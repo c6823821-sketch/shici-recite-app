@@ -1,0 +1,75 @@
+﻿name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'App.tsx'
+      - 'app.json'
+      - 'index.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'assets/**'
+      - '.github/workflows/android-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Prepare APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk shici-recite-app-v0.1.0.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shici-recite-app-v0.1.0
+          path: shici-recite-app-v0.1.0.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: 诗词背诵 v0.1.0
+          body: |
+            诗词背诵 Android 测试版。
+
+            包含离线诗词库、FSRS 背诵、每日荐诗、填诗填词填曲和严格评分入口。
+          files: shici-recite-app-v0.1.0.apk
+          make_latest: true
