@@ -1,0 +1,34 @@
+{
+  "name": "shici-recite-app",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.24",
+    "expo-haptics": "~57.0.3",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "^0.21.2",
+    "ts-fsrs": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/react": "~19.2.2",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run test:core && npx expo-doctor",
+    "export:web": "expo export --platform web",
+    "test:core": "tsx scripts/self-test.ts"
+  },
+  "private": true,
+  "description": "离线优先的古诗文阅读与 FSRS 背诵 App"
+}
