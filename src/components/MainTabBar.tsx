@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme';
 
 export type MainTab = 'today' | 'library' | 'compose' | 'profile';
@@ -17,8 +18,9 @@ const TABS: Array<{ key: MainTab; label: string; mark: string }> = [
 ];
 
 export function MainTabBar({ active, onChange }: Props) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8), minHeight: 62 + Math.max(insets.bottom, 8) }]}>
       {TABS.map((tab) => {
         const selected = active === tab.key;
         return (

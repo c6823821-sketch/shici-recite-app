@@ -102,9 +102,17 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           ) : (
             <ActivityIndicator color={colors.vermilion} style={styles.loader} />
           )}
-          <Pressable onPress={openDaily} style={styles.primaryButton}>
-            <Text style={styles.primaryText}>开始学习</Text>
-          </Pressable>
+          <View style={styles.cardActions}>
+            <Pressable onPress={openDaily} style={styles.primaryButton}>
+              <Text style={styles.primaryText}>开始学习</Text>
+            </Pressable>
+            <Pressable onPress={random} style={styles.randomButton}>
+              <Text style={styles.randomButtonText}>随机换一首</Text>
+            </Pressable>
+            <Pressable onPress={() => { setError(''); setMoodVisible(true); }} style={styles.moodCircle}>
+              <Text style={styles.moodCircleText}>心情</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.goalCard}>
@@ -160,11 +168,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>今天想怎么学</Text>
-        <View style={styles.actionGrid}>
-          <ActionButton label="按心情推荐" detail="写下今天发生的事" onPress={() => { setError(''); setMoodVisible(true); }} />
-          <ActionButton label="随机换一篇" detail="从离线诗库抽取" onPress={random} />
-        </View>
       </ScrollView>
 
       <MoodRecommendSheet
@@ -212,7 +215,12 @@ const styles = StyleSheet.create({
   poemMeta: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, marginTop: 13 },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 12 },
   loader: { marginVertical: 40 },
-  primaryButton: { minHeight: 52, marginTop: spacing.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg },
+  primaryButton: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  randomButton: { minHeight: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
+  moodCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  moodCircleText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, letterSpacing: 2 },
   goalCard: { marginTop: spacing.xl, padding: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
   goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' },

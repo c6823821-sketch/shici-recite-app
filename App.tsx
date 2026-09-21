@@ -1,5 +1,8 @@
 ﻿import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
+import { AppState, Platform } from 'react-native';
+import { NavigationBar } from 'expo-navigation-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
 import { WORKS } from './src/data/works';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
@@ -19,6 +22,18 @@ export default function App() {
   const [tab, setTab] = useState<MainTab>('today');
   const [work, setWork] = useState<Work>(WORKS[0]);
   const [readerLineIndex, setReaderLineIndex] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const syncNavigationBar = (state: string) => {
+        NavigationBar.setHidden(state === 'active');
+      };
+      syncNavigationBar(AppState.currentState);
+      const navigationSubscription = AppState.addEventListener('change', syncNavigationBar);
+      return () => navigationSubscription.remove();
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -47,6 +62,7 @@ export default function App() {
   };
 
   return (
+    <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar style="dark" />
       {screen === 'reader' ? (
@@ -76,6 +92,7 @@ export default function App() {
         </View>
       )}
     </View>
+    </SafeAreaProvider>
   );
 }
 
@@ -86,4 +103,6 @@ const styles = StyleSheet.create({
   tabPane: { flex: 1 },
   hidden: { display: 'none' },
 });
+
+
 
