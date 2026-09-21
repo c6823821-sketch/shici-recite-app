@@ -108,6 +108,8 @@ export async function scoreComposition(
 - 60-69：多处硬伤，需要重写局部。
 - 0-59：核心规则不成立或整体结构失败。
 
+输出必须尽量简短：issues 最多 8 条，revision_plan 最多 6 条，每条问题不超过 100 字。绝不能输出 Markdown，绝不能因为长度把 JSON 截断。
+
 只输出 JSON：
 {
   "overall_score": 0,
@@ -149,7 +151,10 @@ export async function scoreComposition(
     body: JSON.stringify({
       model: settings.model,
       temperature: 0.1,
-      max_tokens: 1800,
+      max_tokens: 3600,
+      ...(settings.endpoint.includes('deepseek') || settings.endpoint.includes('openai')
+        ? { response_format: { type: 'json_object' } }
+        : {}),
       messages: [
         { role: 'system', content: systemPrompt },
         {

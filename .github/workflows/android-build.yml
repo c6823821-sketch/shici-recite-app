@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v0.1.1.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v0.2.0.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v0.1.1
-          path: shici-recite-app-v0.1.1.apk
+          name: shici-recite-app-v0.2.0
+          path: shici-recite-app-v0.2.0.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.1
-          name: 诗词背诵 v0.1.1
+          tag_name: v0.2.0
+          name: 诗词背诵 v0.2.0
           body: |
             诗词背诵 Android 测试版。
 
-            修复 debug 包依赖 Metro 的问题。此版本是自包含 release APK，安装后无需连接电脑。
+            修复阅读页、逐句翻译、点字查询和底部导航。此版本是自包含 release APK，安装后无需连接电脑。
 
             包含离线诗词库、FSRS 背诵、每日荐诗、填诗填词填曲和严格评分入口。
-          files: shici-recite-app-v0.1.1.apk
+          files: shici-recite-app-v0.2.0.apk
           make_latest: true
 

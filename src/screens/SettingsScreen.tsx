@@ -68,17 +68,14 @@ export function SettingsScreen({ onBack }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>‹ 返回</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>接口设置</Text>
+        <View style={styles.backButton} />
+        <Text style={styles.headerTitle}>我的</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.intro}>
-          这是你个人手机上的直连模式。Key 只保存在本机 Android Keystore 或 iOS Keychain
-          中，不会写入源码、GitHub 或聊天记录。
+          这里管理 API 设置和数据。Key 只保存在本机安全存储中，不写入源码、GitHub 或聊天记录。
         </Text>
 
         <Field
@@ -188,7 +185,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: 60,
+    paddingBottom: 120,
   },
   intro: {
     color: colors.inkSoft,

@@ -62,7 +62,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
       const result = await scoreComposition(settings, form, text, precheck);
       setScore(result);
     } catch (scoreError) {
-      setError(scoreError instanceof Error ? scoreError.message : '评分失败。');
+      setError(readableScoreError(scoreError));
     } finally {
       setLoading(false);
     }
@@ -71,10 +71,8 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.headerSide}>
-          <Text style={styles.headerAction}>‹ 返回</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>填诗 · 填词 · 填曲</Text>
+        <View style={styles.headerSide} />
+        <Text style={styles.headerTitle}>创作</Text>
         <Pressable onPress={onOpenSettings} style={[styles.headerSide, styles.headerRight]}>
           <Text style={styles.headerAction}>设置</Text>
         </Pressable>
@@ -174,6 +172,18 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   );
 }
 
+function readableScoreError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('JSON') || message.includes('Unexpected end')) {
+    return '评分结果被截断。请重新点击“严格评分”；如果连续出现，请换用支持长输出的模型。';
+  }
+  if (message.includes('Failed to fetch') || message.includes('Network request failed')) {
+    return '网络请求失败，请检查手机网络和 API 地址。';
+  }
+  if (message.includes('API 请求失败')) return message;
+  return `评分失败：${message}`;
+}
+
 function ScoreCard({ score }: { score: CompositionScore }) {
   return (
     <View style={styles.result}>
@@ -244,7 +254,7 @@ const styles = StyleSheet.create({
   headerRight: { alignItems: 'flex-end' },
   headerAction: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 16 },
   headerTitle: { flex: 1, textAlign: 'center', color: colors.ink, fontFamily: fonts.title, fontSize: 17, fontWeight: '700' },
-  content: { padding: spacing.lg, paddingBottom: 60 },
+  content: { padding: spacing.lg, paddingBottom: 120 },
   intro: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25 },
   genreRow: { flexDirection: 'row', gap: 34, marginTop: spacing.lg },
   genreButton: { minWidth: 40, alignItems: 'center', paddingVertical: 8 },
