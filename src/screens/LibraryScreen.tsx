@@ -53,6 +53,22 @@ export function LibraryScreen({ onOpenWork }: Props) {
     });
   }, [filters, query]);
 
+  const matchedLines = useMemo(() => {
+    const needle = query.trim();
+    if (needle.length < 2) return [];
+    const results: Array<{ work: Work; lineIndex: number; line: string }> = [];
+    for (const work of WORKS) {
+      for (let index = 0; index < work.lines.length; index += 1) {
+        if (work.lines[index].includes(needle)) {
+          results.push({ work, lineIndex: index, line: work.lines[index] });
+          break;
+        }
+      }
+      if (results.length >= 30) break;
+    }
+    return results;
+  }, [query]);
+
   const selected = [
     ...filters.eras,
     ...filters.genres,
@@ -118,9 +134,28 @@ export function LibraryScreen({ onOpenWork }: Props) {
       ) : null}
 
       <FlatList
+        style={styles.listView}
         data={filteredWorks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          matchedLines.length > 0 ? (
+            <View style={styles.quoteResults}>
+              <Text style={styles.quoteResultsTitle}>匹配句子 · 点进去直接定位</Text>
+              {matchedLines.map((result) => (
+                <Pressable
+                  key={`${result.work.id}-${result.lineIndex}`}
+                  onPress={() => onOpenWork(result.work, result.lineIndex)}
+                  style={styles.quoteRow}
+                >
+                  <Text style={styles.quoteLine}>{result.line}</Text>
+                  <Text style={styles.quoteSource}>《{result.work.title}》· {result.work.author}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null
+        }
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const previous = index > 0 ? filteredWorks[index - 1] : null;
@@ -173,7 +208,13 @@ const styles = StyleSheet.create({
   selectedRow: { paddingHorizontal: spacing.lg, paddingTop: 10, gap: 8 },
   selectedChip: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderWidth: 1, borderColor: colors.vermilion, borderRadius: 2, paddingHorizontal: 9, paddingVertical: 5 },
   clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, paddingVertical: 6 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 110 },
+  listView: { flex: 1 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 130 },
+  quoteResults: { marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  quoteRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  quoteLine: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 25 },
+  quoteSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
   eraHeader: { color: colors.vermilion, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 18, marginBottom: 4 },
   workRow: { minHeight: 94, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, paddingVertical: 12 },
   pressed: { opacity: 0.55 },

@@ -54,6 +54,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastLookup, setLastLookup] = useState<{ line: number; start: number; end: number } | null>(null);
+  const [lastCharIndex, setLastCharIndex] = useState<number | null>(null);
+  const [pendingWordStart, setPendingWordStart] = useState<number | null>(null);
   const [card, setCard] = useState<Card | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
   const [favoriteLine, setFavoriteLine] = useState<number | null>(null);
@@ -123,6 +125,30 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     } finally {
       setLoading(false);
     }
+  };
+
+  const scrollToLine = (index: number) => {
+    scrollRef.current?.scrollTo({ y: 215 + index * 82, animated: true });
+  };
+
+  const handleCharPress = (index: number) => {
+    setLastCharIndex(index);
+    if (pendingWordStart !== null) {
+      const start = Math.min(pendingWordStart, index);
+      const end = Math.max(pendingWordStart, index);
+      setPendingWordStart(null);
+      void lookup(lineIndex, start, end);
+      return;
+    }
+    void lookup(lineIndex, index, index);
+  };
+
+  const goToLine = (index: number) => {
+    const next = Math.max(0, Math.min(work.lines.length - 1, index));
+    setLineIndex(next);
+    setPendingWordStart(null);
+    setLastCharIndex(null);
+    scrollToLine(next);
   };
 
   const translationFor = (index: number): string => {
@@ -303,7 +329,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
               translationLoading={translationLoading === index}
               translationError={translationError === index}
               glossarySurfaces={work.glossary.filter((item) => item.lineIndex === index).map((item) => item.surface)}
-              onSelect={(charIndex) => lookup(index, charIndex, charIndex)}
+              onSelect={(charIndex) => handleCharPress(charIndex)}
               onReveal={() => revealLine(index)}
               onToggleTranslation={() => toggleTranslation(index)}
               onFavorite={() => setFavoriteLine(index)}
@@ -327,6 +353,26 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
         <Text style={styles.source}>文本来源：{work.source}</Text>
       </ScrollView>
+
+      <View style={styles.lineToolbar}>
+        <Pressable style={styles.lineToolbarButton} onPress={() => goToLine(lineIndex - 1)}>
+          <Text style={styles.lineToolbarText}>上一句</Text>
+        </Pressable>
+        <Pressable style={styles.lineToolbarButton} onPress={() => lookup(lineIndex, 0, Math.max(0, toChars(work.lines[lineIndex]).length - 1))}>
+          <Text style={styles.lineToolbarText}>整句释义</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.lineToolbarButton, pendingWordStart !== null && styles.lineToolbarActive]}
+          onPress={() => setPendingWordStart(lastCharIndex ?? 0)}
+        >
+          <Text style={[styles.lineToolbarText, pendingWordStart !== null && styles.lineToolbarActiveText]}>
+            {pendingWordStart === null ? '选两个字' : '再点一个字'}
+          </Text>
+        </Pressable>
+        <Pressable style={styles.lineToolbarButton} onPress={() => goToLine(lineIndex + 1)}>
+          <Text style={styles.lineToolbarText}>下一句</Text>
+        </Pressable>
+      </View>
 
       <FavoriteSheet
         visible={favoriteLine !== null}
@@ -453,7 +499,7 @@ const styles = StyleSheet.create({
   headerRight: { alignItems: 'flex-end' },
   headerAction: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 16 },
   headerTitle: { flex: 1, textAlign: 'center', color: colors.ink, fontFamily: fonts.title, fontSize: 19, fontWeight: '700' },
-  scroll: { paddingHorizontal: spacing.lg, paddingBottom: 70 },
+  scroll: { paddingHorizontal: spacing.lg, paddingBottom: 150 },
   hero: { paddingTop: spacing.xl, paddingBottom: spacing.md },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 31, fontWeight: '800', letterSpacing: 2, textAlign: 'center' },
   workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3, textAlign: 'center', marginTop: 10 },
@@ -488,6 +534,11 @@ const styles = StyleSheet.create({
   favoriteText: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, borderBottomWidth: 1, borderBottomColor: colors.jade, paddingBottom: 2 },
   translationText: { marginLeft: 30, marginTop: 6, color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23 },
   translationError: { marginLeft: 30, marginTop: 6, color: colors.danger, fontFamily: fonts.sans, fontSize: 11, lineHeight: 18 },
+  lineToolbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingBottom: Platform.OS === 'ios' ? 20 : 8, backgroundColor: colors.paperLight, borderTopWidth: 1, borderTopColor: colors.line },
+  lineToolbarButton: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper },
+  lineToolbarActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
+  lineToolbarText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  lineToolbarActiveText: { color: colors.vermilion, fontWeight: '700' },
   reviewBlock: { marginTop: spacing.xl, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line },
   reviewHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '700' },

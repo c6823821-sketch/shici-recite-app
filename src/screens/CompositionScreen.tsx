@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -69,7 +70,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <View style={styles.headerSide} />
         <Text style={styles.headerTitle}>创作</Text>
@@ -168,7 +169,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
 
         {score ? <ScoreCard score={score} /> : null}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

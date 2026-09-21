@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { WORKS } from '../data/works';
@@ -45,6 +45,39 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
     .filter((record) => record.status === 'pending')
     .map((record) => WORKS.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
+
+  const highlights = useMemo(() => {
+    const now = new Date();
+    const key = `${now.getMonth() + 1}-${now.getDate()}`;
+    const holidays: Record<string, { title: string; themes: string[]; keywords: string[] }> = {
+      '1-1': { title: '元旦', themes: ['哲理', '励志'], keywords: ['新', '春', '日'] },
+      '5-1': { title: '劳动节', themes: ['民生', '田园'], keywords: ['农', '田', '工'] },
+      '9-10': { title: '教师节', themes: ['读书', '励志'], keywords: ['师', '学', '桃李'] },
+      '10-1': { title: '国庆', themes: ['爱国', '怀古'], keywords: ['国', '山河', '神州'] },
+      '12-22': { title: '冬至', themes: ['冬', '思乡'], keywords: ['冬', '雪', '寒'] },
+    };
+    const month = now.getMonth() + 1;
+    const season = month >= 3 && month <= 5
+      ? { title: '春日精选', themes: ['春'], keywords: ['春', '花', '东风'] }
+      : month >= 6 && month <= 8
+        ? { title: '夏日精选', themes: ['夏'], keywords: ['夏', '荷', '雨'] }
+        : month >= 9 && month <= 11
+          ? { title: '秋日精选', themes: ['秋'], keywords: ['秋', '月', '西风', '落叶'] }
+          : { title: '冬日精选', themes: ['冬', '雪'], keywords: ['冬', '雪', '寒'] };
+    const theme = holidays[key] ?? season;
+    const results: Array<{ work: Work; lineIndex: number; quote: string }> = [];
+    for (const work of WORKS) {
+      const lineIndex = work.lines.findIndex((line) =>
+        theme.keywords.some((keyword) => line.includes(keyword)) ||
+        theme.themes.some((item) => work.themes.includes(item)),
+      );
+      if (lineIndex >= 0) {
+        results.push({ work, lineIndex, quote: work.lines[lineIndex] });
+      }
+      if (results.length >= 3) break;
+    }
+    return { title: theme.title, items: results };
+  }, []);
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
   };
@@ -135,6 +168,16 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           </View>
         ) : null}
 
+        <View style={styles.highlightSection}>
+          <Text style={styles.sectionTitle}>{highlights.title}</Text>
+          {highlights.items.map((item) => (
+            <Pressable key={`${item.work.id}-${item.lineIndex}`} onPress={() => onOpenWork(item.work, item.lineIndex)} style={styles.highlightRow}>
+              <Text style={styles.highlightQuote}>{item.quote}</Text>
+              <Text style={styles.highlightSource}>《{item.work.title}》· {item.work.author}</Text>
+            </Pressable>
+          ))}
+        </View>
+
         <Text style={styles.sectionTitle}>今天想怎么学</Text>
         <View style={styles.actionGrid}>
           <ActionButton label="按心情推荐" detail="写下今天发生的事" onPress={() => { setError(''); setMoodVisible(true); }} />
@@ -190,16 +233,20 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 52, marginTop: spacing.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, letterSpacing: 2 },
   goalCard: { marginTop: spacing.xl, padding: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
-  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' },
   goalLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
   goalValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, fontWeight: '800', marginTop: 5 },
-  goalButtons: { flexDirection: 'row', gap: 6 },
+  goalButtons: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6, flex: 1, minWidth: 210 },
   goalButton: { minWidth: 48, minHeight: 36, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
   goalButtonActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   goalButtonText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
   goalButtonTextActive: { color: colors.vermilion, fontWeight: '700' },
   progressTrack: { height: 6, backgroundColor: colors.paperDeep, marginTop: 16 },
   progressFill: { height: 6, backgroundColor: colors.vermilion },
+  highlightSection: { marginTop: spacing.lg },
+  highlightRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
+  highlightSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
   pendingSection: { marginTop: spacing.lg },
   pendingRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   pendingCopy: { flex: 1 },

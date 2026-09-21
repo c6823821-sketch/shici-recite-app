@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FavoriteFolder } from '../services/favorites';
 import { colors, fonts, spacing } from '../theme';
 
@@ -19,6 +19,7 @@ export function FavoriteSheet({ visible, quote, folders, onClose, onSave }: Prop
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
+      <KeyboardAvoidingView style={styles.wrapper} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.sheet}>
         <View style={styles.handle} />
         <Text style={styles.title}>收藏这句话</Text>
@@ -40,12 +41,14 @@ export function FavoriteSheet({ visible, quote, folders, onClose, onSave }: Prop
           <Text style={styles.saveText}>保存到我的收藏</Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(31,26,20,0.42)' },
+  wrapper: { justifyContent: 'flex-end', flex: 1 },
   sheet: { backgroundColor: colors.paperLight, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: spacing.lg, paddingBottom: 34 },
   handle: { width: 44, height: 3, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 18 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, fontWeight: '800' },
