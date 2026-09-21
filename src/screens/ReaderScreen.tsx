@@ -15,7 +15,8 @@ import { FavoriteSheet } from '../components/FavoriteSheet';
 import { explainWithApi } from '../services/api';
 import { loadCard, rateWork } from '../services/fsrs';
 import { findLocalExplanation } from '../services/localGlossary';
-import { createFavorite, saveFavorite } from '../services/favorites';
+import { findDictionaryExplanation } from '../services/localDictionary';
+import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
 import { loadOrCreateContext, WorkContext } from '../services/context';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
@@ -52,9 +53,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [sheetVisible, setSheetVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastLookup, setLastLookup] = useState<{ line: number; start: number; end: number } | null>(null);
   const [card, setCard] = useState<Card | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
   const [favoriteLine, setFavoriteLine] = useState<number | null>(null);
+  const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
   const [context, setContext] = useState<WorkContext | null>(null);
   const [contextVisible, setContextVisible] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
@@ -64,6 +67,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadCard(work.id).then(setCard);
+    loadFolders().then(setFavoriteFolders);
   }, [work.id]);
 
   useEffect(() => {
@@ -76,6 +80,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   }, [initialLineIndex, work.id]);
 
   const lookup = async (targetLine: number, start: number, end: number) => {
+    setLastLookup({ line: targetLine, start, end });
     setLineIndex(targetLine);
     setSheetVisible(true);
     setLoading(true);
@@ -87,6 +92,14 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       setExplanation(local);
       setLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      return;
+    }
+
+    const dictionary = findDictionaryExplanation(work, targetLine, start, end);
+    if (dictionary) {
+      setExplanation(dictionary);
+      setLoading(false);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       return;
     }
 
@@ -201,8 +214,20 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
-  const handleFavorite = async (name: string, tagsText: string) => {
+  const handleFavorite = async (
+    name: string,
+    tagsText: string,
+    selectedFolderId: string | null,
+    newFolderName: string,
+  ) => {
     if (favoriteLine === null) return;
+    let folderId = selectedFolderId ?? undefined;
+    if (newFolderName.trim()) {
+      const folder = createFolder(newFolderName.trim());
+      await saveFolder(folder);
+      setFavoriteFolders((current) => [...current, folder]);
+      folderId = folder.id;
+    }
     await saveFavorite(createFavorite({
       workId: work.id,
       workTitle: work.title,
@@ -210,6 +235,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       quote: work.lines[favoriteLine],
       name,
       tags: tagsText.split(/[,，\s]+/).filter(Boolean),
+      folderId,
     }));
     setFavoriteLine(null);
   };
@@ -305,6 +331,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       <FavoriteSheet
         visible={favoriteLine !== null}
         quote={favoriteLine === null ? '' : work.lines[favoriteLine]}
+        folders={favoriteFolders}
         onClose={() => setFavoriteLine(null)}
         onSave={handleFavorite}
       />
@@ -315,6 +342,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         error={error}
         explanation={explanation}
         onClose={() => setSheetVisible(false)}
+        onRetry={lastLookup ? () => lookup(lastLookup.line, lastLookup.start, lastLookup.end) : undefined}
       />
     </View>
   );

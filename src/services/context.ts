@@ -66,6 +66,13 @@ const LOCAL_CONTEXT: Record<string, Omit<WorkContext, 'source'>> = {
   },
 };
 
+function endpointUrl(endpoint: string): string {
+  const value = endpoint.trim();
+  if (!value) return '';
+  if (value.endsWith('/chat/completions')) return value;
+  return `${value.replace(/\/+$/, '')}/chat/completions`;
+}
+
 function todayKey(workId: string): string {
   return `work_context_${workId}`;
 }
@@ -96,7 +103,7 @@ export async function loadOrCreateContext(settings: ApiSettings | null, work: Wo
   }
 
   const prompt = `你是古诗词赏析编辑。请根据给定篇目写出简洁、保守、可核对的背景与赏析。不要编造具体逸事，不确定就写“学界有不同说法”。只输出 JSON，字段为 background、surface_meaning、deeper_meaning、theme。每项不超过120字。`;
-  const response = await fetch(settings.endpoint, {
+  const response = await fetch(endpointUrl(settings.endpoint), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.apiKey}` },
     body: JSON.stringify({

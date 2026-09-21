@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { WORKS } from '../data/works';
 import { explainWithApi } from '../services/api';
-import { FavoriteLine, loadFavorites, removeFavorite } from '../services/favorites';
+import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorite } from '../services/favorites';
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings } from '../types';
@@ -30,12 +30,14 @@ export function SettingsScreen({ onBack }: Props) {
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState('');
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
+  const [folders, setFolders] = useState<FavoriteFolder[]>([]);
 
   useEffect(() => {
     loadApiSettings()
       .then((value) => setSettings(value ?? EMPTY))
       .finally(() => setLoading(false));
     loadFavorites().then(setFavorites);
+    loadFolders().then(setFolders);
   }, []);
 
   const update = (key: keyof ApiSettings, value: string) => {
@@ -132,18 +134,22 @@ export function SettingsScreen({ onBack }: Props) {
           {favorites.length === 0 ? (
             <Text style={styles.noteText}>还没有收藏句子。阅读时点击每句下方的“☆ 收藏”。</Text>
           ) : (
-            favorites.map((item) => (
-              <View key={item.id} style={styles.favoriteItem}>
-                <Text style={styles.favoriteName}>{item.name}</Text>
-                <Text style={styles.favoriteQuote}>“{item.quote}”</Text>
-                <Text style={styles.favoriteMeta}>
-                  《{item.workTitle}》 · {item.tags.join(' · ') || '无标签'} · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
-                </Text>
-                <Pressable onPress={async () => { await removeFavorite(item.id); setFavorites(await loadFavorites()); }}>
-                  <Text style={styles.deleteFavorite}>删除</Text>
-                </Pressable>
-              </View>
-            ))
+            <>
+              {folders.map((folder) => {
+                const items = favorites.filter((item) => item.folderId === folder.id);
+                if (!items.length) return null;
+                return (
+                  <View key={folder.id} style={styles.folderBlock}>
+                    <Text style={styles.folderTitle}>{folder.name}</Text>
+                    {items.map((item) => <FavoriteItem key={item.id} item={item} onDeleted={() => loadFavorites().then(setFavorites)} />)}
+                  </View>
+                );
+              })}
+              {favorites.some((item) => !item.folderId) ? <Text style={styles.folderTitle}>未分类收藏</Text> : null}
+              {favorites.filter((item) => !item.folderId).map((item) => (
+                <FavoriteItem key={item.id} item={item} onDeleted={() => loadFavorites().then(setFavorites)} />
+              ))}
+            </>
           )}
         </View>
 
@@ -156,6 +162,21 @@ export function SettingsScreen({ onBack }: Props) {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function FavoriteItem({ item, onDeleted }: { item: FavoriteLine; onDeleted: () => void }) {
+  return (
+    <View style={styles.favoriteItem}>
+      <Text style={styles.favoriteName}>{item.name}</Text>
+      <Text style={styles.favoriteQuote}>“{item.quote}”</Text>
+      <Text style={styles.favoriteMeta}>
+        《{item.workTitle}》 · {item.tags.join(' · ') || '无标签'} · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+      </Text>
+      <Pressable onPress={async () => { await removeFavorite(item.id); onDeleted(); }}>
+        <Text style={styles.deleteFavorite}>删除</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -287,6 +308,8 @@ const styles = StyleSheet.create({
   },
   updateButton: { minHeight: 50, marginTop: spacing.xl, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
   updateButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 17 },
+  folderBlock: { marginTop: 18 },
+  folderTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 17, fontWeight: '700', marginTop: 16 },
   favoriteItem: { marginTop: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   favoriteName: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   favoriteQuote: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 6 },

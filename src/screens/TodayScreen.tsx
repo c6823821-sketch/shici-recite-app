@@ -12,11 +12,9 @@ import { ApiSettings, DailyRecommendation, Work } from '../types';
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
   onOpenSettings: () => void;
-  onOpenLibrary: () => void;
-  onOpenComposition: () => void;
 }
 
-export function TodayScreen({ onOpenWork, onOpenSettings, onOpenLibrary, onOpenComposition }: Props) {
+export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [moodVisible, setMoodVisible] = useState(false);
@@ -141,8 +139,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings, onOpenLibrary, onOpenC
         <View style={styles.actionGrid}>
           <ActionButton label="按心情推荐" detail="写下今天发生的事" onPress={() => { setError(''); setMoodVisible(true); }} />
           <ActionButton label="随机换一篇" detail="从离线诗库抽取" onPress={random} />
-          <ActionButton label="去诗库搜索" detail={`${WORKS.length.toLocaleString('zh-CN')} 篇离线内容`} onPress={onOpenLibrary} />
-          <ActionButton label="写诗填词" detail="本地预检 + 严格评分" onPress={onOpenComposition} />
         </View>
       </ScrollView>
 

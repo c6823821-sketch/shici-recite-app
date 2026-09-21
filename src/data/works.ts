@@ -682,9 +682,32 @@ const CURATED_WORKS: Work[] = [
 ];
 
 const seenWorks = new Set<string>();
-export const WORKS: Work[] = [...CURATED_WORKS, ...CORPUS_WORKS].filter((work) => {
-  const key = `${work.title}|${work.author}|${work.lines[0] ?? ''}`;
-  if (seenWorks.has(key)) return false;
-  seenWorks.add(key);
-  return true;
-});
+const arrowOnly = /^[<>]+$/;
+const metadataOnly = /^(词牌介绍|词牌名|作者简介|题解|注释|译文|赏析|背景|序言)$/;
+function sanitizeWork(work: Work): Work {
+  if (!work.lines.some((line) => line.trim().startsWith('<') || line.trim().startsWith('>'))) return work;
+  const keptIndices: number[] = [];
+  const lines = work.lines.filter((line, index) => {
+    const trimmed = line.trim();
+    if (arrowOnly.test(trimmed) || metadataOnly.test(trimmed) || trimmed.startsWith('>>') || trimmed.startsWith('<<')) return false;
+    keptIndices.push(index);
+    return true;
+  });
+  return {
+    ...work,
+    lines,
+    translations: work.translations.length ? keptIndices.map((index) => work.translations[index] ?? '') : [],
+    glossary: work.glossary.filter((item) => keptIndices.includes(item.lineIndex)).map((item) => ({
+      ...item,
+      lineIndex: keptIndices.indexOf(item.lineIndex),
+    })),
+  };
+}
+export const WORKS: Work[] = [...CURATED_WORKS, ...CORPUS_WORKS]
+  .map(sanitizeWork)
+  .filter((work) => {
+    const key = `${work.title}|${work.author}|${work.lines[0] ?? ''}`;
+    if (seenWorks.has(key)) return false;
+    seenWorks.add(key);
+    return true;
+  });

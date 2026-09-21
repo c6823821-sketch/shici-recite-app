@@ -59,20 +59,18 @@ export default function App() {
       ) : (
         <View style={styles.tabs}>
           <View style={styles.content}>
-            {tab === 'today' ? (
-              <TodayScreen
-                onOpenWork={openWork}
-                onOpenSettings={openSettings}
-                onOpenLibrary={() => setTab('library')}
-                onOpenComposition={() => setTab('compose')}
-              />
-            ) : tab === 'library' ? (
+            <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
+              <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
+            </View>
+            <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
               <LibraryScreen onOpenWork={openWork} />
-            ) : tab === 'compose' ? (
+            </View>
+            <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
               <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
-            ) : (
+            </View>
+            <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
               <SettingsScreen onBack={() => setTab('today')} />
-            )}
+            </View>
           </View>
           <MainTabBar active={tab} onChange={setTab} />
         </View>
@@ -85,5 +83,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.paper },
   tabs: { flex: 1 },
   content: { flex: 1 },
+  tabPane: { flex: 1 },
+  hidden: { display: 'none' },
 });
 
