@@ -21,6 +21,7 @@ import { loadOrCreateContext, WorkContext } from '../services/context';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
+import { recordInteraction } from '../services/preference';
 import { toChars } from '../services/text';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Explanation, Work } from '../types';
@@ -71,6 +72,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     loadCard(work.id).then(setCard);
     loadFolders().then(setFavoriteFolders);
   }, [work.id]);
+
+  useEffect(() => {
+    const startedAt = Date.now();
+    return () => { void recordInteraction(work, 'view', Date.now() - startedAt); };
+  }, [lineIndex, work.id]);
 
   useEffect(() => {
     setLineIndex(initialLineIndex);
@@ -215,6 +221,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
   const markStudy = async (done: boolean) => {
     await setStudyStatus(work.id, done ? 'done' : 'pending');
+    await recordInteraction(work, done ? 'completed' : 'pending');
     const next = await rateWork(work.id, done ? 'good' : 'again');
     setCard(next);
     setReviewMessage(done ? '已完成，进入复习队列。' : '已加入待背清单，下次继续。');
@@ -254,6 +261,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       setFavoriteFolders((current) => [...current, folder]);
       folderId = folder.id;
     }
+    await recordInteraction(work, 'favorite');
     await saveFavorite(createFavorite({
       workId: work.id,
       workTitle: work.title,

@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { WORKS } from '../data/works';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
+import { DailyDiscovery, loadDailyDiscovery } from '../services/dailyDiscovery';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
 import { DailyGoal, loadDailyGoal, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
@@ -21,11 +22,15 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   const [moodText, setMoodText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [discovery, setDiscovery] = useState<DailyDiscovery | null>(null);
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
 
   useEffect(() => {
-    loadApiSettings().then(setSettings);
+    loadApiSettings().then((value) => {
+      setSettings(value);
+      loadDailyDiscovery(value).then(setDiscovery);
+    });
     loadDailyGoal().then(setGoal);
     loadTodayRecords().then(setRecords);
     loadTodayRecommendation().then((saved) => {
@@ -46,47 +51,17 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
     .map((record) => WORKS.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
 
-  const highlights = useMemo(() => {
-    const now = new Date();
-    const key = `${now.getMonth() + 1}-${now.getDate()}`;
-    const holidays: Record<string, { title: string; themes: string[]; keywords: string[] }> = {
-      '1-1': { title: '元旦', themes: ['哲理', '励志'], keywords: ['新', '春', '日'] },
-      '5-1': { title: '劳动节', themes: ['民生', '田园'], keywords: ['农', '田', '工'] },
-      '9-10': { title: '教师节', themes: ['读书', '励志'], keywords: ['师', '学', '桃李'] },
-      '10-1': { title: '国庆', themes: ['爱国', '怀古'], keywords: ['国', '山河', '神州'] },
-      '12-22': { title: '冬至', themes: ['冬', '思乡'], keywords: ['冬', '雪', '寒'] },
-    };
-    const month = now.getMonth() + 1;
-    const season = month >= 3 && month <= 5
-      ? { title: '春日精选', themes: ['春'], keywords: ['春', '花', '东风'] }
-      : month >= 6 && month <= 8
-        ? { title: '夏日精选', themes: ['夏'], keywords: ['夏', '荷', '雨'] }
-        : month >= 9 && month <= 11
-          ? { title: '秋日精选', themes: ['秋'], keywords: ['秋', '月', '西风', '落叶'] }
-          : { title: '冬日精选', themes: ['冬', '雪'], keywords: ['冬', '雪', '寒'] };
-    const theme = holidays[key] ?? season;
-    const results: Array<{ work: Work; lineIndex: number; quote: string }> = [];
-    for (const work of WORKS) {
-      const lineIndex = work.lines.findIndex((line) =>
-        theme.keywords.some((keyword) => line.includes(keyword)) ||
-        theme.themes.some((item) => work.themes.includes(item)),
-      );
-      if (lineIndex >= 0) {
-        results.push({ work, lineIndex, quote: work.lines[lineIndex] });
-      }
-      if (results.length >= 3) break;
-    }
-    return { title: theme.title, items: results };
-  }, []);
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
   };
+
   const random = async () => {
     const next = randomRecommendation(WORKS);
     setDaily(next);
     await saveTodayRecommendation(next);
     setMoodVisible(false);
   };
+
   const recommend = async () => {
     if (!settings?.endpoint.trim() || !settings.model.trim()) {
       setError('请先在“我的”里填写 API 地址和模型名称。');
@@ -168,15 +143,22 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           </View>
         ) : null}
 
-        <View style={styles.highlightSection}>
-          <Text style={styles.sectionTitle}>{highlights.title}</Text>
-          {highlights.items.map((item) => (
-            <Pressable key={`${item.work.id}-${item.lineIndex}`} onPress={() => onOpenWork(item.work, item.lineIndex)} style={styles.highlightRow}>
-              <Text style={styles.highlightQuote}>{item.quote}</Text>
-              <Text style={styles.highlightSource}>《{item.work.title}》· {item.work.author}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {discovery ? (
+          <View style={styles.highlightSection}>
+            <Text style={styles.sectionTitle}>{discovery.title}</Text>
+            <Text style={styles.discoveryReason}>{discovery.reason}</Text>
+            {discovery.items.map((item) => {
+              const work = WORKS.find((candidate) => candidate.id === item.workId);
+              if (!work) return null;
+              return (
+                <Pressable key={`${item.workId}-${item.lineIndex}`} onPress={() => onOpenWork(work, item.lineIndex)} style={styles.highlightRow}>
+                  <Text style={styles.highlightQuote}>{item.quote}</Text>
+                  <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         <Text style={styles.sectionTitle}>今天想怎么学</Text>
         <View style={styles.actionGrid}>
@@ -244,6 +226,7 @@ const styles = StyleSheet.create({
   progressTrack: { height: 6, backgroundColor: colors.paperDeep, marginTop: 16 },
   progressFill: { height: 6, backgroundColor: colors.vermilion },
   highlightSection: { marginTop: spacing.lg },
+  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 5 },
   highlightRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
   highlightSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
