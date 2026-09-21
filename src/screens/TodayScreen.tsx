@@ -5,6 +5,7 @@ import { WORKS } from '../data/works';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
+import { DailyGoal, loadDailyGoal, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, DailyRecommendation, Work } from '../types';
 
@@ -22,9 +23,13 @@ export function TodayScreen({ onOpenWork, onOpenSettings, onOpenLibrary, onOpenC
   const [moodText, setMoodText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [records, setRecords] = useState<StudyRecord[]>([]);
+  const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
+    loadDailyGoal().then(setGoal);
+    loadTodayRecords().then(setRecords);
     loadTodayRecommendation().then((saved) => {
       if (saved) {
         setDaily(saved);
@@ -37,6 +42,11 @@ export function TodayScreen({ onOpenWork, onOpenSettings, onOpenLibrary, onOpenC
   }, []);
 
   const currentWork = daily ? WORKS.find((work) => work.id === daily.workId) : null;
+  const doneCount = records.filter((record) => record.status === 'done').length;
+  const pending = records
+    .filter((record) => record.status === 'pending')
+    .map((record) => WORKS.find((work) => work.id === record.workId))
+    .filter((work): work is Work => Boolean(work));
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
   };
@@ -90,6 +100,42 @@ export function TodayScreen({ onOpenWork, onOpenSettings, onOpenLibrary, onOpenC
             <Text style={styles.primaryText}>开始学习</Text>
           </Pressable>
         </View>
+
+        <View style={styles.goalCard}>
+          <View style={styles.goalHeader}>
+            <View>
+              <Text style={styles.goalLabel}>今日目标</Text>
+              <Text style={styles.goalValue}>{doneCount} / {goal.target} 首</Text>
+            </View>
+            <View style={styles.goalButtons}>
+              {[1, 2, 3, 5].map((value) => (
+                <Pressable
+                  key={value}
+                  onPress={async () => setGoal(await saveDailyGoal(value))}
+                  style={[styles.goalButton, goal.target === value && styles.goalButtonActive]}
+                >
+                  <Text style={[styles.goalButtonText, goal.target === value && styles.goalButtonTextActive]}>{value} 首</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` }]} /></View>
+        </View>
+
+        {pending.length > 0 ? (
+          <View style={styles.pendingSection}>
+            <Text style={styles.sectionTitle}>待背清单</Text>
+            {pending.slice(0, 6).map((work) => (
+              <Pressable key={work.id} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
+                <View style={styles.pendingCopy}>
+                  <Text style={styles.pendingTitle}>{work.title}</Text>
+                  <Text style={styles.pendingMeta}>{work.author} · {work.dynasty}</Text>
+                </View>
+                <Text style={styles.pendingAction}>继续</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <Text style={styles.sectionTitle}>今天想怎么学</Text>
         <View style={styles.actionGrid}>
@@ -147,6 +193,23 @@ const styles = StyleSheet.create({
   loader: { marginVertical: 40 },
   primaryButton: { minHeight: 52, marginTop: spacing.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, letterSpacing: 2 },
+  goalCard: { marginTop: spacing.xl, padding: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
+  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  goalLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
+  goalValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, fontWeight: '800', marginTop: 5 },
+  goalButtons: { flexDirection: 'row', gap: 6 },
+  goalButton: { minWidth: 48, minHeight: 36, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  goalButtonActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
+  goalButtonText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
+  goalButtonTextActive: { color: colors.vermilion, fontWeight: '700' },
+  progressTrack: { height: 6, backgroundColor: colors.paperDeep, marginTop: 16 },
+  progressFill: { height: 6, backgroundColor: colors.vermilion },
+  pendingSection: { marginTop: spacing.lg },
+  pendingRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  pendingCopy: { flex: 1 },
+  pendingTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
+  pendingMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
+  pendingAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   sectionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 18, fontWeight: '700', marginTop: spacing.xl, marginBottom: spacing.md },
   actionGrid: { gap: 10 },
   actionButton: { minHeight: 72, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, paddingHorizontal: 16, justifyContent: 'center' },

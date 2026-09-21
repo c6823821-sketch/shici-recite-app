@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import { Card } from 'ts-fsrs';
 import { ExplanationSheet } from '../components/ExplanationSheet';
-import { PlanSheet } from '../components/PlanSheet';
+import { FavoriteSheet } from '../components/FavoriteSheet';
 import { explainWithApi } from '../services/api';
-import { dueLabel, formatDue, loadCard, rateWork, ReviewRating } from '../services/fsrs';
+import { loadCard, rateWork } from '../services/fsrs';
 import { findLocalExplanation } from '../services/localGlossary';
-import { estimatePlan, loadStudyPlan, saveStudyPlan, StudyPlan } from '../services/plan';
+import { createFavorite, saveFavorite } from '../services/favorites';
+import { loadOrCreateContext, WorkContext } from '../services/context';
+import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
 import { toChars } from '../services/text';
@@ -52,14 +54,16 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [error, setError] = useState('');
   const [card, setCard] = useState<Card | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
-  const [plan, setPlan] = useState<StudyPlan | null>(null);
-  const [planVisible, setPlanVisible] = useState(false);
+  const [favoriteLine, setFavoriteLine] = useState<number | null>(null);
+  const [context, setContext] = useState<WorkContext | null>(null);
+  const [contextVisible, setContextVisible] = useState(false);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [contextError, setContextError] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadCard(work.id).then(setCard);
-    loadStudyPlan(work.id).then(setPlan);
   }, [work.id]);
 
   useEffect(() => {
@@ -170,11 +174,44 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     });
   };
 
-  const rate = async (rating: ReviewRating) => {
-    const next = await rateWork(work.id, rating);
+  const markStudy = async (done: boolean) => {
+    await setStudyStatus(work.id, done ? 'done' : 'pending');
+    const next = await rateWork(work.id, done ? 'good' : 'again');
     setCard(next);
-    setReviewMessage(`已安排下次复习：${formatDue(next)}`);
+    setReviewMessage(done ? '已完成，进入复习队列。' : '已加入待背清单，下次继续。');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  };
+
+  const toggleContext = async () => {
+    if (contextVisible) {
+      setContextVisible(false);
+      return;
+    }
+    setContextVisible(true);
+    if (context) return;
+    setContextLoading(true);
+    setContextError('');
+    try {
+      const next = await loadOrCreateContext(settings, work);
+      setContext(next);
+    } catch (contextFailure) {
+      setContextError(contextFailure instanceof Error ? contextFailure.message : '背景赏析加载失败。');
+    } finally {
+      setContextLoading(false);
+    }
+  };
+
+  const handleFavorite = async (name: string, tagsText: string) => {
+    if (favoriteLine === null) return;
+    await saveFavorite(createFavorite({
+      workId: work.id,
+      workTitle: work.title,
+      lineIndex: favoriteLine,
+      quote: work.lines[favoriteLine],
+      name,
+      tags: tagsText.split(/[,，\s]+/).filter(Boolean),
+    }));
+    setFavoriteLine(null);
   };
 
   return (
@@ -194,6 +231,28 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           <Text style={styles.workTitle}>{work.title}</Text>
           <Text style={styles.workMeta}>{work.dynasty} · {work.author} · {work.genre}</Text>
         </View>
+
+        <Pressable onPress={toggleContext} style={styles.contextToggle}>
+          <Text style={styles.contextToggleText}>{contextVisible ? '收起背景与赏析' : '背景 · 主旨 · 赏析'}</Text>
+        </Pressable>
+        {contextVisible ? (
+          <View style={styles.contextBox}>
+            {contextLoading ? <ActivityIndicator color={colors.vermilion} /> : null}
+            {context ? (
+              <>
+                <Text style={styles.contextLabel}>写作背景</Text>
+                <Text style={styles.contextText}>{context.background}</Text>
+                <Text style={styles.contextLabel}>表面意思</Text>
+                <Text style={styles.contextText}>{context.surfaceMeaning}</Text>
+                <Text style={styles.contextLabel}>深层含义</Text>
+                <Text style={styles.contextText}>{context.deeperMeaning}</Text>
+                <Text style={styles.contextLabel}>主题</Text>
+                <Text style={styles.contextText}>{context.theme}</Text>
+              </>
+            ) : null}
+            {contextError ? <Text style={styles.contextError}>{contextError}</Text> : null}
+          </View>
+        ) : null}
 
         <View style={styles.modeRow}>
           {MODES.map((item) => (
@@ -221,34 +280,21 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
               onSelect={(charIndex) => lookup(index, charIndex, charIndex)}
               onReveal={() => revealLine(index)}
               onToggleTranslation={() => toggleTranslation(index)}
+              onFavorite={() => setFavoriteLine(index)}
             />
           ))}
         </View>
 
         <View style={styles.reviewBlock}>
-          <View style={styles.reviewHeading}>
-            <Text style={styles.reviewTitle}>背诵评价</Text>
-            <Text style={styles.reviewDue}>{card ? dueLabel(card) : '正在读取排期'}</Text>
-          </View>
-          <Text style={styles.reviewHint}>评价会交给 FSRS，不采用固定“第 1、2、4、7 天”。</Text>
-          <Pressable onPress={() => setPlanVisible(true)} style={styles.planButton}>
-            <Text style={styles.planButtonText}>
-              {plan
-                ? `计划：${plan.targetDays} 天 · 每天约 ${estimatePlan(plan, work.lines.length).linesPerDay} 句`
-                : '设置背诵期限'}
-            </Text>
-          </Pressable>
+          <Text style={styles.reviewTitle}>这一首背得怎么样？</Text>
+          <Text style={styles.reviewHint}>完成就打勾；没背完就放进待背清单，下次继续。</Text>
           <View style={styles.ratingRow}>
-            {[
-              ['again', '忘了'],
-              ['hard', '很难'],
-              ['good', '记得'],
-              ['easy', '很熟'],
-            ].map(([key, label]) => (
-              <Pressable key={key} style={styles.ratingButton} onPress={() => rate(key as ReviewRating)}>
-                <Text style={styles.ratingText}>{label}</Text>
-              </Pressable>
-            ))}
+            <Pressable style={[styles.ratingButton, styles.doneButton]} onPress={() => markStudy(true)}>
+              <Text style={styles.doneText}>✓ 完成背诵</Text>
+            </Pressable>
+            <Pressable style={styles.ratingButton} onPress={() => markStudy(false)}>
+              <Text style={styles.ratingText}>加入待背清单</Text>
+            </Pressable>
           </View>
           {reviewMessage ? <Text style={styles.reviewMessage}>{reviewMessage}</Text> : null}
         </View>
@@ -256,17 +302,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         <Text style={styles.source}>文本来源：{work.source}</Text>
       </ScrollView>
 
-      <PlanSheet
-        visible={planVisible}
-        workId={work.id}
-        current={plan}
-        lineCount={work.lines.length}
-        onClose={() => setPlanVisible(false)}
-        onSave={async (next) => {
-          setPlan(next);
-          await saveStudyPlan(next);
-          setPlanVisible(false);
-        }}
+      <FavoriteSheet
+        visible={favoriteLine !== null}
+        quote={favoriteLine === null ? '' : work.lines[favoriteLine]}
+        onClose={() => setFavoriteLine(null)}
+        onSave={handleFavorite}
       />
 
       <ExplanationSheet
@@ -305,6 +345,7 @@ function ReaderLine({
   onSelect,
   onReveal,
   onToggleTranslation,
+  onFavorite,
 }: {
   line: string;
   index: number;
@@ -319,6 +360,7 @@ function ReaderLine({
   onSelect: (index: number) => void;
   onReveal: () => void;
   onToggleTranslation: () => void;
+  onFavorite: () => void;
 }) {
   const chars = toChars(line);
 
@@ -360,11 +402,16 @@ function ReaderLine({
         </View>
       )}
 
-      <Pressable onPress={onToggleTranslation} style={styles.translationToggle}>
-        {translationLoading ? <ActivityIndicator size="small" color={colors.vermilion} /> : (
-          <Text style={styles.translationToggleText}>{expanded ? '收起译文' : translation ? '查看译文' : '生成译文'}</Text>
-        )}
-      </Pressable>
+      <View style={styles.lineActions}>
+        <Pressable onPress={onToggleTranslation} style={styles.translationToggle}>
+          {translationLoading ? <ActivityIndicator size="small" color={colors.vermilion} /> : (
+            <Text style={styles.translationToggleText}>{expanded ? '收起译文' : translation ? '查看译文' : '生成译文'}</Text>
+          )}
+        </Pressable>
+        <Pressable onPress={onFavorite} style={styles.favoriteButton}>
+          <Text style={styles.favoriteText}>☆ 收藏</Text>
+        </Pressable>
+      </View>
       {expanded && translation ? <Text style={styles.translationText}>{translation}</Text> : null}
       {expanded && translationError ? <Text style={styles.translationError}>暂时无法生成译文，请检查网络或 API 设置。</Text> : null}
     </View>
@@ -382,6 +429,12 @@ const styles = StyleSheet.create({
   hero: { paddingTop: spacing.xl, paddingBottom: spacing.md },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 31, fontWeight: '800', letterSpacing: 2, textAlign: 'center' },
   workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3, textAlign: 'center', marginTop: 10 },
+  contextToggle: { alignSelf: 'center', marginTop: 6, paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line },
+  contextToggleText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
+  contextBox: { marginTop: 10, padding: 14, backgroundColor: colors.paperDeep },
+  contextLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 10 },
+  contextText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 5 },
+  contextError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
   modeRow: { flexDirection: 'row', justifyContent: 'center', gap: 34, marginTop: spacing.lg, marginBottom: spacing.sm },
   modeButton: { minWidth: 48, alignItems: 'center', paddingVertical: 10 },
   modeText: { color: colors.muted, fontFamily: fonts.body, fontSize: 16, letterSpacing: 2 },
@@ -400,20 +453,24 @@ const styles = StyleSheet.create({
   reciteHidden: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dotLine: { color: colors.muted, fontFamily: fonts.sans, fontSize: 17 },
   revealHint: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11 },
-  translationToggle: { alignSelf: 'flex-start', marginLeft: 30, marginTop: 2, paddingVertical: 4, paddingHorizontal: 2 },
+  lineActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 30, marginTop: 2, gap: 18 },
+  translationToggle: { paddingVertical: 4, paddingHorizontal: 2 },
+  favoriteButton: { paddingVertical: 4, paddingHorizontal: 2 },
   translationToggleText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 2 },
+  favoriteText: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, borderBottomWidth: 1, borderBottomColor: colors.jade, paddingBottom: 2 },
   translationText: { marginLeft: 30, marginTop: 6, color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23 },
   translationError: { marginLeft: 30, marginTop: 6, color: colors.danger, fontFamily: fonts.sans, fontSize: 11, lineHeight: 18 },
   reviewBlock: { marginTop: spacing.xl, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line },
   reviewHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '700' },
-  reviewDue: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 12 },
   reviewHint: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, lineHeight: 19, marginTop: 8 },
   planButton: { marginTop: 12, borderBottomWidth: 1, borderBottomColor: colors.vermilion, alignSelf: 'flex-start', paddingBottom: 3 },
   planButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   ratingRow: { flexDirection: 'row', gap: 7, marginTop: spacing.md },
   ratingButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 2, backgroundColor: colors.paperLight },
   ratingText: { color: colors.ink, fontFamily: fonts.body, fontSize: 15 },
+  doneButton: { backgroundColor: colors.vermilion, borderColor: colors.vermilion },
+  doneText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   reviewMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 13, marginTop: 10 },
   source: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, lineHeight: 17, marginTop: spacing.xl },
 });

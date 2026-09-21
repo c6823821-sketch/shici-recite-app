@@ -23,6 +23,9 @@ export interface Work {
   dynasty: string;
   genre: string;
   intro: string;
+  background?: string;
+  analysis?: string;
+  themeMeaning?: string;
   collections: string[];
   themes: string[];
   moods: string[];

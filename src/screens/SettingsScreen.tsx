@@ -2,6 +2,7 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { WORKS } from '../data/works';
 import { explainWithApi } from '../services/api';
+import { FavoriteLine, loadFavorites, removeFavorite } from '../services/favorites';
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings } from '../types';
@@ -27,11 +29,13 @@ export function SettingsScreen({ onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState('');
+  const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
 
   useEffect(() => {
     loadApiSettings()
       .then((value) => setSettings(value ?? EMPTY))
       .finally(() => setLoading(false));
+    loadFavorites().then(setFavorites);
   }, []);
 
   const update = (key: keyof ApiSettings, value: string) => {
@@ -115,6 +119,33 @@ export function SettingsScreen({ onBack }: Props) {
         </View>
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
+
+        <Pressable
+          style={styles.updateButton}
+          onPress={() => Linking.openURL('https://github.com/c6823821-sketch/shici-recite-app/releases/latest')}
+        >
+          <Text style={styles.updateButtonText}>检查新版 APK</Text>
+        </Pressable>
+
+        <View style={styles.note}>
+          <Text style={styles.noteTitle}>我的收藏</Text>
+          {favorites.length === 0 ? (
+            <Text style={styles.noteText}>还没有收藏句子。阅读时点击每句下方的“☆ 收藏”。</Text>
+          ) : (
+            favorites.map((item) => (
+              <View key={item.id} style={styles.favoriteItem}>
+                <Text style={styles.favoriteName}>{item.name}</Text>
+                <Text style={styles.favoriteQuote}>“{item.quote}”</Text>
+                <Text style={styles.favoriteMeta}>
+                  《{item.workTitle}》 · {item.tags.join(' · ') || '无标签'} · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+                </Text>
+                <Pressable onPress={async () => { await removeFavorite(item.id); setFavorites(await loadFavorites()); }}>
+                  <Text style={styles.deleteFavorite}>删除</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
+        </View>
 
         <View style={styles.note}>
           <Text style={styles.noteTitle}>为什么还需要本地注释</Text>
@@ -254,6 +285,13 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginTop: spacing.md,
   },
+  updateButton: { minHeight: 50, marginTop: spacing.xl, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  updateButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 17 },
+  favoriteItem: { marginTop: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  favoriteName: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
+  favoriteQuote: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 6 },
+  favoriteMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 7 },
+  deleteFavorite: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
   note: {
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
