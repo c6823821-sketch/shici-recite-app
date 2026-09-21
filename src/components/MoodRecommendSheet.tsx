@@ -5,6 +5,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -41,9 +42,10 @@ export function MoodRecommendSheet({
         <Pressable style={styles.backdrop} onPress={onClose} />
         <KeyboardAvoidingView
           style={styles.wrapper}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
         <View style={styles.sheet}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.handle} />
           <Text style={styles.title}>今天发生了什么</Text>
           <Text style={styles.hint}>
@@ -71,6 +73,7 @@ export function MoodRecommendSheet({
           <Pressable onPress={onOpenSettings} style={styles.settingsLink}>
             <Text style={styles.settingsLinkText}>还没有配置 API？去设置</Text>
           </Pressable>
+          </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -92,9 +95,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(31, 26, 20, 0.42)',
   },
   wrapper: {
+    flex: 1,
     justifyContent: 'flex-end',
   },
   sheet: {
+    maxHeight: '78%',
     backgroundColor: colors.paperLight,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
