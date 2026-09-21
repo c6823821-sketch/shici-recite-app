@@ -2,7 +2,6 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +13,7 @@ import {
 import { WORKS } from '../data/works';
 import { explainWithApi } from '../services/api';
 import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorite } from '../services/favorites';
+import { checkForUpdate, downloadAndInstallUpdate, formatBytes, UpdateInfo } from '../services/updater';
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings } from '../types';
@@ -31,6 +31,11 @@ export function SettingsScreen({ onBack }: Props) {
   const [message, setMessage] = useState('');
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
   const [folders, setFolders] = useState<FavoriteFolder[]>([]);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [updateMessage, setUpdateMessage] = useState('');
 
   useEffect(() => {
     loadApiSettings()
@@ -65,6 +70,36 @@ export function SettingsScreen({ onBack }: Props) {
       setMessage(error instanceof Error ? error.message : '连接失败。');
     } finally {
       setTesting(false);
+    }
+  };
+
+  const checkUpdate = async () => {
+    setCheckingUpdate(true);
+    setUpdateMessage('');
+    setUpdateInfo(null);
+    try {
+      const next = await checkForUpdate();
+      if (!next) setUpdateMessage('当前已经是最新版本。');
+      else setUpdateInfo(next);
+    } catch (error) {
+      setUpdateMessage(error instanceof Error ? error.message : '检查更新失败。');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const installUpdate = async () => {
+    if (!updateInfo) return;
+    setInstallingUpdate(true);
+    setUpdateProgress(0);
+    setUpdateMessage('正在下载新版本……');
+    try {
+      await downloadAndInstallUpdate(updateInfo, setUpdateProgress);
+      setUpdateMessage('下载完成，已打开系统安装器。若系统询问，请允许本应用安装未知应用。');
+    } catch (error) {
+      setUpdateMessage(error instanceof Error ? error.message : '安装包下载或打开失败。');
+    } finally {
+      setInstallingUpdate(false);
     }
   };
 
@@ -122,12 +157,26 @@ export function SettingsScreen({ onBack }: Props) {
 
         {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <Pressable
-          style={styles.updateButton}
-          onPress={() => Linking.openURL('https://github.com/c6823821-sketch/shici-recite-app/releases/latest')}
-        >
-          <Text style={styles.updateButtonText}>检查新版 APK</Text>
-        </Pressable>
+        <View style={styles.updatePanel}>
+          <Pressable style={styles.updateButton} onPress={checkUpdate} disabled={checkingUpdate}>
+            <Text style={styles.updateButtonText}>{checkingUpdate ? '正在检查更新…' : '检查更新'}</Text>
+          </Pressable>
+          {updateInfo ? (
+            <View style={styles.updateInfo}>
+              <Text style={styles.updateTitle}>发现新版 v{updateInfo.version}</Text>
+              <Text style={styles.updateMeta}>安装包 {formatBytes(updateInfo.size)}</Text>
+              {installingUpdate ? (
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${Math.round(updateProgress * 100)}%` }]} />
+                </View>
+              ) : null}
+              <Pressable style={styles.installButton} onPress={installUpdate} disabled={installingUpdate}>
+                <Text style={styles.installButtonText}>{installingUpdate ? '正在下载…' : '下载并安装'}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {updateMessage ? <Text style={styles.updateMessage}>{updateMessage}</Text> : null}
+        </View>
 
         <View style={styles.note}>
           <Text style={styles.noteTitle}>我的收藏</Text>
@@ -306,8 +355,17 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginTop: spacing.md,
   },
-  updateButton: { minHeight: 50, marginTop: spacing.xl, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  updatePanel: { marginTop: spacing.xl },
+  updateButton: { minHeight: 50, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
   updateButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 17 },
+  updateInfo: { marginTop: 12, padding: 14, backgroundColor: colors.paperDeep },
+  updateTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
+  updateMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  progressTrack: { height: 6, backgroundColor: colors.paper, marginTop: 12 },
+  progressFill: { height: 6, backgroundColor: colors.vermilion },
+  installButton: { minHeight: 46, marginTop: 12, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  installButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
+  updateMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 10 },
   folderBlock: { marginTop: 18 },
   folderTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 17, fontWeight: '700', marginTop: 16 },
   favoriteItem: { marginTop: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
