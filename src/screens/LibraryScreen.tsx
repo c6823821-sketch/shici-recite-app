@@ -78,84 +78,83 @@ export function LibraryScreen({ onOpenWork }: Props) {
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>诗库</Text>
-        <Text style={styles.subtitle}>离线 {WORKS.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
-      </View>
+  const listHeader = (
+    <View>
+        <View style={styles.header}>
+          <Text style={styles.title}>诗库</Text>
+          <Text style={styles.subtitle}>离线 {WORKS.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
+        </View>
 
-      <View style={styles.searchRow}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="搜索篇名、作者或正文"
-          placeholderTextColor={colors.muted}
-          selectionColor={colors.vermilion}
-          style={styles.searchInput}
-        />
-        <Pressable onPress={() => setFilterVisible(true)} style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>筛选</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.quickGrid}>
-        {QUICK_THEMES.map((theme) => {
-          const active = filters.themes.includes(theme);
-          return (
-            <Pressable
-              key={theme}
-              onPress={() => {
-                const nextThemes = active
-                  ? filters.themes.filter((item) => item !== theme)
-                  : [...filters.themes, theme];
-                setFilters({ ...filters, themes: nextThemes });
-              }}
-              style={[styles.quickChip, active && styles.quickChipActive]}
-            >
-              <Text style={[styles.quickText, active && styles.quickTextActive]}>{theme}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View style={styles.resultHeader}>
-        <Text style={styles.resultTitle}>{hasFilters ? '筛选结果' : '全部篇目'}</Text>
-        <Text style={styles.resultCount}>{filteredWorks.length.toLocaleString('zh-CN')} 篇</Text>
-      </View>
-
-      {selected.length > 0 ? (
-        <View style={styles.selectedGrid}>
-          {selected.map((item) => <Text key={item} style={styles.selectedChip}>{item}</Text>)}
-          <Pressable onPress={() => { setFilters(EMPTY_FILTERS); setQuery(''); }} style={styles.clearChip}>
-            <Text style={styles.clearText}>清除筛选</Text>
+        <View style={styles.searchRow}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="搜索篇名、作者或正文"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.vermilion}
+            style={styles.searchInput}
+          />
+          <Pressable onPress={() => setFilterVisible(true)} style={styles.filterButton}>
+            <Text style={styles.filterButtonText}>筛选</Text>
           </Pressable>
         </View>
-      ) : null}
 
+        <View style={styles.quickGrid}>
+          {QUICK_THEMES.map((theme) => {
+            const active = filters.themes.includes(theme);
+            return (
+                <Pressable
+                  key={theme}
+                  onPress={() => {
+                    const nextThemes = active
+                        ? filters.themes.filter((item) => item !== theme)
+                        : [...filters.themes, theme];
+                    setFilters({ ...filters, themes: nextThemes });
+                  }}
+                  style={[styles.quickChip, active && styles.quickChipActive]}
+                >
+                  <Text style={[styles.quickText, active && styles.quickTextActive]}>{theme}</Text>
+                </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.resultHeader}>
+          <Text style={styles.resultTitle}>{hasFilters ? '筛选结果' : '全部篇目'}</Text>
+          <Text style={styles.resultCount}>{filteredWorks.length.toLocaleString('zh-CN')} 篇</Text>
+        </View>
+
+        {selected.length > 0 ? (
+          <View style={styles.selectedGrid}>
+            {selected.map((item) => <Text key={item} style={styles.selectedChip}>{item}</Text>)}
+            <Pressable onPress={() => { setFilters(EMPTY_FILTERS); setQuery(''); }} style={styles.clearChip}>
+                <Text style={styles.clearText}>清除筛选</Text>
+            </Pressable>
+          </View>
+        ) : null}
+          {matchedLines.length > 0 ? (
+            <View style={styles.quoteResults}>
+              <Text style={styles.quoteResultsTitle}>匹配句子 · 点进去直接定位</Text>
+              {matchedLines.map((result) => (
+                <Pressable key={`${result.work.id}-${result.lineIndex}`} onPress={() => onOpenWork(result.work, result.lineIndex)} style={styles.quoteRow}>
+                  <Text style={styles.quoteLine}>{result.line}</Text>
+                  <Text style={styles.quoteSource}>《{result.work.title}》· {result.work.author}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
       <FlatList
         style={styles.listView}
         data={filteredWorks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={
-          matchedLines.length > 0 ? (
-            <View style={styles.quoteResults}>
-              <Text style={styles.quoteResultsTitle}>匹配句子 · 点进去直接定位</Text>
-              {matchedLines.map((result) => (
-                <Pressable
-                  key={`${result.work.id}-${result.lineIndex}`}
-                  onPress={() => onOpenWork(result.work, result.lineIndex)}
-                  style={styles.quoteRow}
-                >
-                  <Text style={styles.quoteLine}>{result.line}</Text>
-                  <Text style={styles.quoteSource}>《{result.work.title}》· {result.work.author}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={listHeader}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const previous = index > 0 ? filteredWorks[index - 1] : null;
@@ -210,14 +209,14 @@ const styles = StyleSheet.create({
   clearChip: { minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 },
   clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   listView: { flex: 1 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 130 },
-  quoteResults: { marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  list: { paddingBottom: 130 },
+  quoteResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   quoteRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   quoteLine: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 25 },
   quoteSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
-  eraHeader: { color: colors.vermilion, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 18, marginBottom: 4 },
-  workRow: { minHeight: 94, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, paddingVertical: 12 },
+  eraHeader: { marginHorizontal: spacing.lg, color: colors.vermilion, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 18, marginBottom: 4 },
+  workRow: { minHeight: 94, marginHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, paddingVertical: 12 },
   pressed: { opacity: 0.55 },
   workCopy: { flex: 1, minWidth: 0 },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 23, fontWeight: '700' },
