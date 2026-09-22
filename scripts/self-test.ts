@@ -5,6 +5,7 @@ import { precheckComposition } from '../src/services/prosody';
 import { scoreComposition } from '../src/services/compositionScoring';
 import { recommendForMood } from '../src/services/recommendation';
 import { explainWithApi } from '../src/services/api';
+import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 
 assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
@@ -43,7 +44,10 @@ async function testApiServices() {
     let body = '';
     request.on('data', (chunk) => { body += chunk; });
     request.on('end', () => {
-      const explanation = body.includes('古诗文训诂')
+      const isTranslation = request.url?.includes('/translate') ?? false;
+      const explanation = isTranslation
+        ? '这是测试用白话翻译。'
+        : body.includes('古诗文训诂')
         ? {
             selection: '扈',
             meaning_in_context: '披、佩带',
@@ -106,6 +110,15 @@ async function testApiServices() {
     selectionEnd: 0,
   });
   assert.equal(explanation.meaningInContext, '披、佩带');
+
+  const whole = await loadWholeTranslation({ ...settings, endpoint: `${settings.endpoint.replace('/chat/completions', '')}/translate/chat/completions` }, {
+    ...WORKS[0],
+    id: 'whole-test',
+    translations: [],
+    lines: ['床前明月光，', '疑是地上霜。'],
+  });
+  assert.equal(whole[0], '这是测试用白话翻译。');
+  assert.equal(whole[1], '这是测试用白话翻译。');
 
   const recommendation = await recommendForMood(settings, '今天很安静');
   assert.equal(recommendation.workId, 'jing-ye-si');

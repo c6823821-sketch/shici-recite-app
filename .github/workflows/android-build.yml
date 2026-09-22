@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v1.4.0.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v1.5.0.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v1.4.0
-          path: shici-recite-app-v1.4.0.apk
+          name: shici-recite-app-v1.5.0
+          path: shici-recite-app-v1.5.0.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.4.0
-          name: 诗词背诵 v1.4.0
+          tag_name: v1.5.0
+          name: 诗词背诵 v1.5.0
           body: |
             诗词背诵 Android 测试版。
 
-            全篇译文自动填充每句，完善阅读理解和个人菜单。此版本是自包含 release APK，安装后无需连接电脑。
+            全篇译文真实 API 填充，修复选词、筛选和移动端交互。此版本是自包含 release APK，安装后无需连接电脑。
 
             包含离线诗词库、FSRS 背诵、每日荐诗、填诗填词填曲和严格评分入口。
-          files: shici-recite-app-v1.4.0.apk
+          files: shici-recite-app-v1.5.0.apk
           make_latest: true
 

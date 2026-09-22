@@ -21,7 +21,7 @@ import { loadOrCreateContext, WorkContext } from '../services/context';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
-import { loadWholeTranslation } from '../services/wholeTranslation';
+import { loadWholeTranslationCached } from '../services/wholeTranslationStore';
 import { recordInteraction } from '../services/preference';
 import { toChars } from '../services/text';
 import { colors, fonts, spacing } from '../theme';
@@ -264,18 +264,25 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       setExpandedLines(new Set());
       return;
     }
-    setWholeVisible(true);
+    setWholeVisible(false);
     setWholeLoading(true);
     setWholeProgress(0);
     setWholeError('');
     try {
-      const result = await loadWholeTranslation(settings, work, setWholeProgress);
+      const result = await loadWholeTranslationCached(settings, work, setWholeProgress);
       const next: Record<number, string> = {};
-      result.forEach((value, index) => { if (value) next[index] = value; });
+      result.forEach((value, index) => { if (value?.trim()) next[index] = value.trim(); });
+      if (Object.keys(next).length === 0) {
+        setWholeError(settings?.endpoint.trim()
+          ? 'API 没有返回有效译文，请检查模型设置或稍后重试。'
+          : '还没有配置 API，暂时无法生成全篇译文。请到“我的 → API 设置”里配置。');
+        return;
+      }
       setTranslations((current) => ({ ...current, ...next }));
-      setExpandedLines(new Set(work.lines.map((_, index) => index)));
-      if (!result.some(Boolean) && !settings?.endpoint.trim()) {
-        setWholeError('还没有配置 API，暂时无法生成全篇译文。请到“我的 → API 设置”里配置。');
+      setExpandedLines(new Set(Object.keys(next).map(Number)));
+      setWholeVisible(true);
+      if (Object.keys(next).length < work.lines.length) {
+        setWholeError(`已生成 ${Object.keys(next).length} / ${work.lines.length} 句，其余句子可以稍后重试。`);
       }
     } catch (error) {
       setWholeError(error instanceof Error ? error.message : '全篇译文生成失败。');
