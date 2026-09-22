@@ -91,7 +91,12 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
         <View style={styles.recommendCard}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardLabel}>今日荐诗</Text>
-            <Text style={styles.cardSource}>{daily?.source === 'api' ? '按心情推荐' : '随机推荐'}</Text>
+            <View style={styles.cardHeaderRight}>
+              <Text style={styles.cardSource}>按心情推荐</Text>
+              <Pressable onPress={() => { setError(''); setMoodVisible(true); }} style={styles.moodCircleSmall}>
+                <Text style={styles.moodCircleSmallText}>心情</Text>
+              </Pressable>
+            </View>
           </View>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -108,9 +113,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
             </Pressable>
             <Pressable onPress={random} style={styles.randomButton}>
               <Text style={styles.randomButtonText}>随机换一首</Text>
-            </Pressable>
-            <Pressable onPress={() => { setError(''); setMoodVisible(true); }} style={styles.moodCircle}>
-              <Text style={styles.moodCircleText}>心情</Text>
             </Pressable>
           </View>
         </View>
@@ -211,6 +213,9 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   cardSource: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  cardHeaderRight: { alignItems: 'center', gap: 6 },
+  moodCircleSmall: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  moodCircleSmallText: { color: colors.white, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 38, marginTop: spacing.lg, fontWeight: '700' },
   poemMeta: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, marginTop: 13 },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 12 },
@@ -219,8 +224,7 @@ const styles = StyleSheet.create({
   primaryButton: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   randomButton: { minHeight: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
-  moodCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
-  moodCircleText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, letterSpacing: 2 },
   goalCard: { marginTop: spacing.xl, padding: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
   goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' },
