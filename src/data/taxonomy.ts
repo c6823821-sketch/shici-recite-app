@@ -133,7 +133,10 @@ export const FILTER_GROUPS = [
   { key: 'moods', label: '情绪', values: MOODS },
 ] as const;
 
-export const QUICK_THEMES = ['月亮', '思乡', '离别', '送别', '悼亡', '友情', '相聚', '爱情'] as const;
+export const QUICK_THEMES = [
+  '月亮', '思乡', '离别', '送别', '悼亡', '友情', '相聚', '爱情',
+  '爱国', '怀古', '边塞', '战争', '山水', '田园', '秋', '春', '励志', '咏物', '亲情', '隐逸',
+] as const;
 
 export const ERA_ORDER: Record<string, number> = Object.fromEntries(
   ERAS.map((value, index) => [value, index]),

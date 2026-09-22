@@ -88,7 +88,7 @@ export function MoodRecommendSheet({
 }
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, elevation: 20, backgroundColor: colors.paper },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, elevation: 20, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 46 : 54 },
   container: { flex: 1 },
   header: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   backButton: { width: 80 },

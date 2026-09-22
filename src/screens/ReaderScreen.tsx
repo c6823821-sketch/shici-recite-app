@@ -21,6 +21,7 @@ import { loadOrCreateContext, WorkContext } from '../services/context';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
+import { loadWholeTranslation } from '../services/wholeTranslation';
 import { recordInteraction } from '../services/preference';
 import { toChars } from '../services/text';
 import { colors, fonts, spacing } from '../theme';
@@ -64,12 +65,18 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [contextVisible, setContextVisible] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
   const [contextError, setContextError] = useState('');
+  const [wholeTranslations, setWholeTranslations] = useState<string[]>([]);
+  const [wholeVisible, setWholeVisible] = useState(false);
+  const [wholeLoading, setWholeLoading] = useState(false);
+  const [wholeProgress, setWholeProgress] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadCard(work.id).then(setCard);
     loadFolders().then(setFavoriteFolders);
+    setWholeTranslations([]);
+    setWholeVisible(false);
   }, [work.id]);
 
   useEffect(() => {
@@ -103,14 +110,12 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
 
     const dictionary = findDictionaryExplanation(work, targetLine, start, end);
-    if (dictionary) {
-      setExplanation(dictionary);
-      setLoading(false);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-      return;
-    }
-
     if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      if (dictionary) {
+        setExplanation(dictionary);
+        setLoading(false);
+        return;
+      }
       setError('这条注释暂未收录。你可以在“我的”里配置 API 后继续查询。');
       setLoading(false);
       return;
@@ -126,7 +131,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       setExplanation(result);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     } catch (lookupError) {
-      setError(readableError(lookupError, '查词失败'));
+      if (dictionary) {
+        setExplanation(dictionary);
+      } else {
+        setError(readableError(lookupError, '查词失败'));
+      }
     } finally {
       setLoading(false);
     }
@@ -246,9 +255,24 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
+  const toggleWholeTranslation = async () => {
+    if (wholeVisible) {
+      setWholeVisible(false);
+      return;
+    }
+    setWholeVisible(true);
+    if (wholeTranslations.length === work.lines.length) return;
+    setWholeLoading(true);
+    setWholeProgress(0);
+    try {
+      const result = await loadWholeTranslation(settings, work, setWholeProgress);
+      setWholeTranslations(result);
+    } finally {
+      setWholeLoading(false);
+    }
+  };
+
   const handleFavorite = async (
-    name: string,
-    tagsText: string,
     selectedFolderId: string | null,
     newFolderName: string,
   ) => {
@@ -266,8 +290,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       workTitle: work.title,
       lineIndex: favoriteLine,
       quote: work.lines[favoriteLine],
-      name,
-      tags: tagsText.split(/[,，\s]+/).filter(Boolean),
+      name: work.lines[favoriteLine].slice(0, 18),
+      tags: [],
       folderId,
     }));
     setFavoriteLine(null);
@@ -313,6 +337,26 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           </View>
         ) : null}
 
+        <Pressable onPress={toggleWholeTranslation} style={styles.contextToggle}>
+          <Text style={styles.contextToggleText}>{wholeVisible ? '收起全篇译文' : '一键查看全篇译文'}</Text>
+        </Pressable>
+        {wholeVisible ? (
+          <View style={styles.wholeTranslationBox}>
+            {wholeLoading ? (
+              <View style={styles.wholeProgressRow}>
+                <ActivityIndicator color={colors.vermilion} />
+                <Text style={styles.wholeProgressText}>正在生成全篇译文 {Math.round(wholeProgress * 100)}%</Text>
+              </View>
+            ) : null}
+            {work.lines.map((line, index) => (
+              <View key={`translation-${index}`} style={styles.wholeLine}>
+                <Text style={styles.wholeOriginal}>{line}</Text>
+                <Text style={styles.wholePlain}>{wholeTranslations[index] || '这句暂时没有生成译文，可点句子下方的译文按钮单独查看。'}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.modeRow}>
           {MODES.map((item) => (
             <Pressable key={item.key} onPress={() => setMode(item.key)} style={styles.modeButton}>
@@ -339,6 +383,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
               selection={selection?.line === index ? selection : null}
               onSelect={(charIndex) => selectCharacter(index, charIndex)}
               onLookup={(charIndex) => lookup(index, charIndex, charIndex)}
+              onLookupRange={(start, end) => lookup(index, start, end)}
               onWholeLine={() => lookup(index, 0, Math.max(0, toChars(line).length - 1))}
               onClearSelection={() => setSelection(null)}
               onLinePress={() => goToLine(index)}
@@ -415,6 +460,7 @@ function ReaderLine({
   glossarySurfaces,
   onSelect,
   onLookup,
+  onLookupRange,
   onWholeLine,
   onClearSelection,
   onLinePress,
@@ -435,6 +481,7 @@ function ReaderLine({
   glossarySurfaces: string[];
   onSelect: (index: number) => void;
   onLookup: (index: number) => void;
+  onLookupRange: (start: number, end: number) => void;
   onWholeLine: () => void;
   onClearSelection: () => void;
   onLinePress: () => void;
@@ -485,7 +532,7 @@ function ReaderLine({
       {selection ? (
         <View style={styles.selectionActions}>
           <Text style={styles.selectionText}>已选 {getSelectedText(line, selection)}</Text>
-          <Pressable onPress={() => onLookup(selection.start)} style={styles.selectionAction}>
+          <Pressable onPress={() => onLookupRange(selection.start, selection.end)} style={styles.selectionAction}>
             <Text style={styles.selectionActionText}>解释所选</Text>
           </Pressable>
           <Pressable onPress={onWholeLine} style={styles.selectionAction}>
@@ -514,7 +561,7 @@ function ReaderLine({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
+  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 46 : 54 },
   header: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   headerSide: { width: 70 },
   headerRight: { alignItems: 'flex-end' },
@@ -530,6 +577,12 @@ const styles = StyleSheet.create({
   contextLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 10 },
   contextText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 5 },
   contextError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
+  wholeTranslationBox: { marginTop: 10, padding: 14, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
+  wholeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  wholeProgressText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
+  wholeLine: { paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  wholeOriginal: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, lineHeight: 25 },
+  wholePlain: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 22, marginTop: 5 },
   modeRow: { flexDirection: 'row', justifyContent: 'center', gap: 34, marginTop: spacing.lg, marginBottom: spacing.sm },
   modeButton: { minWidth: 48, alignItems: 'center', paddingVertical: 10 },
   modeText: { color: colors.muted, fontFamily: fonts.body, fontSize: 16, letterSpacing: 2 },
@@ -556,10 +609,10 @@ const styles = StyleSheet.create({
   favoriteText: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, borderBottomWidth: 1, borderBottomColor: colors.jade, paddingBottom: 2 },
   translationText: { marginLeft: 30, marginTop: 6, color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23 },
   translationError: { marginLeft: 30, marginTop: 6, color: colors.danger, fontFamily: fonts.sans, fontSize: 11, lineHeight: 18 },
-  selectionActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginLeft: 30, marginTop: 6 },
-  selectionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
-  selectionAction: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: colors.vermilion },
-  selectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13 },
+  selectionActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginLeft: 30, marginTop: 8 },
+  selectionText: { width: '100%', color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  selectionAction: { flexGrow: 1, minWidth: '28%', minHeight: 44, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 8 },
+  selectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   reviewBlock: { marginTop: spacing.xl, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line },
   reviewHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '700' },

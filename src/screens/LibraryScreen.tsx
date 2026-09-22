@@ -125,12 +125,12 @@ export function LibraryScreen({ onOpenWork }: Props) {
       </View>
 
       {selected.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedRow}>
+        <View style={styles.selectedGrid}>
           {selected.map((item) => <Text key={item} style={styles.selectedChip}>{item}</Text>)}
-          <Pressable onPress={() => { setFilters(EMPTY_FILTERS); setQuery(''); }}>
-            <Text style={styles.clearText}>清除</Text>
+          <Pressable onPress={() => { setFilters(EMPTY_FILTERS); setQuery(''); }} style={styles.clearChip}>
+            <Text style={styles.clearText}>清除筛选</Text>
           </Pressable>
-        </ScrollView>
+        </View>
       ) : null}
 
       <FlatList
@@ -205,9 +205,10 @@ const styles = StyleSheet.create({
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginHorizontal: spacing.lg, marginTop: spacing.sm },
   resultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
-  selectedRow: { paddingHorizontal: spacing.lg, paddingTop: 10, gap: 8 },
-  selectedChip: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderWidth: 1, borderColor: colors.vermilion, borderRadius: 2, paddingHorizontal: 9, paddingVertical: 5 },
-  clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, paddingVertical: 6 },
+  selectedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingTop: 10, gap: 8 },
+  selectedChip: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderWidth: 1, borderColor: colors.vermilion, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 6 },
+  clearChip: { minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 },
+  clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   listView: { flex: 1 },
   list: { paddingHorizontal: spacing.lg, paddingBottom: 130 },
   quoteResults: { marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },

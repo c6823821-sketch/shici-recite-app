@@ -10,7 +10,7 @@ import { TodayScreen } from './src/screens/TodayScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
 import { CompositionScreen } from './src/screens/CompositionScreen';
-import { SettingsScreen } from './src/screens/SettingsScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { colors } from './src/theme';
 import { Work } from './src/types';
 
@@ -85,7 +85,7 @@ export default function App() {
               <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
             </View>
             <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
-              <SettingsScreen onBack={() => setTab('today')} />
+              <ProfileScreen />
             </View>
           </View>
           <MainTabBar active={tab} onChange={setTab} />
