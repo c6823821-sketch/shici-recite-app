@@ -6,7 +6,7 @@ import { randomRecommendation, recommendForMood } from '../services/recommendati
 import { DailyDiscovery, loadDailyDiscovery } from '../services/dailyDiscovery';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
-import { DailyGoal, loadDailyGoal, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
+import { DailyGoal, loadDailyGoal, loadDueRecords, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, DailyRecommendation, Work } from '../types';
 
@@ -24,6 +24,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   const [error, setError] = useState('');
   const [discovery, setDiscovery] = useState<DailyDiscovery | null>(null);
   const [records, setRecords] = useState<StudyRecord[]>([]);
+  const [todayRecords, setTodayRecords] = useState<StudyRecord[]>([]);
   const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
 
   useEffect(() => {
@@ -32,7 +33,8 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
       loadDailyDiscovery(value).then(setDiscovery);
     });
     loadDailyGoal().then(setGoal);
-    loadTodayRecords().then(setRecords);
+    loadDueRecords().then(setRecords);
+    loadTodayRecords().then(setTodayRecords);
     loadTodayRecommendation().then((saved) => {
       if (saved) {
         setDaily(saved);
@@ -45,7 +47,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   }, []);
 
   const currentWork = daily ? WORKS.find((work) => work.id === daily.workId) : null;
-  const doneCount = records.filter((record) => record.status === 'done').length;
+  const doneCount = todayRecords.filter((record) => record.status === 'done').length;
   const pending = records
     .filter((record) => record.status === 'pending')
     .map((record) => WORKS.find((work) => work.id === record.workId))
@@ -138,21 +140,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` }]} /></View>
         </View>
 
-        {pending.length > 0 ? (
-          <View style={styles.pendingSection}>
-            <Text style={styles.sectionTitle}>待背清单</Text>
-            {pending.slice(0, 6).map((work) => (
-              <Pressable key={work.id} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
-                <View style={styles.pendingCopy}>
-                  <Text style={styles.pendingTitle}>{work.title}</Text>
-                  <Text style={styles.pendingMeta}>{work.author} · {work.dynasty}</Text>
-                </View>
-                <Text style={styles.pendingAction}>继续</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
         {discovery ? (
           <View style={styles.highlightSection}>
             <Text style={styles.sectionTitle}>{discovery.title}</Text>
@@ -167,6 +154,21 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
                 </Pressable>
               );
             })}
+          </View>
+        ) : null}
+
+        {pending.length > 0 ? (
+          <View style={styles.pendingSection}>
+            <Text style={styles.sectionTitle}>待背 / 待复习</Text>
+            {pending.slice(0, 6).map((work) => (
+              <Pressable key={work.id} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
+                <View style={styles.pendingCopy}>
+                  <Text style={styles.pendingTitle}>{work.title}</Text>
+                  <Text style={styles.pendingMeta}>{work.author} · {work.dynasty}</Text>
+                </View>
+                <Text style={styles.pendingAction}>继续</Text>
+              </Pressable>
+            ))}
           </View>
         ) : null}
 

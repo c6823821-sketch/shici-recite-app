@@ -1,5 +1,6 @@
 import { Work } from '../types';
 import { CORPUS_WORKS } from './corpus';
+import { MODERN_WORKS } from './modern';
 import { LISAO_GLOSSARY, LISAO_LINES } from './lisao';
 
 const CURATED_WORKS: Work[] = [
@@ -703,7 +704,7 @@ function sanitizeWork(work: Work): Work {
     })),
   };
 }
-export const WORKS: Work[] = [...CURATED_WORKS, ...CORPUS_WORKS]
+export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS]
   .map(sanitizeWork)
   .filter((work) => {
     const key = `${work.title}|${work.author}|${work.lines[0] ?? ''}`;

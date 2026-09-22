@@ -1,4 +1,5 @@
 ﻿import { ApiSettings, Work } from '../types';
+import { explainWithApi } from './api';
 import { getStoredValue, setStoredValue } from './settings';
 import { loadCachedTranslation, saveCachedTranslation } from './translationCache';
 
@@ -62,10 +63,27 @@ export async function loadWholeTranslation(settings: ApiSettings | null, work: W
       const translated = await translateChunk(settings, work, chunk.start, chunk.lines);
       translated.forEach((value, offset) => { result[chunk.start + offset] = value || result[chunk.start + offset]; });
     } catch {
-      // Keep local or empty values and proceed to the next chunk.
+      // Batch JSON occasionally gets truncated. Fall back to one line at a time so a single
+      // malformed batch does not poison the whole work.
+      for (let offset = 0; offset < chunk.lines.length; offset += 1) {
+        const lineIndex = chunk.start + offset;
+        if (result[lineIndex]?.trim()) continue;
+        try {
+          const single = await explainWithApi(settings, {
+            work,
+            lineIndex,
+            selectionStart: 0,
+            selectionEnd: Math.max(0, Array.from(chunk.lines[offset]).length - 1),
+          });
+          result[lineIndex] = single.plainTranslation || single.literalTranslation || single.meaningInContext;
+        } catch {
+          // Leave this line empty; UI will show which lines still need checking.
+        }
+      }
     }
     onProgress?.((index + 1) / chunks.length);
   }
+  if (!result.some(Boolean)) throw new Error('全篇译文生成失败，请检查 API 设置后重试。');
   await setStoredValue(`work_translation_${work.id}`, JSON.stringify(result));
   await Promise.all(result.map((value, index) => value ? saveCachedTranslation(work.id, index, value) : Promise.resolve()));
   return result;

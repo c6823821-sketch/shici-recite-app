@@ -5,6 +5,7 @@ export interface StudyRecord {
   status: 'done' | 'pending';
   date: string;
   updatedAt: string;
+  dueAt?: string;
 }
 
 export interface DailyGoal {
@@ -32,11 +33,24 @@ export async function loadTodayRecords(): Promise<StudyRecord[]> {
   return records.filter((record) => record.date === today());
 }
 
-export async function setStudyStatus(workId: string, status: StudyRecord['status']): Promise<void> {
+export async function setStudyStatus(workId: string, status: StudyRecord['status'], dueAt?: string): Promise<void> {
   const records = await loadStudyRecords();
-  const next: StudyRecord = { workId, status, date: today(), updatedAt: new Date().toISOString() };
+  const next: StudyRecord = { workId, status, date: today(), updatedAt: new Date().toISOString(), dueAt };
   const filtered = records.filter((record) => !(record.workId === workId && record.date === today()));
   await setStoredValue('study_records_v1', JSON.stringify([...filtered, next]));
+}
+
+export async function loadDueRecords(): Promise<StudyRecord[]> {
+  const records = await loadStudyRecords();
+  const now = Date.now();
+  const latest = new Map<string, StudyRecord>();
+  for (const record of records) {
+    const previous = latest.get(record.workId);
+    if (!previous || record.updatedAt > previous.updatedAt) latest.set(record.workId, record);
+  }
+  return [...latest.values()].filter((record) =>
+    record.status === 'pending' || (record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= now),
+  );
 }
 
 export async function loadDailyGoal(): Promise<DailyGoal> {

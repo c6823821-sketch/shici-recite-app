@@ -69,6 +69,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [wholeVisible, setWholeVisible] = useState(false);
   const [wholeLoading, setWholeLoading] = useState(false);
   const [wholeProgress, setWholeProgress] = useState(0);
+  const [wholeError, setWholeError] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -77,6 +78,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     loadFolders().then(setFavoriteFolders);
     setWholeTranslations([]);
     setWholeVisible(false);
+    setWholeTranslations([]);
+    setWholeError('');
   }, [work.id]);
 
   useEffect(() => {
@@ -228,10 +231,10 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   };
 
   const markStudy = async (done: boolean) => {
-    await setStudyStatus(work.id, done ? 'done' : 'pending');
-    await recordInteraction(work, done ? 'completed' : 'pending');
     const next = await rateWork(work.id, done ? 'good' : 'again');
     setCard(next);
+    await setStudyStatus(work.id, done ? 'done' : 'pending', next.due.toISOString());
+    await recordInteraction(work, done ? 'completed' : 'pending');
     setReviewMessage(done ? '已完成，进入复习队列。' : '已加入待背清单，下次继续。');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
   };
@@ -264,9 +267,15 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     if (wholeTranslations.length === work.lines.length) return;
     setWholeLoading(true);
     setWholeProgress(0);
+    setWholeError('');
     try {
       const result = await loadWholeTranslation(settings, work, setWholeProgress);
       setWholeTranslations(result);
+      if (!result.some(Boolean) && !settings?.endpoint.trim()) {
+        setWholeError('还没有配置 API，暂时无法生成全篇译文。请到“我的 → API 设置”里配置。');
+      }
+    } catch (error) {
+      setWholeError(error instanceof Error ? error.message : '全篇译文生成失败。');
     } finally {
       setWholeLoading(false);
     }
@@ -342,6 +351,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         </Pressable>
         {wholeVisible ? (
           <View style={styles.wholeTranslationBox}>
+            {wholeError ? <Text style={styles.wholeError}>{wholeError}</Text> : null}
             {wholeLoading ? (
               <View style={styles.wholeProgressRow}>
                 <ActivityIndicator color={colors.vermilion} />
@@ -406,6 +416,9 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             </Pressable>
           </View>
           {reviewMessage ? <Text style={styles.reviewMessage}>{reviewMessage}</Text> : null}
+          <Text style={styles.reviewExplanation}>
+            完成表示今天能独立背出，系统会把它加入复习队列，之后根据你的记忆状态安排复习；没背完则进入待背清单。
+          </Text>
         </View>
 
         <Text style={styles.source}>文本来源：{work.source}</Text>
@@ -578,6 +591,7 @@ const styles = StyleSheet.create({
   contextText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 5 },
   contextError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
   wholeTranslationBox: { marginTop: 10, padding: 14, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
+  wholeError: { color: colors.danger, fontFamily: fonts.body, fontSize: 14, lineHeight: 22, marginBottom: 12 },
   wholeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   wholeProgressText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   wholeLine: { paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
@@ -625,6 +639,7 @@ const styles = StyleSheet.create({
   doneButton: { backgroundColor: colors.vermilion, borderColor: colors.vermilion },
   doneText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   reviewMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 13, marginTop: 10 },
+  reviewExplanation: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, lineHeight: 19, marginTop: 9 },
   source: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, lineHeight: 17, marginTop: spacing.xl },
 });
 
