@@ -261,16 +261,19 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const toggleWholeTranslation = async () => {
     if (wholeVisible) {
       setWholeVisible(false);
+      setExpandedLines(new Set());
       return;
     }
     setWholeVisible(true);
-    if (wholeTranslations.length === work.lines.length) return;
     setWholeLoading(true);
     setWholeProgress(0);
     setWholeError('');
     try {
       const result = await loadWholeTranslation(settings, work, setWholeProgress);
-      setWholeTranslations(result);
+      const next: Record<number, string> = {};
+      result.forEach((value, index) => { if (value) next[index] = value; });
+      setTranslations((current) => ({ ...current, ...next }));
+      setExpandedLines(new Set(work.lines.map((_, index) => index)));
       if (!result.some(Boolean) && !settings?.endpoint.trim()) {
         setWholeError('还没有配置 API，暂时无法生成全篇译文。请到“我的 → API 设置”里配置。');
       }
@@ -347,25 +350,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         ) : null}
 
         <Pressable onPress={toggleWholeTranslation} style={styles.contextToggle}>
-          <Text style={styles.contextToggleText}>{wholeVisible ? '收起全篇译文' : '一键查看全篇译文'}</Text>
+          <Text style={styles.contextToggleText}>
+            {wholeLoading ? `正在生成全篇译文 ${Math.round(wholeProgress * 100)}%` : wholeVisible ? '收起全篇译文' : '一键显示全篇译文'}
+          </Text>
         </Pressable>
-        {wholeVisible ? (
-          <View style={styles.wholeTranslationBox}>
-            {wholeError ? <Text style={styles.wholeError}>{wholeError}</Text> : null}
-            {wholeLoading ? (
-              <View style={styles.wholeProgressRow}>
-                <ActivityIndicator color={colors.vermilion} />
-                <Text style={styles.wholeProgressText}>正在生成全篇译文 {Math.round(wholeProgress * 100)}%</Text>
-              </View>
-            ) : null}
-            {work.lines.map((line, index) => (
-              <View key={`translation-${index}`} style={styles.wholeLine}>
-                <Text style={styles.wholeOriginal}>{line}</Text>
-                <Text style={styles.wholePlain}>{wholeTranslations[index] || '这句暂时没有生成译文，可点句子下方的译文按钮单独查看。'}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        {wholeError ? <Text style={styles.wholeError}>{wholeError}</Text> : null}
 
         <View style={styles.modeRow}>
           {MODES.map((item) => (

@@ -52,6 +52,28 @@ export async function loadWholeTranslation(settings: ApiSettings | null, work: W
   if (!missing.length) return result;
   if (!settings?.endpoint.trim() || !settings.model.trim()) return result;
 
+  if (work.lines.length <= 24) {
+    for (let index = 0; index < work.lines.length; index += 1) {
+      if (result[index]?.trim()) continue;
+      try {
+        const single = await explainWithApi(settings, {
+          work,
+          lineIndex: index,
+          selectionStart: 0,
+          selectionEnd: Math.max(0, Array.from(work.lines[index]).length - 1),
+        });
+        result[index] = single.plainTranslation || single.literalTranslation || single.meaningInContext;
+      } catch {
+        // Keep empty; the UI shows a retryable error if every line fails.
+      }
+      onProgress?.((index + 1) / work.lines.length);
+    }
+    if (!result.some(Boolean)) throw new Error('全篇译文生成失败，请检查 API 设置后重试。');
+    await setStoredValue(`work_translation_${work.id}`, JSON.stringify(result));
+    await Promise.all(result.map((value, index) => value ? saveCachedTranslation(work.id, index, value) : Promise.resolve()));
+    return result;
+  }
+
   const chunkSize = 16;
   const chunks: Array<{ start: number; lines: string[] }> = [];
   for (let start = 0; start < work.lines.length; start += chunkSize) {
