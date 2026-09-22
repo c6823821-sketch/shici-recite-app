@@ -374,6 +374,14 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
         <View style={styles.poem}>
           {work.lines.map((line, index) => (
+            <React.Fragment key={`${work.id}-${index}`}>
+              {work.sectionBreaks?.includes(index) ? (
+                <View style={styles.sectionBreak}>
+                  <View style={styles.sectionLine} />
+                  <Text style={styles.sectionLabel}>下阕</Text>
+                  <View style={styles.sectionLine} />
+                </View>
+              ) : null}
             <ReaderLine
               key={`${work.id}-${index}`}
               line={line}
@@ -397,6 +405,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
               onToggleTranslation={() => toggleTranslation(index)}
               onFavorite={() => setFavoriteLine(index)}
             />
+            </React.Fragment>
           ))}
         </View>
 
@@ -599,6 +608,9 @@ const styles = StyleSheet.create({
   modeTextActive: { color: colors.ink, fontWeight: '700' },
   modeUnderline: { width: 24, height: 2, backgroundColor: colors.vermilion, marginTop: 6 },
   poem: { marginTop: spacing.md },
+  sectionBreak: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20, marginBottom: 10, paddingHorizontal: 10 },
+  sectionLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
+  sectionLabel: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, letterSpacing: 3 },
   lineBlock: { marginVertical: 3, paddingVertical: 8, paddingHorizontal: 8, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   currentLineBlock: { borderLeftColor: colors.vermilion, backgroundColor: 'rgba(163, 52, 42, 0.035)' },
   lineMain: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 46 },

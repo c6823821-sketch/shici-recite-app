@@ -52,6 +52,10 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
     .filter((record) => record.status === 'pending')
     .map((record) => WORKS.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
+  const review = records
+    .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
+    .map((record) => WORKS.find((work) => work.id === record.workId))
+    .filter((work): work is Work => Boolean(work));
 
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
@@ -157,9 +161,22 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
           </View>
         ) : null}
 
+        <View style={styles.pendingSection}>
+          <Text style={styles.sectionTitle}>今日复习</Text>
+          {review.length ? review.slice(0, 6).map((work) => (
+            <Pressable key={`review-${work.id}`} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
+              <View style={styles.pendingCopy}>
+                <Text style={styles.pendingTitle}>{work.title}</Text>
+                <Text style={styles.pendingMeta}>到期复习 · {work.author}</Text>
+              </View>
+              <Text style={styles.pendingAction}>复习</Text>
+            </Pressable>
+          )) : <Text style={styles.emptyReview}>暂无到期复习。完成背诵后，系统会在这里安排下一次复习。</Text>}
+        </View>
+
         {pending.length > 0 ? (
           <View style={styles.pendingSection}>
-            <Text style={styles.sectionTitle}>待背 / 待复习</Text>
+            <Text style={styles.sectionTitle}>待背清单</Text>
             {pending.slice(0, 6).map((work) => (
               <Pressable key={work.id} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
                 <View style={styles.pendingCopy}>
@@ -245,6 +262,7 @@ const styles = StyleSheet.create({
   highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
   highlightSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
   pendingSection: { marginTop: spacing.lg },
+  emptyReview: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, marginTop: 8 },
   pendingRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   pendingCopy: { flex: 1 },
   pendingTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },

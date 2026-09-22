@@ -706,6 +706,12 @@ function sanitizeWork(work: Work): Work {
 }
 export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS]
   .map(sanitizeWork)
+  .map((work) => {
+    if (work.genre === '词' && work.lines.length >= 8 && !work.sectionBreaks?.length) {
+      return { ...work, sectionBreaks: [Math.ceil(work.lines.length / 2)] };
+    }
+    return work;
+  })
   .filter((work) => {
     const key = `${work.title}|${work.author}|${work.lines[0] ?? ''}`;
     if (seenWorks.has(key)) return false;

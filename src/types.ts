@@ -30,6 +30,7 @@ export interface Work {
   themes: string[];
   moods: string[];
   order?: number;
+  sectionBreaks?: number[];
   featured?: boolean;
   lines: string[];
   translations: string[];
