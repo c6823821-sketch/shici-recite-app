@@ -27,6 +27,10 @@ interface Props {
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
 
+function normalizeSearch(value: string): string {
+  return value.replace(/[唯惟]/g, '惟').replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
+}
+
 function matchesDimension(selected: string[], values: string[]): boolean {
   return selected.length === 0 || selected.some((value) => values.includes(value));
 }
@@ -88,11 +92,11 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   }, [allWorks, query]);
 
   const matchedClassics = useMemo(() => {
-    const needle = query.trim();
+    const needle = normalizeSearch(query.trim());
     if (needle.length < 2) return [];
     return CLASSICS.flatMap((classic) =>
       classic.sections
-        .filter((section) => classic.title.includes(needle) || section.title.includes(needle) || section.text.includes(needle))
+        .filter((section) => normalizeSearch(classic.title).includes(needle) || normalizeSearch(section.title).includes(needle) || normalizeSearch(section.text).includes(needle))
         .slice(0, 2)
         .map((section) => ({ classic, section })),
     ).slice(0, 10);
@@ -224,14 +228,14 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
   useEffect(() => {
     const term = query.trim();
-    if (term.length < 4 || filteredWorks.length > 0 || !settings?.endpoint.trim()) return;
+    if (term.length < 4 || filteredWorks.length > 0 || matchedClassics.length > 0 || !settings?.endpoint.trim()) return;
     if (attemptedRemoteQuery.current === term) return;
     const timer = setTimeout(() => {
       attemptedRemoteQuery.current = term;
       void remoteSearch(term);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [filteredWorks.length, query, settings]);
+  }, [filteredWorks.length, matchedClassics.length, query, settings]);
 
   return (
     <View style={styles.container}>

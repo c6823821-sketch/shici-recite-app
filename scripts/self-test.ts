@@ -16,8 +16,9 @@ assert.ok(WORKS.filter((work) => work.collections.includes('唐诗三百首')).l
 assert.ok(WORKS.filter((work) => work.collections.includes('全宋词')).length >= 20000, '全宋词应至少包含 20,000 篇');
 assert.equal(WORKS.filter((work) => work.author === '李煜').length, 61, '李煜五代十国作品应完整收录');
 assert.ok(WORKS.length >= 23000, '总内容库应超过 23,000 篇');
-assert.equal(CLASSICS.length, 6, '典籍与名句补充库应包含六项');
+assert.equal(CLASSICS.length, 7, '典籍与名句补充库应包含七项');
 assert.ok(CLASSICS.some((item) => item.title === '美美与共' && item.author === '费孝通'), '应补充费孝通名句并纠正出处');
+assert.ok(CLASSICS.some((item) => item.title === '卖油翁' && item.sections.some((section) => section.text.includes('惟手熟尔'))), '应补充卖油翁及惟手熟尔');
 assert.ok(CLASSICS.some((item) => item.title === '道德经' && item.sections.length === 81), '道德经应包含81章');
 assert.ok(CLASSICS.some((item) => item.title === '论语' && item.sections.length === 20), '论语应包含20篇');
 

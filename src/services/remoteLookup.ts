@@ -25,7 +25,7 @@ function parse(text: string): RemoteShape {
 }
 
 function normalize(value: string): string {
-  return value.replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
+  return value.replace(/[唯惟]/g, '惟').replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
 }
 
 export async function lookupRemoteWork(query: string, settings: ApiSettings): Promise<Work> {
