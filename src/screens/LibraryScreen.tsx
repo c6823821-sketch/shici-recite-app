@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -12,13 +12,17 @@ import {
 import { FilterSheet } from '../components/FilterSheet';
 import { WORKS } from '../data/works';
 import { CLASSICS } from '../data/classics';
+import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
+import { lookupRemoteWork } from '../services/remoteLookup';
+import { loadApiSettings } from '../services/settings';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
-import { Classic, Work } from '../types';
+import { ApiSettings, Classic, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
-  onOpenClassic: (classic: Classic) => void;
+  onOpenClassic: (classic: Classic, sectionIndex?: number) => void;
+  onOpenSettings: () => void;
 }
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
@@ -27,14 +31,25 @@ function matchesDimension(selected: string[], values: string[]): boolean {
   return selected.length === 0 || selected.some((value) => values.includes(value));
 }
 
-export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
+export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Props) {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [importedWorks, setImportedWorks] = useState<Work[]>([]);
+  const [settings, setSettings] = useState<ApiSettings | null>(null);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteMessage, setRemoteMessage] = useState('');
+
+  useEffect(() => {
+    loadImportedWorks().then(setImportedWorks);
+    loadApiSettings().then(setSettings);
+  }, []);
+
+  const allWorks = useMemo(() => [...importedWorks, ...WORKS], [importedWorks]);
 
   const filteredWorks = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return WORKS.filter((work) => {
+    return allWorks.filter((work) => {
       const eraMatch = matchesDimension(filters.eras, [work.dynasty]);
       const genreMatch = matchesDimension(filters.genres, [work.genre, ...work.collections]);
       const collectionMatch = matchesDimension(filters.collections, work.collections);
@@ -53,13 +68,13 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
       if (eraDelta !== 0) return eraDelta;
       return a.title.localeCompare(b.title, 'zh-CN');
     });
-  }, [filters, query]);
+  }, [allWorks, filters, query]);
 
   const matchedLines = useMemo(() => {
     const needle = query.trim();
     if (needle.length < 2) return [];
     const results: Array<{ work: Work; lineIndex: number; line: string }> = [];
-    for (const work of WORKS) {
+    for (const work of allWorks) {
       for (let index = 0; index < work.lines.length; index += 1) {
         if (work.lines[index].includes(needle)) {
           results.push({ work, lineIndex: index, line: work.lines[index] });
@@ -69,7 +84,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
       if (results.length >= 30) break;
     }
     return results;
-  }, [query]);
+  }, [allWorks, query]);
 
   const matchedClassics = useMemo(() => {
     const needle = query.trim();
@@ -80,7 +95,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
         .slice(0, 2)
         .map((section) => ({ classic, section })),
     ).slice(0, 10);
-  }, [query]);
+  }, [allWorks, query]);
 
   const selected = [
     ...filters.eras,
@@ -90,6 +105,30 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
     ...filters.moods,
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
+
+  const remoteSearch = async () => {
+    if (query.trim().length < 2) {
+      setRemoteMessage('请输入完整的诗句或关键词。');
+      return;
+    }
+    if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      setRemoteMessage('请先到“我的 → API 设置”配置接口。');
+      return;
+    }
+    setRemoteLoading(true);
+    setRemoteMessage('');
+    try {
+      const work = await lookupRemoteWork(query.trim(), settings);
+      await saveImportedWork(work);
+      setImportedWorks(await loadImportedWorks());
+      setRemoteMessage(`已补录《${work.title}》· ${work.author}，会永久保存在本机。`);
+      onOpenWork(work, 0);
+    } catch (error) {
+      setRemoteMessage(error instanceof Error ? error.message : '联网补录失败。');
+    } finally {
+      setRemoteLoading(false);
+    }
+  };
 
   const listHeader = (
     <View>
@@ -200,7 +239,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
               <Pressable onPress={() => onOpenWork(item, 0)} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
                 <View style={styles.workCopy}>
                   <Text style={styles.workTitle}>{item.title}</Text>
-                  <Text style={styles.workAuthor}>{item.author}</Text>
+                  <Text style={styles.workAuthor}>{item.author}{item.imported ? ' · API补录待校对' : ''}</Text>
                   <Text style={styles.workMeta}>{item.dynasty} · {item.genre} · {item.collections.slice(0, 2).join(' / ')}</Text>
                   <Text style={styles.workTags}>{item.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
                 </View>
@@ -209,7 +248,14 @@ export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
             </View>
           );
         }}
-        ListEmptyComponent={<Text style={styles.empty}>没有找到符合条件的篇目</Text>}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>本地没有找到符合条件的篇目</Text>
+            <Pressable style={styles.remoteButton} onPress={remoteSearch} disabled={remoteLoading}>
+              <Text style={styles.remoteButtonText}>{remoteLoading ? '正在联网检索…' : '联网补录这篇'}</Text>
+            </Pressable>
+          </View>
+        }
       />
 
       <FilterSheet
@@ -240,6 +286,10 @@ const styles = StyleSheet.create({
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginHorizontal: spacing.lg, marginTop: spacing.sm },
   resultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
+  remotePanel: { marginHorizontal: spacing.lg, marginTop: 10 },
+  remoteButton: { minHeight: 46, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  remoteButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  remoteMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
   selectedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingTop: 10, gap: 8 },
   selectedChip: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderWidth: 1, borderColor: colors.vermilion, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 6 },
   clearChip: { minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 },
@@ -271,5 +321,6 @@ const styles = StyleSheet.create({
   workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 6 },
   workTags: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 11, marginTop: 6 },
   arrow: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 28 },
-  empty: { color: colors.muted, fontFamily: fonts.body, fontSize: 15, textAlign: 'center', paddingVertical: 60 },
+  empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyText: { color: colors.muted, fontFamily: fonts.body, fontSize: 15 },
 });

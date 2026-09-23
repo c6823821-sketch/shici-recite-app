@@ -5,7 +5,8 @@ import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
 import { WORKS } from './src/data/works';
-import { classicToWork } from './src/data/classics';
+import { ClassicScreen } from './src/screens/ClassicScreen';
+import { Classic } from './src/types';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
@@ -15,7 +16,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { colors } from './src/theme';
 import { Work } from './src/types';
 
-type Screen = 'tabs' | 'reader';
+type Screen = 'tabs' | 'reader' | 'classic';
 
 
 export default function App() {
@@ -23,6 +24,8 @@ export default function App() {
   const [tab, setTab] = useState<MainTab>('today');
   const [work, setWork] = useState<Work>(WORKS[0]);
   const [readerLineIndex, setReaderLineIndex] = useState(0);
+  const [classic, setClassic] = useState<Classic | null>(null);
+  const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -57,6 +60,12 @@ export default function App() {
     setScreen('reader');
   };
 
+  const openClassic = (next: Classic, sectionIndex?: number) => {
+    setClassic(next);
+    setClassicSectionIndex(sectionIndex);
+    setScreen('classic');
+  };
+
   const openSettings = () => {
     setScreen('tabs');
     setTab('profile');
@@ -72,7 +81,7 @@ export default function App() {
             <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
           </View>
           <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
-            <LibraryScreen onOpenWork={openWork} onOpenClassic={(classic) => openWork(classicToWork(classic), 0)} />
+            <LibraryScreen onOpenWork={openWork} onOpenClassic={openClassic} onOpenSettings={openSettings} />
           </View>
           <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
             <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
@@ -91,6 +100,11 @@ export default function App() {
             onBack={() => setScreen('tabs')}
             onOpenSettings={openSettings}
           />
+        </View>
+      ) : null}
+      {screen === 'classic' ? (
+        <View style={styles.readerOverlay}>
+          <ClassicScreen initialClassic={classic} initialSectionIndex={classicSectionIndex} onBack={() => setScreen('tabs')} />
         </View>
       ) : null}
     </View>

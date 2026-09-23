@@ -31,6 +31,7 @@ export interface Work {
   moods: string[];
   order?: number;
   sectionBreaks?: number[];
+  imported?: boolean;
   featured?: boolean;
   lines: string[];
   translations: string[];

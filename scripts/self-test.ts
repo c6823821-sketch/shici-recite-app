@@ -5,6 +5,7 @@ import { precheckComposition } from '../src/services/prosody';
 import { scoreComposition } from '../src/services/compositionScoring';
 import { recommendForMood } from '../src/services/recommendation';
 import { explainWithApi } from '../src/services/api';
+import { lookupRemoteWork } from '../src/services/remoteLookup';
 import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 import { CLASSICS } from '../src/data/classics';
@@ -50,8 +51,21 @@ async function testApiServices() {
     let body = '';
     request.on('data', (chunk) => { body += chunk; });
     request.on('end', () => {
+      const isRemote = request.url?.includes('/remote') ?? false;
       const isTranslation = request.url?.includes('/translate') ?? false;
-      const explanation = isTranslation
+      const explanation = isRemote
+        ? {
+            found: true,
+            title: '卖炭翁',
+            author: '白居易',
+            dynasty: '唐',
+            genre: '诗',
+            lines: ['卖炭翁，伐薪烧炭南山中。', '可怜身上衣正单，心忧炭贱愿天寒。'],
+            matched_line_index: 1,
+            confidence: 'high',
+            note: '测试补录',
+          }
+        : isTranslation
         ? '这是测试用白话翻译。'
         : body.includes('古诗文训诂')
         ? {
@@ -125,6 +139,13 @@ async function testApiServices() {
   });
   assert.equal(whole[0], '这是测试用白话翻译。');
   assert.equal(whole[1], '这是测试用白话翻译。');
+
+  const remote = await lookupRemoteWork('可怜身上衣正单', {
+    ...settings,
+    endpoint: `${settings.endpoint.replace('/chat/completions', '')}/remote/chat/completions`,
+  });
+  assert.equal(remote.title, '卖炭翁');
+  assert.equal(remote.imported, true);
 
   const recommendation = await recommendForMood(settings, '今天很安静');
   assert.equal(recommendation.workId, 'jing-ye-si');
