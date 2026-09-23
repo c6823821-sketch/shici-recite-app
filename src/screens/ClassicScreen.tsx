@@ -5,14 +5,17 @@ import { translateClassicSection } from '../services/classicTranslation';
 import { splitClassicText, paginateClassicSegments } from '../services/classicText';
 import { findDictionaryExplanation } from '../services/localDictionary';
 import { explainWithApi } from '../services/api';
+import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
 import { loadApiSettings } from '../services/settings';
 import { ExplanationSheet } from '../components/ExplanationSheet';
+import { FavoriteSheet } from '../components/FavoriteSheet';
 import { Classic, Explanation, Work } from '../types';
 import { colors, fonts, spacing } from '../theme';
 
 interface Props {
   classic: Classic | null;
   sectionIndex?: number;
+  initialSegmentIndex?: number;
   onClassicChange: (classic: Classic | null) => void;
   onSectionChange: (sectionIndex?: number) => void;
   onBack: () => void;
@@ -40,7 +43,7 @@ function selectedTextFor(line: string, selection: CharacterSelection): string {
   return Array.from(line).slice(selection.start, selection.end + 1).join('');
 }
 
-export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectionChange, onBack }: Props) {
+export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onClassicChange, onSectionChange, onBack }: Props) {
   const [page, setPage] = useState(0);
   const [translations, setTranslations] = useState<Record<number, string>>({});
   const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set());
@@ -53,6 +56,9 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState('');
   const [selection, setSelection] = useState<CharacterSelection | null>(null);
+  const [favoriteSegment, setFavoriteSegment] = useState<number | null>(null);
+  const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
+  const [favoriteMessage, setFavoriteMessage] = useState('');
   const selectionRef = useRef<CharacterSelection | null>(null);
   const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -84,14 +90,29 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
     setPageMessage('');
     setSelection(null);
     selectionRef.current = null;
+    setFavoriteSegment(null);
+    setFavoriteMessage('');
     setExplanation(null);
     setSheetVisible(false);
     loadApiSettings().then(setSettings);
+    loadFolders().then(setFavoriteFolders);
   }, [classic?.id, sectionIndex]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [page, classic?.id, sectionIndex]);
+
+  useEffect(() => {
+    if (initialSegmentIndex === undefined || pages.length === 0) return;
+    let cursor = 0;
+    for (let index = 0; index < pages.length; index += 1) {
+      if (initialSegmentIndex < cursor + pages[index].length) {
+        setPage(index);
+        return;
+      }
+      cursor += pages[index].length;
+    }
+  }, [initialSegmentIndex, pages]);
 
   useEffect(() => () => {
     if (lookupTimer.current) clearTimeout(lookupTimer.current);
@@ -295,6 +316,30 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
     setSelection(null);
   };
 
+  const favoriteQuote = favoriteSegment === null ? '' : segments[favoriteSegment]?.text ?? '';
+
+  const saveFavoriteForSegment = async (selectedFolderId: string | null, newFolderName: string) => {
+    if (favoriteSegment === null || !favoriteQuote) return;
+    let folderId = selectedFolderId ?? undefined;
+    if (newFolderName.trim()) {
+      const folder = createFolder(newFolderName.trim());
+      await saveFolder(folder);
+      setFavoriteFolders((current) => [...current, folder]);
+      folderId = folder.id;
+    }
+    await saveFavorite(createFavorite({
+      workId: `classic-${classic.id}-${sectionIndex}`,
+      workTitle: `${classic.title}\u00b7${section.title}`,
+      lineIndex: favoriteSegment,
+      quote: favoriteQuote,
+      name: favoriteQuote.slice(0, 18),
+      tags: [],
+      folderId,
+    }));
+    setFavoriteSegment(null);
+    setFavoriteMessage('\u5df2\u52a0\u5165\u6536\u85cf\u3002');
+  };
+
   return (
     <View style={styles.container}>
       <Header title={classic.title} onBack={() => onSectionChange(undefined)} />
@@ -321,6 +366,7 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
             <Text style={styles.pageMeta}>{visibleSegments.length} 段 · 本页 {visibleChars} 字</Text>
           </View>
           {pageMessage ? <Text style={styles.pageMessage}>{pageMessage}</Text> : null}
+          {favoriteMessage ? <Text style={styles.favoriteMessage}>{favoriteMessage}</Text> : null}
         </View>
 
         {visibleSegments.map((segment, offset) => {
@@ -375,20 +421,26 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
               ) : null}
 
               <View style={styles.segmentFooter}>
-                <Pressable onPress={() => void toggleSegmentTranslation(segmentIndex)} style={styles.sentenceTranslate}>
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color={colors.vermilion} />
-                  ) : (
-                    <Text style={styles.sentenceTranslateText}>{translationOpen ? '收起白话' : '查看白话'}</Text>
-                  )}
-                </Pressable>
+                <View style={styles.segmentActions}>
+                  <Pressable onPress={() => void toggleSegmentTranslation(segmentIndex)} style={styles.sentenceTranslate}>
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color={colors.vermilion} />
+                    ) : (
+                      <Text style={styles.sentenceTranslateText}>{translationOpen ? '\u6536\u8d77\u767d\u8bdd' : '\u67e5\u770b\u767d\u8bdd'}</Text>
+                    )}
+                  </Pressable>
+                  <Pressable onPress={() => setFavoriteSegment(segmentIndex)} style={styles.favoriteButton}>
+                    <Text style={styles.favoriteButtonText}>{'\u6536\u85cf\u672c\u6bb5'}</Text>
+                  </Pressable>
+                </View>
                 {translationOpen && translation ? (
                   <View style={styles.translationPanel}>
-                    <Text style={styles.translationLabel}>白话</Text>
+                    <Text style={styles.translationLabel}>{'\u767d\u8bdd'}</Text>
                     <Text style={styles.sentenceTranslation}>{translation}</Text>
                   </View>
                 ) : null}
               </View>
+
               {translationErrors[segmentIndex] ? (
                 <Text style={styles.translationError}>{translationErrors[segmentIndex]}</Text>
               ) : null}
@@ -421,6 +473,13 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
         error={lookupError}
         explanation={explanation}
         onClose={() => setSheetVisible(false)}
+      />
+      <FavoriteSheet
+        visible={favoriteSegment !== null}
+        quote={favoriteQuote}
+        folders={favoriteFolders}
+        onClose={() => setFavoriteSegment(null)}
+        onSave={saveFavoriteForSegment}
       />
     </View>
   );
@@ -476,6 +535,10 @@ const styles = StyleSheet.create({
   selectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
   selectionActionMuted: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   segmentFooter: { marginTop: 5 },
+  segmentActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  favoriteButton: { minHeight: 34, justifyContent: 'center', paddingVertical: 3 },
+  favoriteButtonText: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, borderBottomWidth: 1, borderBottomColor: colors.jade, paddingBottom: 2 },
+  favoriteMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
   sentenceTranslate: { alignSelf: 'flex-start', minHeight: 34, justifyContent: 'center', paddingVertical: 3 },
   sentenceTranslateText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 12, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 2 },
   translationPanel: { marginTop: 10, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.line },

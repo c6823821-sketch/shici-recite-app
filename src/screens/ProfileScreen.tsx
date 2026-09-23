@@ -19,9 +19,13 @@ import { ApiSettings } from '../types';
 
 type Section = 'menu' | 'api' | 'favorites';
 
+interface Props {
+  onOpenFavorite: (favorite: FavoriteLine) => void;
+}
+
 const EMPTY: ApiSettings = { endpoint: '', apiKey: '', model: '' };
 
-export function ProfileScreen() {
+export function ProfileScreen({ onOpenFavorite }: Props) {
   const [section, setSection] = useState<Section>('menu');
   const [settings, setSettings] = useState<ApiSettings>(EMPTY);
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
@@ -139,12 +143,12 @@ export function ProfileScreen() {
             return (
               <View key={folder.id} style={styles.folderBlock}>
                 <Text style={styles.folderTitle}>{folder.name}</Text>
-                {items.map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} />)}
+                {items.map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} onOpen={() => onOpenFavorite(item)} />)}
               </View>
             );
           })}
           {favorites.some((item) => !item.folderId) ? <Text style={styles.folderTitle}>未分类</Text> : null}
-          {favorites.filter((item) => !item.folderId).map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} />)}
+          {favorites.filter((item) => !item.folderId).map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} onOpen={() => onOpenFavorite(item)} />)}
         </ScrollView>
       )}
     </View>
@@ -172,12 +176,15 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
   );
 }
 
-function FavoriteItem({ item, onDeleted }: { item: FavoriteLine; onDeleted: () => void }) {
+function FavoriteItem({ item, onDeleted, onOpen }: { item: FavoriteLine; onDeleted: () => void; onOpen: () => void }) {
   return (
     <View style={styles.favoriteItem}>
-      <Text style={styles.favoriteQuote}>“{item.quote}”</Text>
-      <Text style={styles.favoriteMeta}>《{item.workTitle}》 · {new Date(item.createdAt).toLocaleDateString('zh-CN')}</Text>
-      <Pressable onPress={async () => { await removeFavorite(item.id); onDeleted(); }}><Text style={styles.delete}>删除</Text></Pressable>
+      <Pressable onPress={onOpen} style={styles.favoriteQuoteButton}>
+        <Text style={styles.favoriteQuote}>“{item.quote}”</Text>
+      </Pressable>
+      <Pressable onPress={async () => { await removeFavorite(item.id); onDeleted(); }} style={styles.deleteButton}>
+        <Text style={styles.delete}>删除</Text>
+      </Pressable>
     </View>
   );
 }
@@ -214,8 +221,9 @@ const styles = StyleSheet.create({
   installButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   folderBlock: { marginBottom: 18 },
   folderTitle: { color: colors.vermilion, fontFamily: fonts.title, fontSize: 20, fontWeight: '800', marginTop: 16, marginBottom: 8 },
-  favoriteItem: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  favoriteItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  favoriteQuoteButton: { flex: 1, paddingRight: 10 },
   favoriteQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, lineHeight: 26 },
-  favoriteMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
-  delete: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
+  deleteButton: { minWidth: 48, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  delete: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12 },
 });
