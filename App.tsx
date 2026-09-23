@@ -5,6 +5,7 @@ import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
 import { WORKS } from './src/data/works';
+import { CLASSICS } from './src/data/classics';
 import { ClassicScreen } from './src/screens/ClassicScreen';
 import { Classic } from './src/types';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
@@ -15,6 +16,8 @@ import { CompositionScreen } from './src/screens/CompositionScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { colors } from './src/theme';
 import { Work } from './src/types';
+import { FavoriteLine } from './src/services/favorites';
+import { loadImportedWorks } from './src/services/importedWorks';
 
 type Screen = 'tabs' | 'reader' | 'classic';
 
@@ -26,6 +29,7 @@ export default function App() {
   const [readerLineIndex, setReaderLineIndex] = useState(0);
   const [classic, setClassic] = useState<Classic | null>(null);
   const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
+  const [classicSegmentIndex, setClassicSegmentIndex] = useState<number | undefined>();
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -44,6 +48,7 @@ export default function App() {
       if (screen === 'classic') {
         if (classicSectionIndex !== undefined) {
           setClassicSectionIndex(undefined);
+          setClassicSegmentIndex(undefined);
           return true;
         }
         if (classic) {
@@ -72,10 +77,29 @@ export default function App() {
     setScreen('reader');
   };
 
-  const openClassic = (next: Classic, sectionIndex?: number) => {
+  const openClassic = (next: Classic, sectionIndex?: number, segmentIndex?: number) => {
     setClassic(next);
     setClassicSectionIndex(sectionIndex);
+    setClassicSegmentIndex(segmentIndex);
     setScreen('classic');
+  };
+
+  const openFavorite = async (favorite: FavoriteLine) => {
+    if (favorite.workId.startsWith('classic-')) {
+      const suffix = favorite.workId.slice('classic-'.length);
+      const separator = suffix.lastIndexOf('-');
+      const classicId = separator > 0 ? suffix.slice(0, separator) : '';
+      const sectionIndex = separator > 0 ? Number(suffix.slice(separator + 1)) : Number.NaN;
+      const target = CLASSICS.find((item) => item.id === classicId);
+      if (target && Number.isInteger(sectionIndex) && sectionIndex >= 0) {
+        openClassic(target, sectionIndex, favorite.lineIndex);
+        return;
+      }
+    }
+    const imported = await loadImportedWorks();
+    const target = WORKS.find((item) => item.id === favorite.workId)
+      ?? imported.find((item) => item.id === favorite.workId);
+    if (target) openWork(target, favorite.lineIndex);
   };
 
   const openSettings = () => {
@@ -99,7 +123,7 @@ export default function App() {
             <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
           </View>
           <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
-            <ProfileScreen />
+            <ProfileScreen onOpenFavorite={(item) => { void openFavorite(item); }} />
           </View>
         </View>
         <MainTabBar active={tab} onChange={setTab} />
@@ -119,8 +143,9 @@ export default function App() {
           <ClassicScreen
             classic={classic}
             sectionIndex={classicSectionIndex}
+            initialSegmentIndex={classicSegmentIndex}
             onClassicChange={setClassic}
-            onSectionChange={setClassicSectionIndex}
+            onSectionChange={(index) => { setClassicSectionIndex(index); setClassicSegmentIndex(undefined); }}
             onBack={() => setScreen('tabs')}
           />
         </View>
