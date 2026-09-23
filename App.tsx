@@ -41,7 +41,19 @@ export default function App() {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (screen === 'reader' || screen === 'classic') {
+      if (screen === 'classic') {
+        if (classicSectionIndex !== undefined) {
+          setClassicSectionIndex(undefined);
+          return true;
+        }
+        if (classic) {
+          setClassic(null);
+          return true;
+        }
+        setScreen('tabs');
+        return true;
+      }
+      if (screen === 'reader') {
         setScreen('tabs');
         return true;
       }
@@ -52,7 +64,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [screen, tab]);
+  }, [classic, classicSectionIndex, screen, tab]);
 
   const openWork = (next: Work, lineIndex = 0) => {
     setWork(next);
@@ -104,7 +116,13 @@ export default function App() {
       ) : null}
       {screen === 'classic' ? (
         <View style={styles.readerOverlay}>
-          <ClassicScreen initialClassic={classic} initialSectionIndex={classicSectionIndex} onBack={() => setScreen('tabs')} />
+          <ClassicScreen
+            classic={classic}
+            sectionIndex={classicSectionIndex}
+            onClassicChange={setClassic}
+            onSectionChange={setClassicSectionIndex}
+            onBack={() => setScreen('tabs')}
+          />
         </View>
       ) : null}
     </View>

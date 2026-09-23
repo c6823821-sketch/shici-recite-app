@@ -178,15 +178,6 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           })}
         </View>
 
-        <View style={styles.classicStrip}>
-          <Text style={styles.classicStripLabel}>典籍 / 名句补充</Text>
-          {CLASSICS.map((classic) => (
-            <Pressable key={classic.id} onPress={() => onOpenClassic(classic)} style={styles.classicChip}>
-              <Text style={styles.classicChipText}>{classic.title}</Text>
-            </Pressable>
-          ))}
-        </View>
-
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{hasFilters ? '筛选结果' : '全部篇目'}</Text>
           <Text style={styles.resultCount}>{filteredWorks.length.toLocaleString('zh-CN')} 篇</Text>

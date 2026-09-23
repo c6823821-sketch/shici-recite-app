@@ -7,8 +7,10 @@ import { Classic } from '../types';
 import { colors, fonts, spacing } from '../theme';
 
 interface Props {
-  initialClassic?: Classic | null;
-  initialSectionIndex?: number;
+  classic: Classic | null;
+  sectionIndex?: number;
+  onClassicChange: (classic: Classic | null) => void;
+  onSectionChange: (sectionIndex?: number) => void;
   onBack: () => void;
 }
 
@@ -16,9 +18,8 @@ function splitParagraphs(text: string): string[] {
   const lines = text.split(/\n+/).map((part) => part.trim()).filter(Boolean);
   const result: string[] = [];
   for (const line of lines) {
-    if (line.length <= 180) {
-      result.push(line);
-    } else {
+    if (line.length <= 180) result.push(line);
+    else {
       const pieces = line.match(/[^。！？；]+[。！？；]?/g) ?? [line];
       result.push(...pieces.map((piece) => piece.trim()).filter(Boolean));
     }
@@ -27,40 +28,23 @@ function splitParagraphs(text: string): string[] {
 }
 
 function cleanText(text: string): string {
-  return text
-    .replace(/[①-⑳㉑-㉟]/g, '')
-    .replace(/\\libcirc\{[^}]*\}/g, '')
-    .replace(/\s+([，。！？；])/g, '$1');
+  return text.replace(/[①-⑳㉑-㉟]/g, '').replace(/\\libcirc\{[^}]*\}/g, '').replace(/\s+([，。！？；])/g, '$1');
 }
 
-export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: Props) {
-  const [classic, setClassic] = useState<Classic | null>(initialClassic ?? null);
-  const [sectionIndex, setSectionIndex] = useState<number | null>(initialClassic && initialSectionIndex != null ? initialSectionIndex : null);
+export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectionChange, onBack }: Props) {
   const [translation, setTranslation] = useState('');
   const [translationVisible, setTranslationVisible] = useState(false);
   const [translationLoading, setTranslationLoading] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
   const [translationError, setTranslationError] = useState('');
+  const section = classic && sectionIndex !== undefined ? classic.sections[sectionIndex] : null;
+  const paragraphs = useMemo(() => section ? splitParagraphs(cleanText(section.text)) : [], [section]);
 
   useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (sectionIndex !== null) {
-        setSectionIndex(null);
-        setTranslation('');
-        setTranslationVisible(false);
-        return true;
-      }
-      if (classic) {
-        setClassic(null);
-        return true;
-      }
-      return false;
-    });
-    return () => subscription.remove();
-  }, [classic, sectionIndex]);
-
-  const section = classic && sectionIndex !== null ? classic.sections[sectionIndex] : null;
-  const paragraphs = useMemo(() => section ? splitParagraphs(cleanText(section.text)) : [], [section]);
+    setTranslation('');
+    setTranslationVisible(false);
+    setTranslationError('');
+  }, [classic?.id, sectionIndex]);
 
   if (!classic) {
     return (
@@ -68,7 +52,7 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
         <Header title="典籍补充" onBack={onBack} />
         <ScrollView contentContainerStyle={styles.list}>
           {CLASSICS.map((item) => (
-            <Pressable key={item.id} onPress={() => { setClassic(item); setSectionIndex(null); }} style={styles.classicRow}>
+            <Pressable key={item.id} onPress={() => onClassicChange(item)} style={styles.classicRow}>
               <Text style={styles.classicTitle}>{item.title}</Text>
               <Text style={styles.classicMeta}>{item.kind === '名句' ? '名句补充' : item.category} · {item.author} · {item.sections.length} 篇</Text>
             </Pressable>
@@ -78,14 +62,14 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
     );
   }
 
-  if (sectionIndex === null) {
+  if (sectionIndex === undefined || !section) {
     return (
       <View style={styles.container}>
-        <Header title={classic.title} onBack={() => setClassic(null)} />
+        <Header title={classic.title} onBack={() => onClassicChange(null)} />
         <ScrollView contentContainerStyle={styles.list}>
           <Text style={styles.directoryHint}>{classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`} · 选择篇目开始阅读</Text>
           {classic.sections.map((sectionItem, index) => (
-            <Pressable key={`${classic.id}-${index}`} onPress={() => { setSectionIndex(index); setTranslation(''); setTranslationVisible(false); }} style={styles.chapterRow}>
+            <Pressable key={`${classic.id}-${index}`} onPress={() => onSectionChange(index)} style={styles.chapterRow}>
               <Text style={styles.chapterTitle}>{sectionItem.title}</Text>
             </Pressable>
           ))}
@@ -95,7 +79,6 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
   }
 
   const toggleTranslation = async () => {
-    if (!section) return;
     if (translationVisible) {
       setTranslationVisible(false);
       return;
@@ -117,9 +100,9 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
 
   return (
     <View style={styles.container}>
-      <Header title={classic.title} onBack={() => setSectionIndex(null)} />
+      <Header title={classic.title} onBack={() => onSectionChange(undefined)} />
       <ScrollView contentContainerStyle={styles.reader}>
-        <Text style={styles.readerTitle}>{section?.title}</Text>
+        <Text style={styles.readerTitle}>{section.title}</Text>
         <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
         {classic.note ? <Text style={styles.note}>{classic.note}</Text> : null}
         <Pressable onPress={toggleTranslation} style={styles.translateButton}>
