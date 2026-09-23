@@ -88,6 +88,8 @@ export interface Classic {
   title: string;
   author: string;
   category: '儒家' | '道家' | '其他';
+  kind?: '典籍' | '名句';
+  note?: string;
   source: string;
   sections: ClassicSection[];
 }

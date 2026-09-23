@@ -22,7 +22,7 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
           {CLASSICS.map((item) => (
             <Pressable key={item.id} onPress={() => { setClassic(item); setSectionIndex(null); }} style={styles.classicRow}>
               <Text style={styles.classicTitle}>{item.title}</Text>
-              <Text style={styles.classicMeta}>{item.category} · {item.author} · {item.sections.length} 篇</Text>
+              <Text style={styles.classicMeta}>{item.kind === '名句' ? '名句补充' : item.category} · {item.author} · {item.sections.length} 篇</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -53,7 +53,8 @@ export function ClassicScreen({ initialClassic, initialSectionIndex, onBack }: P
       <ScrollView contentContainerStyle={styles.reader}>
         <Text style={styles.readerBook}>{classic.title}</Text>
         <Text style={styles.readerTitle}>{section.title}</Text>
-        <Text style={styles.readerMeta}>{classic.author} · {classic.category}典籍</Text>
+        <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
+        {classic.note ? <Text style={styles.note}>{classic.note}</Text> : null}
         <Text style={styles.readerText}>{section.text}</Text>
         <Text style={styles.source}>来源：{classic.source}</Text>
       </ScrollView>
@@ -88,6 +89,7 @@ const styles = StyleSheet.create({
   readerBook: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 2 },
   readerTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 29, fontWeight: '800', marginTop: 12 },
   readerMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 10 },
+  note: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 10 },
   readerText: { color: colors.ink, fontFamily: fonts.body, fontSize: 19, lineHeight: 34, marginTop: spacing.xl },
   source: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, lineHeight: 18, marginTop: 36 },
 });

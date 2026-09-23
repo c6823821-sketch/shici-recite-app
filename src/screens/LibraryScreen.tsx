@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -39,6 +39,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteMessage, setRemoteMessage] = useState('');
+  const attemptedRemoteQuery = useRef('');
 
   useEffect(() => {
     loadImportedWorks().then(setImportedWorks);
@@ -106,8 +107,9 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
 
-  const remoteSearch = async () => {
-    if (query.trim().length < 2) {
+  const remoteSearch = async (override?: string) => {
+    const term = (override ?? query).trim();
+    if (term.length < 2) {
       setRemoteMessage('请输入完整的诗句或关键词。');
       return;
     }
@@ -118,7 +120,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     setRemoteLoading(true);
     setRemoteMessage('');
     try {
-      const work = await lookupRemoteWork(query.trim(), settings);
+      const work = await lookupRemoteWork(term, settings);
       await saveImportedWork(work);
       setImportedWorks(await loadImportedWorks());
       setRemoteMessage(`已补录《${work.title}》· ${work.author}，会永久保存在本机。`);
@@ -172,7 +174,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         </View>
 
         <View style={styles.classicStrip}>
-          <Text style={styles.classicStripLabel}>典籍补充</Text>
+          <Text style={styles.classicStripLabel}>典籍 / 名句补充</Text>
           {CLASSICS.map((classic) => (
             <Pressable key={classic.id} onPress={() => onOpenClassic(classic)} style={styles.classicChip}>
               <Text style={styles.classicChipText}>{classic.title}</Text>
@@ -195,12 +197,12 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         ) : null}
           {matchedClassics.length > 0 ? (
             <View style={styles.classicResults}>
-              <Text style={styles.classicResultsTitle}>典籍补充 · 与诗词分开</Text>
+              <Text style={styles.classicResultsTitle}>典籍 / 名句补充 · 与诗词分开</Text>
               {matchedClassics.map((item, index) => (
                 <Pressable key={`${item.classic.id}-${index}`} onPress={() => onOpenClassic(item.classic)} style={styles.classicResultRow}>
                   <Text style={styles.classicResultTitle}>《{item.classic.title}》· {item.section.title}</Text>
                   <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
-                  <Text style={styles.classicResultAuthor}>{item.classic.author} · {item.classic.category}典籍</Text>
+                  <Text style={styles.classicResultAuthor}>{item.classic.author} · {item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
                 </Pressable>
               ))}
             </View>
@@ -219,6 +221,17 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           ) : null}
     </View>
   );
+
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 4 || filteredWorks.length > 0 || !settings?.endpoint.trim()) return;
+    if (attemptedRemoteQuery.current === term) return;
+    const timer = setTimeout(() => {
+      attemptedRemoteQuery.current = term;
+      void remoteSearch(term);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [filteredWorks.length, query, settings]);
 
   return (
     <View style={styles.container}>
@@ -251,7 +264,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>本地没有找到符合条件的篇目</Text>
-            <Pressable style={styles.remoteButton} onPress={remoteSearch} disabled={remoteLoading}>
+            <Pressable style={styles.remoteButton} onPress={() => remoteSearch()} disabled={remoteLoading}>
               <Text style={styles.remoteButtonText}>{remoteLoading ? '正在联网检索…' : '联网补录这篇'}</Text>
             </Pressable>
           </View>
@@ -324,3 +337,4 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyText: { color: colors.muted, fontFamily: fonts.body, fontSize: 15 },
 });
+
