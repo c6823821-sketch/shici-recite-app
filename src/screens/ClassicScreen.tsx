@@ -60,7 +60,6 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
   const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
   const [favoriteMessage, setFavoriteMessage] = useState('');
   const selectionRef = useRef<CharacterSelection | null>(null);
-  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const section = classic && sectionIndex !== undefined ? classic.sections[sectionIndex] : null;
@@ -113,10 +112,6 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
       cursor += pages[index].length;
     }
   }, [initialSegmentIndex, pages]);
-
-  useEffect(() => () => {
-    if (lookupTimer.current) clearTimeout(lookupTimer.current);
-  }, []);
 
   if (!classic) {
     return (
@@ -279,13 +274,6 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
     }
   };
 
-  const scheduleLookup = (next: CharacterSelection) => {
-    if (lookupTimer.current) clearTimeout(lookupTimer.current);
-    lookupTimer.current = setTimeout(() => {
-      void lookupRange(next.segmentIndex, next.start, next.end);
-    }, 320);
-  };
-
   const selectCharacter = (segmentIndexValue: number, charIndex: number) => {
     const current = selectionRef.current;
     let next: CharacterSelection;
@@ -307,11 +295,9 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
 
     selectionRef.current = next;
     setSelection(next);
-    scheduleLookup(next);
   };
 
   const clearSelection = () => {
-    if (lookupTimer.current) clearTimeout(lookupTimer.current);
     selectionRef.current = null;
     setSelection(null);
   };
@@ -411,7 +397,7 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
                   <Text style={styles.selectionText} numberOfLines={1}>已选：{selectedTextFor(segment.text, selectionHere)}</Text>
                   <View style={styles.selectionActions}>
                     <Pressable onPress={() => void lookupRange(segmentIndex, selectionHere.start, selectionHere.end)} style={styles.selectionAction}>
-                      <Text style={styles.selectionActionText}>解释所选</Text>
+                      <Text style={styles.selectionActionText}>根据上下文解释</Text>
                     </Pressable>
                     <Pressable onPress={clearSelection} style={styles.selectionAction}>
                       <Text style={styles.selectionActionMuted}>取消</Text>
