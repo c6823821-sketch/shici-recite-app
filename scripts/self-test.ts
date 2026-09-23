@@ -12,6 +12,8 @@ assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('诗经')).length >= 300, '诗经应至少包含 300 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('唐诗三百首')).length >= 300, '唐诗三百首应至少包含 300 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('全宋词')).length >= 20000, '全宋词应至少包含 20,000 篇');
+assert.equal(WORKS.filter((work) => work.author === '李煜').length, 61, '李煜五代十国作品应完整收录');
+assert.ok(WORKS.length >= 23000, '总内容库应超过 23,000 篇');
 
 const wuyan = GENRE_FORMS.诗.find((item) => item.label === '五言绝句')!;
 if (!wuyan) throw new Error('缺少五言绝句格式');

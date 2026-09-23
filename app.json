@@ -2,7 +2,7 @@
   "expo": {
     "name": "诗词背诵",
     "slug": "shici-recite-app",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.shicirecite.app",
-      "versionCode": 16,
+      "versionCode": 17,
       "adaptiveIcon": {
         "backgroundColor": "#F3EDDF",
         "foregroundImage": "./assets/android-icon-foreground.png",
