@@ -2,7 +2,7 @@
 import pingshui from '../data/prosody/Pingshui_Rhyme.json';
 import xinyun from '../data/prosody/Xinyun_Rhyme.json';
 import wordTune from '../data/prosody/Word_Tune.json';
-import { CompositionForm, RhymeBook } from '../data/composition';
+import { CompositionForm, CompositionVariant, RhymeBook, formWithVariant } from '../data/composition';
 
 export interface PrecheckIssue {
   severity: 'error' | 'warning';
@@ -20,6 +20,7 @@ export interface LocalPrecheck {
   expectedCharCount?: number;
   expectedLineCount?: number;
   expectedLineLengths?: number[];
+  matchedVariantLabel?: string;
   passed: boolean;
   issues: PrecheckIssue[];
   toneChecked: number;
@@ -114,7 +115,7 @@ function checkPoemRhyme(lines: string[], book: RhymeBook, strict: boolean): Prec
   for (let index = 1; index < required.length; index += 1) {
     if (!compatibleRhyme(required[0], required[index], book)) {
       issues.push({
-        severity: 'error',
+        severity: 'warning',
         area: '押韵',
         message: `第 ${index * 2 + 2} 句韵脚“${required[index]}”与前面韵脚“${required[0]}”不在同一韵部。`,
         line: index * 2 + 2,
@@ -147,7 +148,7 @@ function checkCiRhyme(
   for (let index = 1; index < characters.length; index += 1) {
     if (!compatibleRhyme(characters[0], characters[index], book)) {
       issues.push({
-        severity: 'error',
+        severity: 'warning',
         area: '押韵',
         message: `第 ${positions[index] + 1} 个字的韵脚“${characters[index]}”与前面的“${characters[0]}”不在同一韵部。`,
       });
@@ -174,15 +175,15 @@ function checkTone(
       matched += 1;
     } else {
       issues.push({
-        severity: actual ? 'error' : 'warning',
+        severity: 'warning',
         area: '平仄',
         message: `第 ${index + 1} 个字“${chars[index]}”应为${expected}，实际${actual ?? '未收录'}。`,
       });
     }
   }
-  if (chars.length !== form.tonePattern.length) {
+  if (chars.length !== form.tonePattern.length && form.genre !== '词') {
     issues.push({
-      severity: 'error',
+      severity: 'warning',
       area: '字数',
       message: `所选词牌常见格例为 ${form.tonePattern.length} 字，当前为 ${chars.length} 字。`,
     });
@@ -190,26 +191,94 @@ function checkTone(
   return { issues, checked, matched };
 }
 
+function variantDistance(
+  lines: string[],
+  chars: string[],
+  variant: CompositionVariant,
+  book: RhymeBook,
+): number {
+  const charDiff = Math.abs(chars.length - variant.charCount);
+  const lineDiff = Math.abs(lines.length - variant.lineCount);
+  const lineLengthDiff = variant.lineLengths.reduce(
+    (total, expected, index) => total + Math.abs((lines[index]?.length ?? 0) - expected),
+    0,
+  );
+  const toneDiff = variant.tonePattern.split('').reduce((total, expected, index) => {
+    if (expected === '?' || index >= chars.length) return total;
+    const actual = toneOf(chars[index]);
+    return total + (actual && actual !== expected ? 1 : 0);
+  }, 0);
+  const rhymeChars = variant.rhymePositions
+    .map((position) => chars[position])
+    .filter((character): character is string => Boolean(character));
+  const rhymeDiff = rhymeChars.slice(1).reduce(
+    (total, character) => total + (compatibleRhyme(rhymeChars[0], character, book) ? 0 : 1),
+    0,
+  );
+  return charDiff * 10 + lineDiff * 6 + lineLengthDiff * 2 + toneDiff * 0.35 + rhymeDiff * 4;
+}
+
 export function precheckComposition(text: string, form: CompositionForm): LocalPrecheck {
   const lines = splitCompositionLines(text);
   const allChars = lines.join('');
   const issues: PrecheckIssue[] = [];
 
-  if (form.genre === '诗' && form.lineCount && lines.length !== form.lineCount) {
+  let metricForm = form;
+  let matchedVariantLabel: string | undefined;
+
+  if (form.genre === '词' && form.variants?.length) {
+    let bestIndex = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    form.variants.forEach((variant, index) => {
+      const distance = variantDistance(lines, Array.from(allChars), variant, form.rhymeBook);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+    metricForm = formWithVariant(form, bestIndex);
+    matchedVariantLabel = form.variants[bestIndex]?.label;
+
+    if (allChars.length !== metricForm.charCount) {
+      issues.push({
+        severity: 'warning',
+        area: '字数',
+        message: `当前 ${allChars.length} 字，最接近的${matchedVariantLabel ?? '格例'}为 ${metricForm.charCount} 字；若采用其他谱式，可继续交给 API 复核。`,
+      });
+    }
+    if (lines.length !== metricForm.lineCount) {
+      issues.push({
+        severity: 'warning',
+        area: '句数',
+        message: `当前 ${lines.length} 句，最接近的${matchedVariantLabel ?? '格例'}为 ${metricForm.lineCount} 句；词牌变体或衬字可能造成差异。`,
+      });
+    }
+    metricForm.lineLengths?.forEach((expected, index) => {
+      const actual = lines[index]?.length;
+      if (actual !== undefined && actual !== expected) {
+        issues.push({
+          severity: 'warning',
+          area: '字数',
+          message: `第 ${index + 1} 句 ${actual} 字，最接近格例为 ${expected} 字；可能是变体、衬字或句读差异。`,
+          line: index + 1,
+        });
+      }
+    });
+  } else if (form.id !== 'guti' && form.genre === '诗' && form.lineCount && lines.length !== form.lineCount) {
     issues.push({
       severity: 'error',
       area: '句数',
       message: `当前 ${lines.length} 句，${form.label} 常见格式为 ${form.lineCount} 句。`,
     });
   }
-  if (form.charCount && allChars.length !== form.charCount) {
+  if (form.id !== 'guti' && form.charCount && allChars.length !== form.charCount) {
     issues.push({
       severity: 'error',
       area: '字数',
       message: `当前 ${allChars.length} 字，${form.label} 常见格式为 ${form.charCount} 字。`,
     });
   }
-  if (form.genre === '诗' && form.lineLengths) {
+  if (form.id !== 'guti' && form.genre === '诗' && form.lineLengths) {
     form.lineLengths.forEach((expected, index) => {
       const actual = lines[index]?.length;
       if (actual !== undefined && actual !== expected) {
@@ -223,12 +292,12 @@ export function precheckComposition(text: string, form: CompositionForm): LocalP
     });
   }
 
-  const rhymeIssues = form.genre === '诗'
-    ? checkPoemRhyme(lines, form.rhymeBook, true)
-    : checkCiRhyme(lines, form.rhymePositions, form.rhymeBook);
+  const rhymeIssues = metricForm.genre === '诗'
+    ? checkPoemRhyme(lines, metricForm.rhymeBook, true)
+    : checkCiRhyme(lines, metricForm.rhymePositions, metricForm.rhymeBook);
   issues.push(...rhymeIssues);
 
-  const tone = checkTone(lines, form);
+  const tone = checkTone(lines, metricForm);
   issues.push(...tone.issues);
 
   if (form.rhymeBook === '中原音韵') {
@@ -245,9 +314,10 @@ export function precheckComposition(text: string, form: CompositionForm): LocalP
     charCount: allChars.length,
     lineCount: lines.length,
     lineLengths: lines.map((line) => line.length),
-    expectedCharCount: form.charCount,
-    expectedLineCount: form.lineCount,
-    expectedLineLengths: form.lineLengths,
+    expectedCharCount: metricForm.charCount,
+    expectedLineCount: metricForm.lineCount,
+    expectedLineLengths: metricForm.lineLengths,
+    matchedVariantLabel,
     passed: !issues.some((issue) => issue.severity === 'error'),
     issues,
     toneChecked: tone.checked,

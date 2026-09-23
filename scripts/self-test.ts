@@ -86,10 +86,12 @@ const invalidRhyme = precheckComposition(
   '床前明月光\n疑是地上霜\n举头望明月\n低头思故人',
   wuyan,
 );
-assert.equal(invalidRhyme.passed, false, '错误韵脚必须被本地预检拒绝');
+assert.equal(invalidRhyme.passed, true, '变体和拗体不应被本地预检硬性拒绝');
+assert.ok(invalidRhyme.issues.length > 0, '不同韵脚仍应作为风险提醒列出');
 
 const yijiangnan = GENRE_FORMS.词.find((item) => item.label === '忆江南')!;
 if (!yijiangnan) throw new Error('缺少忆江南词谱');
+assert.ok((yijiangnan.variants?.length ?? 0) >= 3, '忆江南应包含多个可选格例');
 
 const validCi = precheckComposition(
   '江南好\n风景旧曾谙\n日出江花红胜火\n春来江水绿如蓝\n能不忆江南',
@@ -97,7 +99,9 @@ const validCi = precheckComposition(
 );
 assert.equal(validCi.charCount, 27, '忆江南应为 27 字');
 assert.equal(validCi.toneChecked, 27, '忆江南应完成 27 字平仄检查');
-assert.equal(validCi.issues.length, 0, '示例忆江南不应有本地格律问题');
+assert.equal(validCi.passed, true, '示例忆江南应通过本地预检');
+assert.ok(validCi.matchedVariantLabel, '应记录匹配的词牌格例变体');
+assert.equal(validCi.issues.some((issue) => issue.severity === 'error'), false, '本地预检不应把变体当硬伤');
 
 async function testApiServices() {
   const server = http.createServer((request, response) => {
