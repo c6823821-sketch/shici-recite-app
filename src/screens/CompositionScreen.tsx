@@ -10,10 +10,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { CompositionForm, CompositionGenre, GENRE_FORMS } from '../data/composition';
+import { CompositionForm, CompositionGenre, GENRE_FORMS, formWithVariant } from '../data/composition';
 import { scoreComposition, CATEGORY_LABELS, CompositionScore } from '../services/compositionScoring';
 import { LocalPrecheck, precheckComposition } from '../services/prosody';
 import { loadApiSettings } from '../services/settings';
+import { createSavedComposition, loadSavedCompositions, removeSavedComposition, SavedComposition, saveSavedComposition } from '../services/compositions';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings } from '../types';
 
@@ -33,18 +34,71 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   const [score, setScore] = useState<CompositionScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [variantIndex, setVariantIndex] = useState(0);
+  const [title, setTitle] = useState('');
+  const [saved, setSaved] = useState<SavedComposition[]>([]);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
+    loadSavedCompositions().then(setSaved);
   }, []);
 
-  const precheck = useMemo<LocalPrecheck>(() => precheckComposition(text, form), [form, text]);
+  const activeForm = useMemo(() => formWithVariant(form, variantIndex), [form, variantIndex]);
+  const precheck = useMemo<LocalPrecheck>(() => precheckComposition(text, activeForm), [activeForm, text]);
 
   const changeGenre = (next: CompositionGenre) => {
     setGenre(next);
     setForm(GENRE_FORMS[next][0]);
+    setVariantIndex(0);
     setScore(null);
     setError('');
+    setSaveMessage('');
+  };
+
+  const saveDraft = async () => {
+    if (!text.trim()) {
+      setError('先写正文，再保存。');
+      return;
+    }
+    const fallbackTitle = text.trim().split(/\r?\n/)[0]?.trim().slice(0, 24) || '未命名作品';
+    const next = createSavedComposition({
+      id: activeDraftId ?? undefined,
+      title: title.trim() || fallbackTitle,
+      text: text.trim(),
+      genre,
+      formId: form.id,
+      formLabel: form.label,
+      variantIndex,
+      createdAt: saved.find((item) => item.id === activeDraftId)?.createdAt,
+    });
+    await saveSavedComposition(next);
+    setActiveDraftId(next.id);
+    setTitle(next.title);
+    setSaved(await loadSavedCompositions());
+    setSaveMessage(`已保存：${next.title}`);
+    setError('');
+  };
+
+  const openDraft = (item: SavedComposition) => {
+    const nextForm = GENRE_FORMS[item.genre].find((candidate) => candidate.id === item.formId) ?? GENRE_FORMS[item.genre][0];
+    setGenre(item.genre);
+    setForm(nextForm);
+    setVariantIndex(Math.max(0, Math.min(item.variantIndex, (nextForm.variants?.length ?? 1) - 1)));
+    setTitle(item.title);
+    setText(item.text);
+    setActiveDraftId(item.id);
+    setScore(null);
+    setError('');
+    setSaveMessage('已载入已保存作品。');
+  };
+
+  const deleteDraft = async (id: string) => {
+    await removeSavedComposition(id);
+    if (activeDraftId === id) setActiveDraftId(null);
+    setSaved(await loadSavedCompositions());
+    setSaveMessage('已删除作品。');
   };
 
   const runScore = async () => {
@@ -60,7 +114,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
     setError('');
     setScore(null);
     try {
-      const result = await scoreComposition(settings, form, text, precheck);
+      const result = await scoreComposition(settings, activeForm, text, precheck);
       setScore(result);
     } catch (scoreError) {
       setError(readableScoreError(scoreError));
@@ -81,7 +135,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.intro}>
-          先选体裁和格例，再写正文。本地先查字数、句数、押韵和平仄；API 按硬性规则逐项扣分，不恭维、不抬分。
+          先选体裁和格例，必要时切换词牌变体；写完后可先保存，再做本地预检和 API 复核。
         </Text>
 
         <View style={styles.genreRow}>
@@ -100,7 +154,7 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
             return (
               <Pressable
                 key={item.id}
-                onPress={() => { setForm(item); setScore(null); setError(''); }}
+                onPress={() => { setForm(item); setVariantIndex(0); setScore(null); setError(''); setSaveMessage(''); }}
                 style={[styles.formChip, active && styles.formChipActive]}
               >
                 <Text style={[styles.formChipText, active && styles.formChipTextActive]}>{item.label}</Text>
@@ -109,24 +163,56 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
           })}
         </ScrollView>
 
+        {form.variants?.length ? (
+          <View style={styles.variantBox}>
+            <Text style={styles.variantLabel}>{'\u683c\u4f8b\u53d8\u4f53'}</Text>
+            <View style={styles.variantRow}>
+              {form.variants.map((variant, index) => {
+                const active = variantIndex === index;
+                return (
+                  <Pressable
+                    key={variant.id}
+                    onPress={() => { setVariantIndex(index); setScore(null); setError(''); setSaveMessage(''); }}
+                    style={[styles.variantChip, active && styles.variantChipActive]}
+                  >
+                    <Text style={[styles.variantText, active && styles.variantTextActive]}>
+                      {variant.label} {'\u00b7'} {variant.charCount} {'\u5b57'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.reference}>
           <Text style={styles.referenceTitle}>{form.label}</Text>
           <Text style={styles.referenceMeta}>
-            {form.charCount ? `${form.charCount} 字` : '字数随句式'} · {form.rhymeBook} · {form.source}
+            {activeForm.charCount ? `${activeForm.charCount} 字` : '字数随句式'} · {activeForm.rhymeBook} · {form.source}
           </Text>
           <Text style={styles.referenceHint}>{form.hint}</Text>
-          {form.patternLines?.length ? (
+          {activeForm.patternLines?.length ? (
             <View style={styles.patternBox}>
               <Text style={styles.patternLabel}>常见格例</Text>
-              {form.patternLines.slice(0, 4).map((line, index) => (
+              {activeForm.patternLines.slice(0, 4).map((line, index) => (
                 <Text key={`${line}-${index}`} style={styles.patternLine}>{index + 1}. {line}</Text>
               ))}
-              {form.patternLines.length > 4 ? (
-                <Text style={styles.patternMore}>……共 {form.patternLines.length} 句，API 会按完整词谱复核</Text>
+              {activeForm.patternLines.length > 4 ? (
+                <Text style={styles.patternMore}>……共 {activeForm.patternLines.length} 句，API 会按完整词谱复核</Text>
               ) : null}
             </View>
           ) : null}
         </View>
+
+        <Text style={styles.sectionLabel}>题目</Text>
+        <TextInput
+          value={title}
+          onChangeText={(value) => { setTitle(value); setSaveMessage(''); }}
+          placeholder="例：秋夜怀人"
+          placeholderTextColor={colors.muted}
+          selectionColor={colors.vermilion}
+          style={styles.titleInput}
+        />
 
         <Text style={styles.sectionLabel}>正文</Text>
         <TextInput
@@ -140,9 +226,17 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
           textAlignVertical="top"
         />
 
+        <View style={styles.saveRow}>
+          <Pressable style={styles.saveButton} onPress={() => void saveDraft()}>
+            <Text style={styles.saveButtonText}>{'\u4fdd\u5b58\u4f5c\u54c1'}</Text>
+          </Pressable>
+          {activeDraftId ? <Text style={styles.saveState}>{'\u6b63\u5728\u7f16\u8f91\u5df2\u4fdd\u5b58\u4f5c\u54c1'}</Text> : null}
+        </View>
+        {saveMessage ? <Text style={styles.saveMessage}>{saveMessage}</Text> : null}
+
         <View style={[styles.precheck, precheck.passed ? styles.precheckPass : styles.precheckFail]}>
           <View style={styles.precheckHeader}>
-            <Text style={styles.precheckTitle}>本地预检 · {precheck.passed ? '未发现硬性错误' : '发现硬性错误'}</Text>
+            <Text style={styles.precheckTitle}>本地预检 · {precheck.passed ? '未发现本地硬性错误' : '发现本地硬性错误'}{precheck.matchedVariantLabel ? ` · ${precheck.matchedVariantLabel}` : ''}</Text>
             <Text style={styles.precheckCount}>{precheck.charCount} 字 / {precheck.lineCount} 句</Text>
           </View>
           <Text style={styles.precheckMeta}>
@@ -168,6 +262,13 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {score ? <ScoreCard score={score} /> : null}
+
+        <Text style={styles.resultSectionTitle}>{'\u6211\u7684\u4f5c\u54c1'}</Text>
+        {saved.length === 0 ? (
+          <Text style={styles.resultText}>{'\u8fd8\u6ca1\u6709\u4fdd\u5b58\u7684\u4f5c\u54c1\u3002'}</Text>
+        ) : saved.map((item) => (
+          <SavedRow key={item.id} item={item} onOpen={() => openDraft(item)} onDelete={() => void deleteDraft(item.id)} />
+        ))}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -236,6 +337,23 @@ function ScoreCard({ score }: { score: CompositionScore }) {
   );
 }
 
+function SavedRow({ item, onOpen, onDelete }: { item: SavedComposition; onOpen: () => void; onDelete: () => void }) {
+  const date = new Date(item.updatedAt).toLocaleString('zh-CN');
+  const variant = item.variantIndex > 0 ? ` · 第${item.variantIndex + 1}体` : '';
+  return (
+    <View style={styles.savedRow}>
+      <Pressable onPress={onOpen} style={styles.savedCopy}>
+        <Text style={styles.savedTitle}>{item.title}</Text>
+        <Text style={styles.savedMeta}>{item.genre} · {item.formLabel}{variant} · {date}</Text>
+        <Text style={styles.savedQuote} numberOfLines={2}>{item.text}</Text>
+      </Pressable>
+      <Pressable onPress={onDelete} style={styles.savedDeleteButton}>
+        <Text style={styles.savedDeleteText}>删除</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -276,7 +394,20 @@ const styles = StyleSheet.create({
   patternLabel: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, marginBottom: 5 },
   patternLine: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23 },
   patternMore: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  titleInput: { minHeight: 48, borderBottomWidth: 1, borderBottomColor: colors.line, color: colors.ink, fontFamily: fonts.body, fontSize: 18, paddingVertical: 8 },
+  variantBox: { marginTop: 12, padding: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  variantLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, letterSpacing: 2, marginBottom: 8 },
+  variantRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  variantChip: { minHeight: 38, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 11, justifyContent: 'center' },
+  variantChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
+  variantText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  variantTextActive: { color: colors.vermilion, fontWeight: '700' },
   editor: { minHeight: 250, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, padding: 14, color: colors.ink, fontFamily: fonts.body, fontSize: 19, lineHeight: 34, borderRadius: 3 },
+  saveRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  saveButton: { minHeight: 46, minWidth: 112, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  saveButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  saveState: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, flex: 1 },
+  saveMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
   precheck: { marginTop: spacing.lg, padding: 14, borderLeftWidth: 3 },
   precheckPass: { borderLeftColor: colors.jade, backgroundColor: 'rgba(64,88,76,0.06)' },
   precheckFail: { borderLeftColor: colors.vermilion, backgroundColor: 'rgba(163,52,42,0.06)' },
@@ -310,4 +441,11 @@ const styles = StyleSheet.create({
   issueProblem: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 5 },
   issueSuggestion: { color: colors.jade, fontFamily: fonts.body, fontSize: 14, lineHeight: 23, marginTop: 5 },
   resultText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginBottom: 6 },
+  savedRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, paddingVertical: 12 },
+  savedCopy: { flex: 1, paddingRight: 10 },
+  savedTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
+  savedMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  savedQuote: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 6 },
+  savedDeleteButton: { minWidth: 48, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  savedDeleteText: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12 },
 });

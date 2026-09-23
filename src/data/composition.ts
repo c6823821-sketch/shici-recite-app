@@ -3,6 +3,17 @@
 export type CompositionGenre = '诗' | '词' | '曲';
 export type RhymeBook = '平水韵' | '词林正韵' | '中华新韵' | '中原音韵';
 
+export interface CompositionVariant {
+  id: string;
+  label: string;
+  charCount: number;
+  lineCount: number;
+  lineLengths: number[];
+  patternLines: string[];
+  tonePattern: string;
+  rhymePositions: number[];
+}
+
 export interface CompositionForm {
   id: string;
   label: string;
@@ -16,6 +27,7 @@ export interface CompositionForm {
   rhymePositions?: number[];
   hint: string;
   source: string;
+  variants?: CompositionVariant[];
 }
 
 const POETRY_FORMS: CompositionForm[] = [
@@ -90,22 +102,48 @@ const QU_FORMS: CompositionForm[] = [
 }));
 
 const CI_FORMS: CompositionForm[] = Object.entries(CI_PATTERNS).map(([label, patterns]) => {
-  const pattern = patterns[0];
-  return {
-    id: `ci-${label}`,
-    label,
-    genre: '词',
+  const variants: CompositionVariant[] = patterns.map((pattern, index) => ({
+    id: `ci-${label}-${index + 1}`,
+    label: `\u7b2c${index + 1}\u4f53`,
     charCount: pattern.geLyuStr.length,
     lineCount: pattern.ciSep.length,
     lineLengths: pattern.ciSep.map((line) => line.replace(/\s/g, '').length),
-    rhymeBook: '词林正韵',
     patternLines: pattern.ciSep,
     tonePattern: pattern.geLyuStr,
     rhymePositions: pattern.rhymePos,
-    hint: `按《${pattern.tune}》常见格例预检。押韵位置按照本地词谱，平仄和句读再结合 API 严格复核。`,
-    source: 'couyun（MIT）词谱数据',
+  }));
+  const first = variants[0];
+  return {
+    id: `ci-${label}`,
+    label,
+    genre: '\u8bcd',
+    charCount: first.charCount,
+    lineCount: first.lineCount,
+    lineLengths: first.lineLengths,
+    rhymeBook: '\u8bcd\u6797\u6b63\u97f5',
+    patternLines: first.patternLines,
+    tonePattern: first.tonePattern,
+    rhymePositions: first.rhymePositions,
+    variants,
+    hint: `\u300a${label}\u300b\u5df2\u6536\u5f55 ${variants.length} \u4e2a\u5e38\u89c1\u683c\u4f8b\uff1b\u4f1a\u5148\u5339\u914d\u6700\u63a5\u8fd1\u7684\u4e00\u4f53\uff0c\u518d\u7531 API \u590d\u6838\u53e5\u8bfb\u3001\u5e73\u4ec4\u3001\u97f5\u4f4d\u548c\u53d8\u4f53\u4f9d\u636e\u3002`,
+    source: 'couyun\uff08MIT\uff09\u8bcd\u8c31\u6570\u636e',
   };
 });
+
+export function formWithVariant(form: CompositionForm, variantIndex = 0): CompositionForm {
+  const variants = form.variants ?? [];
+  const variant = variants[Math.max(0, Math.min(variantIndex, variants.length - 1))];
+  if (!variant) return form;
+  return {
+    ...form,
+    charCount: variant.charCount,
+    lineCount: variant.lineCount,
+    lineLengths: variant.lineLengths,
+    patternLines: variant.patternLines,
+    tonePattern: variant.tonePattern,
+    rhymePositions: variant.rhymePositions,
+  };
+}
 
 export const COMPOSITION_FORMS: CompositionForm[] = [
   ...POETRY_FORMS,

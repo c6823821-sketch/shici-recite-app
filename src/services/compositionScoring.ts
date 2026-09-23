@@ -96,10 +96,11 @@ export async function scoreComposition(
 3. 近体诗重点检查：句数、字数、平仄、押韵、粘对、孤平、三平尾、对仗和重字。
 4. 词重点检查：词牌、字数、句读、平仄、韵位、换韵、叶韵、对仗和领字。
 5. 曲重点检查：曲牌、宫调、字数、句读、衬字、韵脚、平仄和曲谱版本。曲牌存在不同版本时，必须明确采用哪一版，不能把不确定写成确定。
-6. 现代普通话读音只能辅助，判断古韵时必须使用用户选择的韵书。
-7. 每一条优点必须有文本证据；每一条问题必须指出具体位置和修改方向。
-8. 不确定就写 uncertain，不能编造词谱规则或古人评价。
-9. 本地预检已经发现硬性错误时，总分不得超过 79。
+6. 如果所选词牌有多个通行变体，必须逐一比较，不能只按一个模板判错；只有不符合所有变体且无拗救、衬字依据时才判硬伤。
+7. 现代普通话读音只能辅助，判断古韵时必须使用用户选择的韵书。
+8. 每一条优点必须有文本证据；每一条问题必须指出具体位置和修改方向。
+9. 不确定就写 uncertain，不能编造词谱规则或古人评价。
+10. 本地预检已经发现硬性错误时，总分不得超过 79。
 
 评分档位：
 - 90-100：格律基本无误，语言和章法都达到较高水平。
@@ -174,6 +175,15 @@ export async function scoreComposition(
                 rhyme_positions: form.rhymePositions,
                 source: form.source,
               },
+              variants: form.variants?.map((variant) => ({
+                label: variant.label,
+                char_count: variant.charCount,
+                line_count: variant.lineCount,
+                line_lengths: variant.lineLengths,
+                ci_pattern: variant.patternLines,
+                tone_pattern: variant.tonePattern,
+                rhyme_positions: variant.rhymePositions,
+              })),
               local_precheck: precheck,
               submitted_text: text,
             },
