@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
 import { WORKS } from './src/data/works';
 import { CLASSICS } from './src/data/classics';
+import { normalizeWorkTitle } from './src/data/corrections';
 import { ClassicScreen } from './src/screens/ClassicScreen';
 import { Classic } from './src/types';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
@@ -97,8 +98,11 @@ export default function App() {
       }
     }
     const imported = await loadImportedWorks();
+    const targetTitle = normalizeWorkTitle(favorite.workTitle);
     const target = WORKS.find((item) => item.id === favorite.workId)
-      ?? imported.find((item) => item.id === favorite.workId);
+      ?? imported.find((item) => item.id === favorite.workId)
+      ?? WORKS.find((item) => normalizeWorkTitle(item.title) === targetTitle)
+      ?? imported.find((item) => normalizeWorkTitle(item.title) === targetTitle);
     if (target) openWork(target, favorite.lineIndex);
   };
 

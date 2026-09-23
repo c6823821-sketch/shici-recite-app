@@ -14,6 +14,7 @@ import { WORKS } from '../data/works';
 import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
 import { lookupRemoteWork } from '../services/remoteLookup';
+import { canonicalWorkKey } from '../data/corrections';
 import { loadApiSettings } from '../services/settings';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
@@ -50,7 +51,15 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     loadApiSettings().then(setSettings);
   }, []);
 
-  const allWorks = useMemo(() => [...importedWorks, ...WORKS], [importedWorks]);
+  const allWorks = useMemo(() => {
+    const seen = new Set<string>();
+    return [...WORKS, ...importedWorks].filter((work) => {
+      const key = canonicalWorkKey(work);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [importedWorks]);
 
   const filteredWorks = useMemo(() => {
     const needle = query.trim().toLowerCase();

@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.6.2.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.7.0.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v2.6.2
-          path: shici-recite-app-v2.6.2.apk
+          name: shici-recite-app-v2.7.0
+          path: shici-recite-app-v2.7.0.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.6.2
-          name: 诗词背诵 v2.6.2
+          tag_name: v2.7.0
+          name: 诗词背诵 v2.7.0
           body: |
             诗词背诵 Android 测试版。
 
-            典籍阅读与诗词阅读操作一致：先点选字词，选完后再点“根据上下文解释”，不再点一个字就自动弹出考据。
+            本版重点校订全库数据：修正“糖多令”、“塞沙带浅流”、“系舟”和“故人今不在”等已知错误，并自动清理历史 API 补录产生的重复或污染条目。
 
             此版本是自包含 release APK，安装后无需连接电脑。
-          files: shici-recite-app-v2.6.2.apk
+          files: shici-recite-app-v2.7.0.apk
           make_latest: true
 
