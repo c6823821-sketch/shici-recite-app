@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { FilterSheet } from '../components/FilterSheet';
 import { WORKS } from '../data/works';
+import { CLASSICS } from '../data/classics';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
-import { Work } from '../types';
+import { Classic, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
+  onOpenClassic: (classic: Classic) => void;
 }
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
@@ -25,7 +27,7 @@ function matchesDimension(selected: string[], values: string[]): boolean {
   return selected.length === 0 || selected.some((value) => values.includes(value));
 }
 
-export function LibraryScreen({ onOpenWork }: Props) {
+export function LibraryScreen({ onOpenWork, onOpenClassic }: Props) {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -67,6 +69,17 @@ export function LibraryScreen({ onOpenWork }: Props) {
       if (results.length >= 30) break;
     }
     return results;
+  }, [query]);
+
+  const matchedClassics = useMemo(() => {
+    const needle = query.trim();
+    if (needle.length < 2) return [];
+    return CLASSICS.flatMap((classic) =>
+      classic.sections
+        .filter((section) => classic.title.includes(needle) || section.title.includes(needle) || section.text.includes(needle))
+        .slice(0, 2)
+        .map((section) => ({ classic, section })),
+    ).slice(0, 10);
   }, [query]);
 
   const selected = [
@@ -119,6 +132,15 @@ export function LibraryScreen({ onOpenWork }: Props) {
           })}
         </View>
 
+        <View style={styles.classicStrip}>
+          <Text style={styles.classicStripLabel}>典籍补充</Text>
+          {CLASSICS.map((classic) => (
+            <Pressable key={classic.id} onPress={() => onOpenClassic(classic)} style={styles.classicChip}>
+              <Text style={styles.classicChipText}>{classic.title}</Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{hasFilters ? '筛选结果' : '全部篇目'}</Text>
           <Text style={styles.resultCount}>{filteredWorks.length.toLocaleString('zh-CN')} 篇</Text>
@@ -132,6 +154,18 @@ export function LibraryScreen({ onOpenWork }: Props) {
             </Pressable>
           </View>
         ) : null}
+          {matchedClassics.length > 0 ? (
+            <View style={styles.classicResults}>
+              <Text style={styles.classicResultsTitle}>典籍补充 · 与诗词分开</Text>
+              {matchedClassics.map((item, index) => (
+                <Pressable key={`${item.classic.id}-${index}`} onPress={() => onOpenClassic(item.classic)} style={styles.classicResultRow}>
+                  <Text style={styles.classicResultTitle}>《{item.classic.title}》· {item.section.title}</Text>
+                  <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
+                  <Text style={styles.classicResultAuthor}>{item.classic.author} · {item.classic.category}典籍</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
           {matchedLines.length > 0 ? (
             <View style={styles.quoteResults}>
               <Text style={styles.quoteResultsTitle}>匹配句子 · 点进去直接定位</Text>
@@ -212,6 +246,16 @@ const styles = StyleSheet.create({
   clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   listView: { flex: 1 },
   list: { paddingBottom: 130 },
+  classicStrip: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 8 },
+  classicStripLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11 },
+  classicChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 10, justifyContent: 'center' },
+  classicChipText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  classicResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  classicResultsTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  classicResultRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  classicResultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
+  classicResultSnippet: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 5 },
+  classicResultAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
   quoteResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   quoteRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },

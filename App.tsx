@@ -5,6 +5,7 @@ import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
 import { WORKS } from './src/data/works';
+import { classicToWork } from './src/data/classics';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
@@ -71,7 +72,7 @@ export default function App() {
             <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
           </View>
           <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
-            <LibraryScreen onOpenWork={openWork} />
+            <LibraryScreen onOpenWork={openWork} onOpenClassic={(classic) => openWork(classicToWork(classic), 0)} />
           </View>
           <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
             <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />

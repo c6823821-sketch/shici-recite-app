@@ -363,6 +363,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         </Pressable>
         {wholeError ? <Text style={styles.wholeError}>{wholeError}</Text> : null}
 
+        {work.genre !== '典籍' ? (
         <View style={styles.modeRow}>
           {MODES.map((item) => (
             <Pressable key={item.key} onPress={() => setMode(item.key)} style={styles.modeButton}>
@@ -371,6 +372,9 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             </Pressable>
           ))}
         </View>
+        ) : (
+          <Text style={styles.classicNotice}>典籍补充阅读 · 不计入诗词背诵统计</Text>
+        )}
 
         <View style={styles.poem}>
           {work.lines.map((line, index) => (
@@ -409,7 +413,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           ))}
         </View>
 
-        <View style={styles.reviewBlock}>
+        {work.genre !== '典籍' ? <View style={styles.reviewBlock}>
           <Text style={styles.reviewTitle}>这一首背得怎么样？</Text>
           <Text style={styles.reviewHint}>完成就打勾；没背完就放进待背清单，下次继续。</Text>
           <View style={styles.ratingRow}>
@@ -424,7 +428,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           <Text style={styles.reviewExplanation}>
             完成表示今天能独立背出，系统会把它加入复习队列，之后根据你的记忆状态安排复习；没背完则进入待背清单。
           </Text>
-        </View>
+        </View> : null}
 
         <Text style={styles.source}>文本来源：{work.source}</Text>
       </ScrollView>
@@ -611,6 +615,7 @@ const styles = StyleSheet.create({
   sectionBreak: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20, marginBottom: 10, paddingHorizontal: 10 },
   sectionLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
   sectionLabel: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, letterSpacing: 3 },
+  classicNotice: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', marginVertical: 18 },
   lineBlock: { marginVertical: 3, paddingVertical: 8, paddingHorizontal: 8, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   currentLineBlock: { borderLeftColor: colors.vermilion, backgroundColor: 'rgba(163, 52, 42, 0.035)' },
   lineMain: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 46 },

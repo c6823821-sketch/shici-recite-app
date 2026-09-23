@@ -7,6 +7,7 @@ import { recommendForMood } from '../src/services/recommendation';
 import { explainWithApi } from '../src/services/api';
 import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
+import { CLASSICS } from '../src/data/classics';
 
 assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('诗经')).length >= 300, '诗经应至少包含 300 篇');
@@ -14,6 +15,9 @@ assert.ok(WORKS.filter((work) => work.collections.includes('唐诗三百首')).l
 assert.ok(WORKS.filter((work) => work.collections.includes('全宋词')).length >= 20000, '全宋词应至少包含 20,000 篇');
 assert.equal(WORKS.filter((work) => work.author === '李煜').length, 61, '李煜五代十国作品应完整收录');
 assert.ok(WORKS.length >= 23000, '总内容库应超过 23,000 篇');
+assert.equal(CLASSICS.length, 5, '典籍补充库应包含五部基础典籍');
+assert.ok(CLASSICS.some((item) => item.title === '道德经' && item.sections.length === 81), '道德经应包含81章');
+assert.ok(CLASSICS.some((item) => item.title === '论语' && item.sections.length === 20), '论语应包含20篇');
 
 const wuyan = GENRE_FORMS.诗.find((item) => item.label === '五言绝句')!;
 if (!wuyan) throw new Error('缺少五言绝句格式');

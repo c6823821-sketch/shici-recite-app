@@ -76,3 +76,17 @@ export interface DailyRecommendation {
   confidence: Confidence;
   source: 'random' | 'api';
 }
+
+export interface ClassicSection {
+  title: string;
+  text: string;
+}
+
+export interface Classic {
+  id: string;
+  title: string;
+  author: string;
+  category: '儒家' | '道家' | '其他';
+  source: string;
+  sections: ClassicSection[];
+}
