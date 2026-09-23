@@ -682,6 +682,21 @@ const CURATED_WORKS: Work[] = [
 
 ];
 
+function splitCiClauses(work: Work): Work {
+  if (work.genre !== '词') return work;
+  const lines: string[] = [];
+  const translations: string[] = [];
+  work.lines.forEach((line) => {
+    const parts = line.match(/[^，。！？；：]+[，。！？；：]?/g)?.map((part) => part.trim()).filter(Boolean) ?? [line];
+    lines.push(...parts);
+    if (work.translations.length) {
+      const translation = work.translations[lines.length - parts.length] ?? '';
+      parts.forEach(() => translations.push(translation));
+    }
+  });
+  return { ...work, lines, translations };
+}
+
 const seenWorks = new Set<string>();
 const arrowOnly = /^[<>]+$/;
 const metadataOnly = /^(词牌介绍|词牌名|作者简介|题解|注释|译文|赏析|背景|序言)$/;
@@ -706,6 +721,7 @@ function sanitizeWork(work: Work): Work {
 }
 export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS]
   .map(sanitizeWork)
+  .map(splitCiClauses)
   .map((work) => {
     if (work.genre === '词' && work.lines.length >= 8 && !work.sectionBreaks?.length) {
       return { ...work, sectionBreaks: [Math.ceil(work.lines.length / 2)] };

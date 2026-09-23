@@ -65,32 +65,33 @@ export default function App() {
     <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar style="dark" />
-      {screen === 'reader' ? (
-        <ReaderScreen
-          work={work}
-          initialLineIndex={readerLineIndex}
-          onBack={() => setScreen('tabs')}
-          onOpenSettings={openSettings}
-        />
-      ) : (
-        <View style={styles.tabs}>
-          <View style={styles.content}>
-            <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
-              <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
-            </View>
-            <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
-              <LibraryScreen onOpenWork={openWork} />
-            </View>
-            <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
-              <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
-            </View>
-            <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
-              <ProfileScreen />
-            </View>
+      <View style={styles.tabs}>
+        <View style={styles.content}>
+          <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
+            <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
           </View>
-          <MainTabBar active={tab} onChange={setTab} />
+          <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
+            <LibraryScreen onOpenWork={openWork} />
+          </View>
+          <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
+            <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
+          </View>
+          <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
+            <ProfileScreen />
+          </View>
         </View>
-      )}
+        <MainTabBar active={tab} onChange={setTab} />
+      </View>
+      {screen === 'reader' ? (
+        <View style={styles.readerOverlay}>
+          <ReaderScreen
+            work={work}
+            initialLineIndex={readerLineIndex}
+            onBack={() => setScreen('tabs')}
+            onOpenSettings={openSettings}
+          />
+        </View>
+      ) : null}
     </View>
     </SafeAreaProvider>
   );
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabPane: { flex: 1 },
   hidden: { display: 'none' },
+  readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40, backgroundColor: colors.paper },
 });
 
 

@@ -138,7 +138,8 @@ export function LibraryScreen({ onOpenWork }: Props) {
               {matchedLines.map((result) => (
                 <Pressable key={`${result.work.id}-${result.lineIndex}`} onPress={() => onOpenWork(result.work, result.lineIndex)} style={styles.quoteRow}>
                   <Text style={styles.quoteLine}>{result.line}</Text>
-                  <Text style={styles.quoteSource}>《{result.work.title}》· {result.work.author}</Text>
+                  <Text style={styles.quoteTitle}>《{result.work.title}》</Text>
+                  <Text style={styles.quoteAuthor}>{result.work.author}</Text>
                 </Pressable>
               ))}
             </View>
@@ -165,7 +166,8 @@ export function LibraryScreen({ onOpenWork }: Props) {
               <Pressable onPress={() => onOpenWork(item, 0)} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
                 <View style={styles.workCopy}>
                   <Text style={styles.workTitle}>{item.title}</Text>
-                  <Text style={styles.workMeta}>{item.author} · {item.genre} · {item.collections.slice(0, 2).join(' / ')}</Text>
+                  <Text style={styles.workAuthor}>{item.author}</Text>
+                  <Text style={styles.workMeta}>{item.dynasty} · {item.genre} · {item.collections.slice(0, 2).join(' / ')}</Text>
                   <Text style={styles.workTags}>{item.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
                 </View>
                 <Text style={styles.arrow}>›</Text>
@@ -214,7 +216,9 @@ const styles = StyleSheet.create({
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   quoteRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   quoteLine: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 25 },
-  quoteSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  quoteTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 7 },
+  quoteAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 3 },
+  workAuthor: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 6 },
   eraHeader: { marginHorizontal: spacing.lg, color: colors.vermilion, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 18, marginBottom: 4 },
   workRow: { minHeight: 94, marginHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, paddingVertical: 12 },
   pressed: { opacity: 0.55 },
