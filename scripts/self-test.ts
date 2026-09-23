@@ -9,6 +9,7 @@ import { lookupRemoteWork } from '../src/services/remoteLookup';
 import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 import { CLASSICS } from '../src/data/classics';
+import { splitClassicText, paginateClassicSegments } from '../src/services/classicText';
 
 assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('诗经')).length >= 300, '诗经应至少包含 300 篇');
@@ -21,6 +22,30 @@ assert.ok(CLASSICS.some((item) => item.title === '美美与共' && item.author =
 assert.ok(CLASSICS.some((item) => item.title === '卖油翁' && item.sections.some((section) => section.text.includes('惟手熟尔'))), '应补充卖油翁及惟手熟尔');
 assert.ok(CLASSICS.some((item) => item.title === '道德经' && item.sections.length === 81), '道德经应包含81章');
 assert.ok(CLASSICS.some((item) => item.title === '论语' && item.sections.length === 20), '论语应包含20篇');
+
+
+const classicalQuote = splitClassicText(
+  '曾子曰：“以能问于不能，以多问于寡；有若无，实若虚，犯而不校。昔者吾友尝从事于斯矣。”'
+);
+assert.equal(classicalQuote.length, 1, '完整引语不应被分号拆碎');
+assert.equal(classicalQuote[0].text.startsWith('曾子曰'), true, '不应留下孤立前引号');
+assert.equal(classicalQuote[0].text.endsWith('。'), true, '应以完整句意收束');
+assert.ok(splitClassicText('子曰：“见贤思齐焉，见不贤而内自省也。”')[0].highlights.includes('见贤思齐焉'), '应标注见贤思齐名句');
+assert.ok(splitClassicText('曾子曰：“士不可以不弘毅，任重而道远。”')[0].highlights.includes('士不可以不弘毅'), '应标注士不可以不弘毅名句');
+const longClassicSegments = splitClassicText('甲。'.repeat(120));
+assert.ok(longClassicSegments.length > 1, '超长段落应按完整句意继续分组');
+for (const classic of CLASSICS) {
+  for (const section of classic.sections) {
+    const parsed = splitClassicText(section.text);
+    assert.ok(parsed.length > 0, `${classic.title}·${section.title} 不应解析为空`);
+    for (const segment of parsed) {
+      assert.equal(segment.text.startsWith('"'), false, `${classic.title}·${section.title} 不应留下孤立引号`);
+      assert.equal(segment.text.startsWith('“'), false, `${classic.title}·${section.title} 不应留下孤立引号`);
+      assert.equal(segment.text.endsWith('；'), false, `${classic.title}·${section.title} 不应按分号截断`);
+    }
+  }
+}
+assert.ok(paginateClassicSegments(longClassicSegments, 120, 3).length > 1, '分页应按字符预算而不是固定碎句数');
 
 const wuyan = GENRE_FORMS.诗.find((item) => item.label === '五言绝句')!;
 if (!wuyan) throw new Error('缺少五言绝句格式');

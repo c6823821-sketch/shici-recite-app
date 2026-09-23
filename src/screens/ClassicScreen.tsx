@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CLASSICS } from '../data/classics';
 import { translateClassicSection } from '../services/classicTranslation';
+import { splitClassicText, paginateClassicSegments } from '../services/classicText';
 import { findDictionaryExplanation } from '../services/localDictionary';
 import { explainWithApi } from '../services/api';
 import { loadApiSettings } from '../services/settings';
@@ -17,41 +18,84 @@ interface Props {
   onBack: () => void;
 }
 
-function splitSentences(text: string): string[] {
-  return (text.match(/[^。！？；]+[。！？；]?/g) ?? [text])
-    .map((part) => part.trim())
-    .filter(Boolean);
+interface CharacterSelection {
+  segmentIndex: number;
+  start: number;
+  end: number;
 }
 
-function calculateCharIndexes(line: string, start: number, end: number): { start: number; end: number } {
-  return { start, end };
+function readableTranslationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('还没有配置 API')) {
+    return '还没有配置 API。请到“我的 → API 设置”配置后再生成白话。';
+  }
+  if (message.includes('Failed to fetch') || message.includes('Network request failed')) {
+    return '网络请求失败，请检查手机网络和 API 地址。';
+  }
+  if (message.includes('返回为空')) return 'API 返回了空内容，请稍后重试。';
+  return `白话生成失败：${message}`;
+}
+
+function selectedTextFor(line: string, selection: CharacterSelection): string {
+  return Array.from(line).slice(selection.start, selection.end + 1).join('');
 }
 
 export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectionChange, onBack }: Props) {
   const [page, setPage] = useState(0);
   const [translations, setTranslations] = useState<Record<number, string>>({});
-  const [translationLoading, setTranslationLoading] = useState<number | null>(null);
-  const [translationError, setTranslationError] = useState<number | null>(null);
+  const [openTranslations, setOpenTranslations] = useState<Set<number>>(new Set());
+  const [translationLoading, setTranslationLoading] = useState<Set<number>>(new Set());
+  const [translationErrors, setTranslationErrors] = useState<Record<number, string>>({});
+  const [pageMessage, setPageMessage] = useState('');
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof loadApiSettings>>>(null);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState('');
+  const [selection, setSelection] = useState<CharacterSelection | null>(null);
+  const selectionRef = useRef<CharacterSelection | null>(null);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
   const section = classic && sectionIndex !== undefined ? classic.sections[sectionIndex] : null;
-  const sentences = useMemo(() => section ? splitSentences(section.text) : [], [section]);
-  const pageSize = 6;
-  const pageCount = Math.max(1, Math.ceil(sentences.length / pageSize));
-  const pageStart = page * pageSize;
-  const visibleSentences = sentences.slice(pageStart, pageStart + pageSize);
+  const segments = useMemo(() => (section ? splitClassicText(section.text) : []), [section]);
+  const pages = useMemo(() => paginateClassicSegments(segments), [segments]);
+  const pageCount = Math.max(1, pages.length);
+  const safePage = Math.min(page, pageCount - 1);
+  const visibleSegments = pages[safePage] ?? [];
+  const pageStart = useMemo(
+    () => pages.slice(0, safePage).reduce((total, current) => total + current.length, 0),
+    [pages, safePage],
+  );
+  const visibleIndexes = useMemo(
+    () => visibleSegments.map((_, offset) => pageStart + offset),
+    [pageStart, visibleSegments],
+  );
+  const visibleChars = visibleSegments.reduce((total, item) => total + item.text.length, 0);
+  const allVisibleTranslationsOpen = visibleIndexes.length > 0
+    && visibleIndexes.every((index) => openTranslations.has(index));
+  const visibleTranslationLoading = visibleIndexes.some((index) => translationLoading.has(index));
 
   useEffect(() => {
     setPage(0);
     setTranslations({});
-    setTranslationError(null);
+    setOpenTranslations(new Set());
+    setTranslationErrors({});
+    setPageMessage('');
+    setSelection(null);
+    selectionRef.current = null;
     setExplanation(null);
     setSheetVisible(false);
     loadApiSettings().then(setSettings);
   }, [classic?.id, sectionIndex]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [page, classic?.id, sectionIndex]);
+
+  useEffect(() => () => {
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+  }, []);
 
   if (!classic) {
     return (
@@ -96,87 +140,276 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
     moods: [],
     intro: '',
     source: classic.source,
-    lines: sentences,
+    lines: segments.map((item) => item.text),
     translations: [],
     glossary: [],
   };
 
-  const translateSentence = async (sentenceIndex: number) => {
-    if (translations[sentenceIndex]) return;
-    setTranslationLoading(sentenceIndex);
-    setTranslationError(null);
+  const translateSegment = async (segmentIndex: number, show = true): Promise<boolean> => {
+    const existing = translations[segmentIndex];
+    if (existing) {
+      if (show) setOpenTranslations((current) => new Set(current).add(segmentIndex));
+      return true;
+    }
+
+    const activeSettings = settings ?? await loadApiSettings();
+    if (!settings) setSettings(activeSettings);
+    if (!activeSettings?.endpoint.trim() || !activeSettings.model.trim()) {
+      setTranslationErrors((current) => ({
+        ...current,
+        [segmentIndex]: '还没有配置 API。请到“我的 → API 设置”配置后再生成白话。',
+      }));
+      return false;
+    }
+
+    setTranslationLoading((current) => new Set(current).add(segmentIndex));
+    setTranslationErrors((current) => {
+      const next = { ...current };
+      delete next[segmentIndex];
+      return next;
+    });
     try {
-      const result = await translateClassicSection(settings, `${classic.id}-${sectionIndex}-${sentenceIndex}`, `${classic.title}·${section.title}`, sentences[sentenceIndex]);
-      setTranslations((current) => ({ ...current, [sentenceIndex]: result }));
+      const result = await translateClassicSection(
+        activeSettings,
+        `${classic.id}-${sectionIndex}-${segmentIndex}`,
+        `${classic.title}·${section.title}`,
+        segments[segmentIndex].text,
+      );
+      setTranslations((current) => ({ ...current, [segmentIndex]: result }));
+      if (show) setOpenTranslations((current) => new Set(current).add(segmentIndex));
+      return true;
     } catch (error) {
-      setTranslationError(sentenceIndex);
+      setTranslationErrors((current) => ({
+        ...current,
+        [segmentIndex]: readableTranslationError(error),
+      }));
+      return false;
     } finally {
-      setTranslationLoading(null);
+      setTranslationLoading((current) => {
+        const next = new Set(current);
+        next.delete(segmentIndex);
+        return next;
+      });
     }
   };
 
-  const lookupCharacter = async (sentenceIndex: number, charIndex: number) => {
+  const toggleSegmentTranslation = async (segmentIndex: number) => {
+    if (openTranslations.has(segmentIndex)) {
+      setOpenTranslations((current) => {
+        const next = new Set(current);
+        next.delete(segmentIndex);
+        return next;
+      });
+      return;
+    }
+    await translateSegment(segmentIndex, true);
+  };
+
+  const togglePageTranslations = async () => {
+    setPageMessage('');
+    if (allVisibleTranslationsOpen) {
+      setOpenTranslations((current) => {
+        const next = new Set(current);
+        visibleIndexes.forEach((index) => next.delete(index));
+        return next;
+      });
+      return;
+    }
+
+    const completed: number[] = [];
+    for (const index of visibleIndexes) {
+      const ok = await translateSegment(index, false);
+      if (!ok) {
+        setPageMessage('本页部分白话没有生成，请检查上面的提示后重试。');
+        break;
+      }
+      completed.push(index);
+    }
+    if (completed.length > 0) {
+      setOpenTranslations((current) => new Set([...current, ...completed]));
+    }
+  };
+
+  const lookupRange = async (targetSegmentIndex: number, start: number, end: number) => {
     setSheetVisible(true);
     setLookingUp(true);
     setLookupError('');
     setExplanation(null);
-    const dictionary = findDictionaryExplanation(temporaryWork, sentenceIndex, charIndex, charIndex);
+    const dictionary = findDictionaryExplanation(temporaryWork, targetSegmentIndex, start, end);
     if (!settings?.endpoint.trim() || !settings.model.trim()) {
       if (dictionary) setExplanation(dictionary);
-      else setLookupError('这句字义暂未收录。请先在“我的 → API 设置”配置接口。');
+      else setLookupError('这处字义暂未收录。请先在“我的 → API 设置”配置接口。');
       setLookingUp(false);
       return;
     }
     try {
       const result = await explainWithApi(settings, {
         work: temporaryWork,
-        lineIndex: sentenceIndex,
-        selectionStart: charIndex,
-        selectionEnd: charIndex,
+        lineIndex: targetSegmentIndex,
+        selectionStart: start,
+        selectionEnd: end,
       });
       setExplanation(result);
     } catch (error) {
       if (dictionary) setExplanation(dictionary);
-      else setLookupError(error instanceof Error ? error.message : '查字失败。');
+      else setLookupError(error instanceof Error ? error.message : '查询失败。');
     } finally {
       setLookingUp(false);
     }
   };
 
+  const scheduleLookup = (next: CharacterSelection) => {
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    lookupTimer.current = setTimeout(() => {
+      void lookupRange(next.segmentIndex, next.start, next.end);
+    }, 320);
+  };
+
+  const selectCharacter = (segmentIndexValue: number, charIndex: number) => {
+    const current = selectionRef.current;
+    let next: CharacterSelection;
+
+    if (current?.segmentIndex === segmentIndexValue && charIndex === current.start && charIndex === current.end) {
+      next = current;
+    } else if (
+      current?.segmentIndex === segmentIndexValue
+      && (charIndex === current.start - 1 || charIndex === current.end + 1)
+    ) {
+      next = {
+        segmentIndex: segmentIndexValue,
+        start: Math.min(current.start, charIndex),
+        end: Math.max(current.end, charIndex),
+      };
+    } else {
+      next = { segmentIndex: segmentIndexValue, start: charIndex, end: charIndex };
+    }
+
+    selectionRef.current = next;
+    setSelection(next);
+    scheduleLookup(next);
+  };
+
+  const clearSelection = () => {
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    selectionRef.current = null;
+    setSelection(null);
+  };
+
   return (
     <View style={styles.container}>
       <Header title={classic.title} onBack={() => onSectionChange(undefined)} />
-      <ScrollView contentContainerStyle={styles.reader}>
-        <Text style={styles.readerTitle}>{section.title}</Text>
-        <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
-        {classic.note ? <Text style={styles.note}>{classic.note}</Text> : null}
-        {visibleSentences.map((sentence, offset) => {
-          const sentenceIndex = pageStart + offset;
-          const chars = Array.from(sentence);
-          const translation = translations[sentenceIndex];
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.reader} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <Text style={styles.readerTitle}>{section.title}</Text>
+          <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
+          {classic.note ? <Text style={styles.note}>{classic.note}</Text> : null}
+          <View style={styles.heroRule} />
+          <View style={styles.pageToolbar}>
+            <Pressable
+              onPress={togglePageTranslations}
+              disabled={visibleTranslationLoading}
+              style={[styles.pageTranslateButton, visibleTranslationLoading && styles.disabled]}
+            >
+              {visibleTranslationLoading ? (
+                <ActivityIndicator size="small" color={colors.vermilion} />
+              ) : (
+                <Text style={styles.pageTranslateText}>
+                  {allVisibleTranslationsOpen ? '收起本页白话' : '一键本页白话'}
+                </Text>
+              )}
+            </Pressable>
+            <Text style={styles.pageMeta}>{visibleSegments.length} 段 · 本页 {visibleChars} 字</Text>
+          </View>
+          {pageMessage ? <Text style={styles.pageMessage}>{pageMessage}</Text> : null}
+        </View>
+
+        {visibleSegments.map((segment, offset) => {
+          const segmentIndex = pageStart + offset;
+          const chars = Array.from(segment.text);
+          const translation = translations[segmentIndex];
+          const translationOpen = openTranslations.has(segmentIndex);
+          const isLoading = translationLoading.has(segmentIndex);
+          const isHighlighted = segment.highlights.length > 0;
+          const selectionHere = selection?.segmentIndex === segmentIndex ? selection : null;
+
           return (
-            <View key={`${sentence}-${sentenceIndex}`} style={styles.sentenceBlock}>
+            <View key={`${sectionIndex}-${segmentIndex}-${segment.text.slice(0, 8)}`} style={[styles.segmentBlock, isHighlighted && styles.segmentHighlight]}>
+              {isHighlighted ? (
+                <Text style={styles.highlightLabel}>名句 · {segment.highlights[0]}</Text>
+              ) : null}
               <View style={styles.charRow}>
-                {chars.map((char, charIndex) => (
-                  <Pressable key={`${char}-${charIndex}`} onPress={() => lookupCharacter(sentenceIndex, charIndex)} style={styles.charTouch}>
-                    <Text style={styles.char}>{char}</Text>
-                  </Pressable>
-                ))}
+                {chars.map((char, charIndex) => {
+                  const selectable = /[\u3400-\u9FFF]/.test(char);
+                  const selected = Boolean(
+                    selectionHere
+                    && charIndex >= selectionHere.start
+                    && charIndex <= selectionHere.end,
+                  );
+                  if (!selectable) {
+                    return <Text key={`${char}-${charIndex}`} style={styles.charPunctuation}>{char}</Text>;
+                  }
+                  return (
+                    <Pressable
+                      key={`${char}-${charIndex}`}
+                      onPress={() => selectCharacter(segmentIndex, charIndex)}
+                      style={[styles.charTouch, selected && styles.charTouchSelected]}
+                    >
+                      <Text style={[styles.char, selected && styles.charSelected]}>{char}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-              <Pressable onPress={() => translateSentence(sentenceIndex)} style={styles.sentenceTranslate}>
-                {translationLoading === sentenceIndex ? <ActivityIndicator size="small" color={colors.vermilion} /> : <Text style={styles.sentenceTranslateText}>{translation ? '收起白话' : '查看白话'}</Text>}
-              </Pressable>
-              {translation ? <Text style={styles.sentenceTranslation}>{translation}</Text> : null}
-              {translationError === sentenceIndex ? <Text style={styles.translationError}>这句翻译失败，请检查 API 设置。</Text> : null}
+
+              {selectionHere ? (
+                <View style={styles.selectionBar}>
+                  <Text style={styles.selectionText} numberOfLines={1}>已选：{selectedTextFor(segment.text, selectionHere)}</Text>
+                  <View style={styles.selectionActions}>
+                    <Pressable onPress={() => void lookupRange(segmentIndex, selectionHere.start, selectionHere.end)} style={styles.selectionAction}>
+                      <Text style={styles.selectionActionText}>解释所选</Text>
+                    </Pressable>
+                    <Pressable onPress={clearSelection} style={styles.selectionAction}>
+                      <Text style={styles.selectionActionMuted}>取消</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
+
+              <View style={styles.segmentFooter}>
+                <Pressable onPress={() => void toggleSegmentTranslation(segmentIndex)} style={styles.sentenceTranslate}>
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color={colors.vermilion} />
+                  ) : (
+                    <Text style={styles.sentenceTranslateText}>{translationOpen ? '收起白话' : '查看白话'}</Text>
+                  )}
+                </Pressable>
+                {translationOpen && translation ? (
+                  <View style={styles.translationPanel}>
+                    <Text style={styles.translationLabel}>白话</Text>
+                    <Text style={styles.sentenceTranslation}>{translation}</Text>
+                  </View>
+                ) : null}
+              </View>
+              {translationErrors[segmentIndex] ? (
+                <Text style={styles.translationError}>{translationErrors[segmentIndex]}</Text>
+              ) : null}
             </View>
           );
         })}
+
         <View style={styles.pager}>
-          <Pressable disabled={page === 0} onPress={() => setPage((value) => Math.max(0, value - 1))} style={[styles.pagerButton, page === 0 && styles.disabled]}>
+          <Pressable
+            disabled={safePage === 0}
+            onPress={() => setPage((value) => Math.max(0, value - 1))}
+            style={[styles.pagerButton, safePage === 0 && styles.disabled]}
+          >
             <Text style={styles.pagerText}>上一页</Text>
           </Pressable>
-          <Text style={styles.pagerInfo}>{page + 1} / {pageCount}</Text>
-          <Pressable disabled={page >= pageCount - 1} onPress={() => setPage((value) => Math.min(pageCount - 1, value + 1))} style={[styles.pagerButton, page >= pageCount - 1 && styles.disabled]}>
+          <Text style={styles.pagerInfo}>{safePage + 1} / {pageCount}</Text>
+          <Pressable
+            disabled={safePage >= pageCount - 1}
+            onPress={() => setPage((value) => Math.min(pageCount - 1, value + 1))}
+            style={[styles.pagerButton, safePage >= pageCount - 1 && styles.disabled]}
+          >
             <Text style={styles.pagerText}>下一页</Text>
           </Pressable>
         </View>
@@ -197,7 +430,7 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <View style={styles.header}>
       <Pressable onPress={onBack} style={styles.headerSide}><Text style={styles.backText}>‹ 返回</Text></Pressable>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
       <View style={styles.headerSide} />
     </View>
   );
@@ -216,20 +449,41 @@ const styles = StyleSheet.create({
   directoryHint: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, marginBottom: 12 },
   chapterRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   chapterTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 18 },
-  reader: { padding: spacing.lg, paddingBottom: 100 },
-  readerTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 28, fontWeight: '800' },
+  reader: { paddingHorizontal: spacing.lg, paddingBottom: 110 },
+  hero: { paddingTop: spacing.lg, paddingBottom: 4 },
+  readerTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 30, fontWeight: '800' },
   readerMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 9 },
   note: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 10 },
-  sentenceBlock: { marginTop: spacing.lg, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  charRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  charTouch: { minWidth: 24, minHeight: 38, alignItems: 'center', justifyContent: 'center' },
-  char: { color: colors.ink, fontFamily: fonts.body, fontSize: 20, lineHeight: 32 },
-  sentenceTranslate: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
+  heroRule: { height: 1, backgroundColor: colors.line, marginTop: 18 },
+  pageToolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 14 },
+  pageTranslateButton: { minHeight: 42, minWidth: 126, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, backgroundColor: colors.paperLight },
+  pageTranslateText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  pageMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  pageMessage: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
+  segmentBlock: { marginTop: 24, paddingLeft: 14, paddingRight: 4, borderLeftWidth: 2, borderLeftColor: 'transparent' },
+  segmentHighlight: { borderLeftColor: colors.vermilion, backgroundColor: '#F8F0E3', paddingTop: 13, paddingBottom: 13, paddingRight: 12 },
+  highlightLabel: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, letterSpacing: 1.5, marginBottom: 9 },
+  charRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end' },
+  charTouch: { minWidth: 21, minHeight: 39, alignItems: 'center', justifyContent: 'center' },
+  charTouchSelected: { backgroundColor: '#E8D6C7' },
+  char: { color: colors.ink, fontFamily: fonts.body, fontSize: 20, lineHeight: 34 },
+  charSelected: { color: colors.vermilionDark, fontWeight: '700' },
+  charPunctuation: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 18, lineHeight: 34 },
+  selectionBar: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, paddingTop: 9, marginTop: 8 },
+  selectionText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  selectionActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  selectionAction: { minHeight: 36, minWidth: 86, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  selectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
+  selectionActionMuted: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
+  segmentFooter: { marginTop: 5 },
+  sentenceTranslate: { alignSelf: 'flex-start', minHeight: 34, justifyContent: 'center', paddingVertical: 3 },
   sentenceTranslateText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 12, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 2 },
-  sentenceTranslation: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 8 },
-  translationError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
-  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 28 },
-  pagerButton: { minWidth: 76, minHeight: 40, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  translationPanel: { marginTop: 10, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.line },
+  translationLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, letterSpacing: 2, marginBottom: 5 },
+  sentenceTranslation: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25 },
+  translationError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 11, lineHeight: 18, marginTop: 7 },
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 34 },
+  pagerButton: { minWidth: 82, minHeight: 42, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paperLight },
   pagerText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   pagerInfo: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
   disabled: { opacity: 0.3 },
