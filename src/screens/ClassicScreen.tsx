@@ -1,9 +1,12 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CLASSICS } from '../data/classics';
 import { translateClassicSection } from '../services/classicTranslation';
+import { findDictionaryExplanation } from '../services/localDictionary';
+import { explainWithApi } from '../services/api';
 import { loadApiSettings } from '../services/settings';
-import { Classic } from '../types';
+import { ExplanationSheet } from '../components/ExplanationSheet';
+import { Classic, Explanation, Work } from '../types';
 import { colors, fonts, spacing } from '../theme';
 
 interface Props {
@@ -14,36 +17,40 @@ interface Props {
   onBack: () => void;
 }
 
-function splitParagraphs(text: string): string[] {
-  const lines = text.split(/\n+/).map((part) => part.trim()).filter(Boolean);
-  const result: string[] = [];
-  for (const line of lines) {
-    if (line.length <= 180) result.push(line);
-    else {
-      const pieces = line.match(/[^。！？；]+[。！？；]?/g) ?? [line];
-      result.push(...pieces.map((piece) => piece.trim()).filter(Boolean));
-    }
-  }
-  return result;
+function splitSentences(text: string): string[] {
+  return (text.match(/[^。！？；]+[。！？；]?/g) ?? [text])
+    .map((part) => part.trim())
+    .filter(Boolean);
 }
 
-function cleanText(text: string): string {
-  return text.replace(/[①-⑳㉑-㉟]/g, '').replace(/\\libcirc\{[^}]*\}/g, '').replace(/\s+([，。！？；])/g, '$1');
+function calculateCharIndexes(line: string, start: number, end: number): { start: number; end: number } {
+  return { start, end };
 }
 
 export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectionChange, onBack }: Props) {
-  const [translation, setTranslation] = useState('');
-  const [translationVisible, setTranslationVisible] = useState(false);
-  const [translationLoading, setTranslationLoading] = useState(false);
-  const [translationProgress, setTranslationProgress] = useState(0);
-  const [translationError, setTranslationError] = useState('');
+  const [page, setPage] = useState(0);
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  const [translationLoading, setTranslationLoading] = useState<number | null>(null);
+  const [translationError, setTranslationError] = useState<number | null>(null);
+  const [settings, setSettings] = useState<Awaited<ReturnType<typeof loadApiSettings>>>(null);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState('');
   const section = classic && sectionIndex !== undefined ? classic.sections[sectionIndex] : null;
-  const paragraphs = useMemo(() => section ? splitParagraphs(cleanText(section.text)) : [], [section]);
+  const sentences = useMemo(() => section ? splitSentences(section.text) : [], [section]);
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(sentences.length / pageSize));
+  const pageStart = page * pageSize;
+  const visibleSentences = sentences.slice(pageStart, pageStart + pageSize);
 
   useEffect(() => {
-    setTranslation('');
-    setTranslationVisible(false);
-    setTranslationError('');
+    setPage(0);
+    setTranslations({});
+    setTranslationError(null);
+    setExplanation(null);
+    setSheetVisible(false);
+    loadApiSettings().then(setSettings);
   }, [classic?.id, sectionIndex]);
 
   if (!classic) {
@@ -78,23 +85,61 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
     );
   }
 
-  const toggleTranslation = async () => {
-    if (translationVisible) {
-      setTranslationVisible(false);
+  const temporaryWork: Work = {
+    id: `classic-${classic.id}-${sectionIndex}`,
+    title: `${classic.title}·${section.title}`,
+    author: classic.author,
+    dynasty: classic.category,
+    genre: '典籍',
+    collections: ['典籍', classic.title],
+    themes: ['典籍', classic.category],
+    moods: [],
+    intro: '',
+    source: classic.source,
+    lines: sentences,
+    translations: [],
+    glossary: [],
+  };
+
+  const translateSentence = async (sentenceIndex: number) => {
+    if (translations[sentenceIndex]) return;
+    setTranslationLoading(sentenceIndex);
+    setTranslationError(null);
+    try {
+      const result = await translateClassicSection(settings, `${classic.id}-${sectionIndex}-${sentenceIndex}`, `${classic.title}·${section.title}`, sentences[sentenceIndex]);
+      setTranslations((current) => ({ ...current, [sentenceIndex]: result }));
+    } catch (error) {
+      setTranslationError(sentenceIndex);
+    } finally {
+      setTranslationLoading(null);
+    }
+  };
+
+  const lookupCharacter = async (sentenceIndex: number, charIndex: number) => {
+    setSheetVisible(true);
+    setLookingUp(true);
+    setLookupError('');
+    setExplanation(null);
+    const dictionary = findDictionaryExplanation(temporaryWork, sentenceIndex, charIndex, charIndex);
+    if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      if (dictionary) setExplanation(dictionary);
+      else setLookupError('这句字义暂未收录。请先在“我的 → API 设置”配置接口。');
+      setLookingUp(false);
       return;
     }
-    setTranslationVisible(true);
-    if (translation) return;
-    setTranslationLoading(true);
-    setTranslationError('');
     try {
-      const settings = await loadApiSettings();
-      const result = await translateClassicSection(settings, `${classic.id}-${sectionIndex}`, `${classic.title}·${section.title}`, cleanText(section.text), setTranslationProgress);
-      setTranslation(result);
+      const result = await explainWithApi(settings, {
+        work: temporaryWork,
+        lineIndex: sentenceIndex,
+        selectionStart: charIndex,
+        selectionEnd: charIndex,
+      });
+      setExplanation(result);
     } catch (error) {
-      setTranslationError(error instanceof Error ? error.message : '翻译失败。');
+      if (dictionary) setExplanation(dictionary);
+      else setLookupError(error instanceof Error ? error.message : '查字失败。');
     } finally {
-      setTranslationLoading(false);
+      setLookingUp(false);
     }
   };
 
@@ -105,14 +150,45 @@ export function ClassicScreen({ classic, sectionIndex, onClassicChange, onSectio
         <Text style={styles.readerTitle}>{section.title}</Text>
         <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
         {classic.note ? <Text style={styles.note}>{classic.note}</Text> : null}
-        <Pressable onPress={toggleTranslation} style={styles.translateButton}>
-          <Text style={styles.translateButtonText}>{translationLoading ? `正在翻译 ${Math.round(translationProgress * 100)}%` : translationVisible ? '收起白话' : '查看白话翻译'}</Text>
-        </Pressable>
-        {translationError ? <Text style={styles.translationError}>{translationError}</Text> : null}
-        {translationVisible && translation ? <Text style={styles.translation}>{translation}</Text> : null}
-        {paragraphs.map((paragraph, index) => <Text key={`${paragraph}-${index}`} style={styles.readerText}>{paragraph}</Text>)}
+        {visibleSentences.map((sentence, offset) => {
+          const sentenceIndex = pageStart + offset;
+          const chars = Array.from(sentence);
+          const translation = translations[sentenceIndex];
+          return (
+            <View key={`${sentence}-${sentenceIndex}`} style={styles.sentenceBlock}>
+              <View style={styles.charRow}>
+                {chars.map((char, charIndex) => (
+                  <Pressable key={`${char}-${charIndex}`} onPress={() => lookupCharacter(sentenceIndex, charIndex)} style={styles.charTouch}>
+                    <Text style={styles.char}>{char}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Pressable onPress={() => translateSentence(sentenceIndex)} style={styles.sentenceTranslate}>
+                {translationLoading === sentenceIndex ? <ActivityIndicator size="small" color={colors.vermilion} /> : <Text style={styles.sentenceTranslateText}>{translation ? '收起白话' : '查看白话'}</Text>}
+              </Pressable>
+              {translation ? <Text style={styles.sentenceTranslation}>{translation}</Text> : null}
+              {translationError === sentenceIndex ? <Text style={styles.translationError}>这句翻译失败，请检查 API 设置。</Text> : null}
+            </View>
+          );
+        })}
+        <View style={styles.pager}>
+          <Pressable disabled={page === 0} onPress={() => setPage((value) => Math.max(0, value - 1))} style={[styles.pagerButton, page === 0 && styles.disabled]}>
+            <Text style={styles.pagerText}>上一页</Text>
+          </Pressable>
+          <Text style={styles.pagerInfo}>{page + 1} / {pageCount}</Text>
+          <Pressable disabled={page >= pageCount - 1} onPress={() => setPage((value) => Math.min(pageCount - 1, value + 1))} style={[styles.pagerButton, page >= pageCount - 1 && styles.disabled]}>
+            <Text style={styles.pagerText}>下一页</Text>
+          </Pressable>
+        </View>
         <Text style={styles.source}>来源：{classic.source}</Text>
       </ScrollView>
+      <ExplanationSheet
+        visible={sheetVisible}
+        loading={lookingUp}
+        error={lookupError}
+        explanation={explanation}
+        onClose={() => setSheetVisible(false)}
+      />
     </View>
   );
 }
@@ -144,10 +220,18 @@ const styles = StyleSheet.create({
   readerTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 28, fontWeight: '800' },
   readerMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 9 },
   note: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 10 },
-  translateButton: { minHeight: 46, marginTop: spacing.lg, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
-  translateButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
-  translationError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
-  translation: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 16, lineHeight: 28, marginTop: 14, padding: 14, backgroundColor: colors.paperDeep },
-  readerText: { color: colors.ink, fontFamily: fonts.body, fontSize: 19, lineHeight: 34, marginTop: 18 },
+  sentenceBlock: { marginTop: spacing.lg, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  charRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  charTouch: { minWidth: 24, minHeight: 38, alignItems: 'center', justifyContent: 'center' },
+  char: { color: colors.ink, fontFamily: fonts.body, fontSize: 20, lineHeight: 32 },
+  sentenceTranslate: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
+  sentenceTranslateText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 12, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 2 },
+  sentenceTranslation: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 8 },
+  translationError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 28 },
+  pagerButton: { minWidth: 76, minHeight: 40, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  pagerText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
+  pagerInfo: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
+  disabled: { opacity: 0.3 },
   source: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, lineHeight: 18, marginTop: 36 },
 });
