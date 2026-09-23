@@ -1,4 +1,5 @@
 ﻿import { ApiSettings, Work } from '../types';
+import { correctKnownImportedWork } from '../data/corrections';
 
 interface RemoteShape {
   found?: boolean;
@@ -25,7 +26,12 @@ function parse(text: string): RemoteShape {
 }
 
 function normalize(value: string): string {
-  return value.replace(/[唯惟]/g, '惟').replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
+  return value
+    .replace(/[\s\u3000\uff0c\u3002\uff01\uff1f\uff1b\uff1a\u3001,.!?;:'\"\u201c\u201d\u2018\u2019\u300a\u300b\u3008\u3009()\uff08\uff09]/g, '')
+    .replace(/\u6545\u4eba\u4eca\u4e0d\u5728/g, '\u6545\u4eba\u4eca\u5728\u5426')
+    .replace(/\u585e\u6c99/g, '\u5bd2\u6c99')
+    .replace(/\u7cfb\u821f/g, '\u7cfb\u8239')
+    .replace(/[\u552f\u60df]/g, '\u60df');
 }
 
 export async function lookupRemoteWork(query: string, settings: ApiSettings): Promise<Work> {
@@ -61,7 +67,7 @@ export async function lookupRemoteWork(query: string, settings: ApiSettings): Pr
     throw new Error('API 返回的原文不包含你搜索的原句，已拒绝写入。');
   }
   const matched = Number.isInteger(parsed.matched_line_index) ? Number(parsed.matched_line_index) : 0;
-  return {
+  const work: Work = {
     id: `remote-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     title: parsed.title.trim(),
     author: parsed.author.trim(),
@@ -78,4 +84,5 @@ export async function lookupRemoteWork(query: string, settings: ApiSettings): Pr
     order: 50000 + Date.now() % 100000,
     imported: true,
   };
+  return correctKnownImportedWork(work);
 }

@@ -1,5 +1,6 @@
 import { Work } from '../types';
 import { CORPUS_WORKS } from './corpus';
+import { CORRECTED_WORKS, correctKnownImportedWork } from './corrections';
 import { MODERN_WORKS } from './modern';
 import { LISAO_GLOSSARY, LISAO_LINES } from './lisao';
 
@@ -719,7 +720,8 @@ function sanitizeWork(work: Work): Work {
     })),
   };
 }
-export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS]
+export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS, ...CORRECTED_WORKS]
+  .map(correctKnownImportedWork)
   .map(sanitizeWork)
   .map(splitCiClauses)
   .map((work) => {

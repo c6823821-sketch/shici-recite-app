@@ -10,6 +10,7 @@ import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 import { CLASSICS } from '../src/data/classics';
 import { splitClassicText, paginateClassicSegments } from '../src/services/classicText';
+import { canonicalWorkKey, correctKnownImportedWork, CORRECTED_WORKS, normalizeWorkTitle, TANGDUOLING_LINES } from '../src/data/corrections';
 
 assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('诗经')).length >= 300, '诗经应至少包含 300 篇');
@@ -22,6 +23,31 @@ assert.ok(CLASSICS.some((item) => item.title === '美美与共' && item.author =
 assert.ok(CLASSICS.some((item) => item.title === '卖油翁' && item.sections.some((section) => section.text.includes('惟手熟尔'))), '应补充卖油翁及惟手熟尔');
 assert.ok(CLASSICS.some((item) => item.title === '道德经' && item.sections.length === 81), '道德经应包含81章');
 assert.ok(CLASSICS.some((item) => item.title === '论语' && item.sections.length === 20), '论语应包含20篇');
+const correctedTangDuoling = correctKnownImportedWork({
+  ...CORRECTED_WORKS[0],
+  id: 'legacy-tang-duoling',
+  title: '糖多令·唐多令',
+  lines: [
+    '芦叶满汀洲，',
+    '塞沙带浅流。',
+    '故人今不在。',
+  ],
+});
+assert.equal(correctedTangDuoling.title, '唐多令', '糖多令应修正为唐多令');
+assert.equal(correctedTangDuoling.lines.includes('故人今在否？'), true, '应修正故人今在否');
+assert.equal(correctedTangDuoling.lines.includes('塞沙带浅流。'), false, '应修正塞沙为寒沙');
+assert.equal(canonicalWorkKey(correctedTangDuoling), canonicalWorkKey({ ...correctedTangDuoling, title: '糖多令·唐多令' }), '修正后的篇目应可去重');
+assert.equal(WORKS.some((work) => normalizeWorkTitle(work.title) === '唐多令' && work.author === '刘过'), true, '内置库应包含校订后的唐多令');
+assert.equal(WORKS.some((work) => work.title.includes('糖多令')), false, '内置库不应再出现糖多令');
+assert.equal(WORKS.some((work) => work.lines.some((line) => line.includes('故人今不在'))), false, '全库不应再出现故人今不在');
+assert.equal(WORKS.some((work) => work.lines.some((line) => line.includes('塞沙带浅流'))), false, '全库不应再出现塞沙带浅流');
+assert.equal(WORKS.some((work) => work.lines.some((line) => line.includes('柳下系舟犹未稳'))), false, '全库不应再出现柳下系舟犹未稳');
+
+const correctedLiuGuo = WORKS.find((work) => normalizeWorkTitle(work.title) === '唐多令' && work.author === '刘过' && work.lines[0]?.includes('芦叶满汀洲'));
+assert.ok(correctedLiuGuo, '内置库应包含刘过的唐多令');
+assert.deepEqual(correctedLiuGuo.lines, TANGDUOLING_LINES, '刘过唐多令应使用校订文本');
+
+
 
 
 const classicalQuote = splitClassicText(
