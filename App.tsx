@@ -41,7 +41,7 @@ export default function App() {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (screen === 'reader') {
+      if (screen === 'reader' || screen === 'classic') {
         setScreen('tabs');
         return true;
       }

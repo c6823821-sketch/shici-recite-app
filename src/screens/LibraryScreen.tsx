@@ -96,9 +96,10 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     if (needle.length < 2) return [];
     return CLASSICS.flatMap((classic) =>
       classic.sections
-        .filter((section) => normalizeSearch(classic.title).includes(needle) || normalizeSearch(section.title).includes(needle) || normalizeSearch(section.text).includes(needle))
+        .map((section, sectionIndex) => ({ section, sectionIndex }))
+        .filter(({ section }) => normalizeSearch(classic.title).includes(needle) || normalizeSearch(section.title).includes(needle) || normalizeSearch(section.text).includes(needle))
         .slice(0, 2)
-        .map((section) => ({ classic, section })),
+        .map(({ section, sectionIndex }) => ({ classic, section, sectionIndex })),
     ).slice(0, 10);
   }, [allWorks, query]);
 
@@ -203,7 +204,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             <View style={styles.classicResults}>
               <Text style={styles.classicResultsTitle}>典籍 / 名句补充 · 与诗词分开</Text>
               {matchedClassics.map((item, index) => (
-                <Pressable key={`${item.classic.id}-${index}`} onPress={() => onOpenClassic(item.classic)} style={styles.classicResultRow}>
+                <Pressable key={`${item.classic.id}-${index}`} onPress={() => onOpenClassic(item.classic, item.sectionIndex)} style={styles.classicResultRow}>
                   <Text style={styles.classicResultTitle}>《{item.classic.title}》· {item.section.title}</Text>
                   <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
                   <Text style={styles.classicResultAuthor}>{item.classic.author} · {item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
