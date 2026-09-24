@@ -75,7 +75,7 @@ export interface DailyRecommendation {
   reason: string;
   moodTags: string[];
   confidence: Confidence;
-  source: 'random' | 'api';
+  source: 'random' | 'local' | 'api';
 }
 
 export interface ClassicSection {

@@ -30,11 +30,13 @@ function dateKey(date = new Date()): string {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
-function calendarContext(date = new Date()): DiscoveryContext {
+export function calendarContext(date = new Date()): DiscoveryContext {
   const solar = Solar.fromDate(date);
   const lunar = solar.getLunar();
   const festivals = [...solar.getFestivals(), ...lunar.getFestivals()];
   const jieQi = lunar.getJieQi();
+  const lunarMonth = lunar.getMonth();
+  const lunarDay = lunar.getDay();
   const month = date.getMonth() + 1;
   const season = month >= 3 && month <= 5
     ? { title: '春日应景', themes: ['春'], keywords: ['春', '花', '东风', '新绿'] }
@@ -44,11 +46,12 @@ function calendarContext(date = new Date()): DiscoveryContext {
         ? { title: '秋日应景', themes: ['秋'], keywords: ['秋', '月', '西风', '落叶', '霜'] }
         : { title: '冬日应景', themes: ['冬'], keywords: ['冬', '雪', '寒', '梅花'] };
 
-  if (festivals.includes('中秋节')) return { title: '中秋应景', reason: '今日中秋，适合读月色、团圆与思念。', themes: ['中秋', '月亮', '思念', '亲情'], keywords: ['月', '中秋', '团圆', '婵娟'] };
+  if (festivals.some((festival) => festival.includes('中秋')) || (lunarMonth === 8 && lunarDay === 15)) return { title: '中秋应景', reason: '今日中秋，适合读月色、团圆与思念。', themes: ['中秋', '月亮', '思念', '亲情', '秋'], keywords: ['月', '中秋', '团圆', '婵娟', '秋'] };
   if (festivals.includes('国庆节')) return { title: '国庆应景', reason: '今日国庆，适合读山河、家国与壮阔气象。', themes: ['爱国', '怀古', '山河'], keywords: ['山河', '神州', '国', '万里'] };
   if (festivals.includes('重阳节')) return { title: '重阳应景', reason: '今日重阳，适合读登高、秋色与思乡。', themes: ['重阳', '秋', '思乡'], keywords: ['重阳', '登高', '菊', '秋'] };
   if (festivals.includes('元宵节')) return { title: '元宵应景', reason: '今日元宵，适合读灯火、相逢与春夜。', themes: ['元宵', '相聚', '爱情'], keywords: ['灯', '月', '相逢', '春'] };
   if (festivals.includes('七夕节')) return { title: '七夕应景', reason: '今日七夕，适合读相思、星河与相逢。', themes: ['七夕', '爱情', '相思'], keywords: ['星河', '相思', '织女', '月'] };
+  if (String(jieQi).includes('秋分')) return { title: '秋分应景', reason: '今日秋分，适合读秋色、清凉与岁时变化。', themes: ['秋分', '秋', '思乡', '怀人'], keywords: ['秋分', '秋', '燕', '月', '凉'] };
   if (festivals.includes('清明节') || jieQi === '清明') return { title: '清明应景', reason: '今日清明，适合读春景、追思与怀念。', themes: ['清明', '春', '思念'], keywords: ['清明', '春', '柳', '雨'] };
   if (jieQi === '冬至') return { title: '冬至应景', reason: '今日冬至，适合读冬日、归家与亲情。', themes: ['冬', '思乡', '亲情'], keywords: ['冬', '雪', '寒', '归'] };
   return { title: season.title, reason: `今天属于${season.title.replace('应景', '')}，给你挑几句相近的句子。`, themes: season.themes, keywords: season.keywords };
@@ -105,7 +108,7 @@ async function enrichWithApi(settings: ApiSettings, context: DiscoveryContext): 
 }
 
 export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: Work[]): Promise<DailyDiscovery> {
-  const key = `daily_discovery_${dateKey()}`;
+  const key = `daily_discovery_v2_${dateKey()}`;
   const cached = await getStoredValue(key);
   if (cached) {
     try { return JSON.parse(cached) as DailyDiscovery; } catch { /* regenerate */ }

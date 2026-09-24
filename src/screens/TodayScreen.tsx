@@ -31,18 +31,33 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   useEffect(() => {
     loadWorksCatalog().then((catalogValue) => {
       setCatalog(catalogValue);
-      loadApiSettings().then((value) => {
+      loadApiSettings().then(async (value) => {
         setSettings(value);
-        loadDailyDiscovery(value, catalogValue).then(setDiscovery);
-      });
-      loadTodayRecommendation().then((saved) => {
-        if (saved) {
+        const discoveryValue = await loadDailyDiscovery(value, catalogValue);
+        setDiscovery(discoveryValue);
+        const saved = await loadTodayRecommendation();
+        const seasonalItem = discoveryValue.items[0];
+        const savedMatchesSeason = saved && discoveryValue.items.some(
+          (item) => item.workId === saved.workId && item.lineIndex === saved.lineIndex,
+        );
+        const seasonal = seasonalItem
+          ? {
+              workId: seasonalItem.workId,
+              lineIndex: seasonalItem.lineIndex,
+              quote: seasonalItem.quote,
+              reason: discoveryValue.reason,
+              moodTags: discoveryValue.interests?.length ? discoveryValue.interests : [discoveryValue.title],
+              confidence: 'high' as const,
+              source: 'local' as const,
+            }
+          : null;
+        if (savedMatchesSeason && saved) {
           setDaily(saved);
-        } else {
-          const next = randomRecommendation(catalogValue);
-          setDaily(next);
-          void saveTodayRecommendation(next);
+          return;
         }
+        const next = seasonal ?? randomRecommendation(catalogValue);
+        setDaily(next);
+        void saveTodayRecommendation(next);
       });
     });
     loadDailyGoal().then(setGoal);

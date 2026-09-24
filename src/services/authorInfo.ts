@@ -57,6 +57,15 @@ const LOCAL_AUTHORS: Record<string, Omit<AuthorInfo, 'name' | 'source'>> = {
   },
 };
 
+function safeCacheKey(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${CACHE_PREFIX}${(hash >>> 0).toString(36)}`;
+}
+
 function endpointUrl(endpoint: string): string {
   const value = endpoint.trim();
   if (!value) return '';
@@ -83,7 +92,7 @@ export async function loadAuthorInfo(settings: ApiSettings | null, author: strin
   const local = LOCAL_AUTHORS[name];
   if (local) return { name, ...local, source: 'local' };
 
-  const cacheKey = `${CACHE_PREFIX}${name}`;
+  const cacheKey = safeCacheKey(name);
   const cached = await getStoredValue(cacheKey);
   if (cached) {
     try {
