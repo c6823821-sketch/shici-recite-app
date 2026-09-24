@@ -15,6 +15,7 @@ export interface UpdateInfo {
   size: number;
   releaseUrl: string;
   notes: string;
+  downloadUrls?: string[];
 }
 
 interface Manifest {
@@ -23,6 +24,7 @@ interface Manifest {
   size?: number;
   releaseUrl?: string;
   notes?: string;
+  downloadUrls?: string[];
 }
 
 function normalizeVersion(value: string): number[] {
@@ -54,6 +56,7 @@ async function fetchManifest(): Promise<UpdateInfo | null> {
     size: typeof data.size === 'number' ? data.size : 0,
     releaseUrl: data.releaseUrl ?? `https://github.com/${OWNER}/${REPO}/releases/tag/v${version}`,
     notes: data.notes ?? '',
+    downloadUrls: Array.isArray(data.downloadUrls) ? data.downloadUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('http')) : undefined,
   };
 }
 
@@ -71,6 +74,7 @@ async function fetchLatestPage(): Promise<UpdateInfo> {
     size: 0,
     releaseUrl: response.url,
     notes: '',
+    downloadUrls: [`https://github.com/${OWNER}/${REPO}/releases/download/v${version}/${APK_PREFIX}v${version}.apk`],
   };
 }
 
@@ -93,32 +97,47 @@ export async function downloadAndInstallUpdate(
   update: UpdateInfo,
   onProgress: (progress: number) => void,
 ): Promise<void> {
-  if (Platform.OS !== 'android') throw new Error('\u5e94\u7528\u5185\u5b89\u88c5\u53ea\u652f\u6301 Android\u3002');
-  if (!FileSystem.cacheDirectory) throw new Error('\u624b\u673a\u7f13\u5b58\u76ee\u5f55\u4e0d\u53ef\u7528\u3002');
+  if (Platform.OS !== 'android') throw new Error('应用内安装只支持 Android。');
+  if (!FileSystem.cacheDirectory) throw new Error('手机缓存目录不可用。');
+  const urls = update.downloadUrls?.length ? update.downloadUrls : [update.downloadUrl];
   const target = `${FileSystem.cacheDirectory}${APK_PREFIX}${update.version}.apk`;
-  let file = await FileSystem.getInfoAsync(target);
-  const fileSize = 'size' in file ? (file.size ?? 0) : 0;
-  const incomplete = update.size > 0 && fileSize < update.size * 0.98;
-  if (!file.exists || incomplete) {
-    if (file.exists) await FileSystem.deleteAsync(target, { idempotent: true });
-    const task = FileSystem.createDownloadResumable(
-      update.downloadUrl,
-      target,
-      {},
-      (progress) => {
-        if (progress.totalBytesExpectedToWrite > 0) {
-          onProgress(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
-        }
-      },
-    );
-    const result = await task.downloadAsync();
-    if (!result?.uri) throw new Error('APK \u4e0b\u8f7d\u5931\u8d25\u3002');
-    file = await FileSystem.getInfoAsync(result.uri);
-    if (!file.exists) throw new Error('APK \u4e0b\u8f7d\u5b8c\u6210\u540e\u6587\u4ef6\u4e0d\u5b58\u5728\u3002');
-    await openInstaller(result.uri);
-    return;
+  let lastError: unknown = null;
+
+  for (const url of urls) {
+    try {
+      let file = await FileSystem.getInfoAsync(target);
+      const currentSize = 'size' in file ? (file.size ?? 0) : 0;
+      const existingComplete = file.exists && (update.size === 0 || currentSize === update.size);
+      if (!existingComplete) {
+        if (file.exists) await FileSystem.deleteAsync(target, { idempotent: true });
+        const task = FileSystem.createDownloadResumable(
+          url,
+          target,
+          {},
+          (progress) => {
+            if (progress.totalBytesExpectedToWrite > 0) {
+              onProgress(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
+            }
+          },
+        );
+        const result = await task.downloadAsync();
+        if (!result?.uri) throw new Error('APK 下载失败。');
+        file = await FileSystem.getInfoAsync(result.uri);
+      }
+      const finalSize = 'size' in file ? (file.size ?? 0) : 0;
+      if (!file.exists || (update.size > 0 && finalSize !== update.size)) {
+        throw new Error(`APK 下载不完整（${finalSize}/${update.size || '?'}）。`);
+      }
+      await openInstaller(target);
+      return;
+    } catch (error) {
+      lastError = error;
+      const file = await FileSystem.getInfoAsync(target);
+      if (file.exists) await FileSystem.deleteAsync(target, { idempotent: true });
+    }
   }
-  await openInstaller(target);
+
+  throw new Error(`所有下载线路都失败：${lastError instanceof Error ? lastError.message : '网络中断'}`);
 }
 
 async function openInstaller(fileUri: string): Promise<void> {
