@@ -14,7 +14,7 @@ import { loadWorksCatalog } from '../data/worksCatalog';
 import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
 import { lookupRemoteWork } from '../services/remoteLookup';
-import { canonicalWorkKey } from '../data/corrections';
+import { canonicalWorkContentKey, canonicalWorkKey } from '../data/corrections';
 import { loadApiSettings } from '../services/settings';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
@@ -64,10 +64,13 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
   const allWorks = useMemo(() => {
     const seen = new Set<string>();
+    const seenContent = new Set<string>();
     return [...catalog, ...importedWorks].filter((work) => {
       const key = canonicalWorkKey(work);
-      if (seen.has(key)) return false;
+      const contentKey = canonicalWorkContentKey(work);
+      if (seen.has(key) || seenContent.has(contentKey)) return false;
       seen.add(key);
+      seenContent.add(contentKey);
       return true;
     });
   }, [catalog, importedWorks]);
@@ -236,7 +239,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           </View>
         ) : null}
 
-        <View style={styles.quickGrid}>
+        {!query.trim() ? <View style={styles.quickGrid}>
           {QUICK_THEMES.map((theme) => {
             const active = filters.themes.includes(theme);
             return (
@@ -254,7 +257,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 </Pressable>
             );
           })}
-        </View>
+        </View> : null}
 
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{resultTitle}</Text>
@@ -383,20 +386,20 @@ const styles = StyleSheet.create({
   clearChip: { minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 },
   clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   listView: { flex: 1 },
-  list: { paddingBottom: 130 },
+  list: { paddingBottom: 190 },
   classicStrip: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 8 },
   classicStripLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11 },
   classicChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 10, justifyContent: 'center' },
   classicChipText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
   classicResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   classicResultsTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  classicResultRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  classicResultRow: { marginHorizontal: spacing.lg, paddingVertical: 13, paddingHorizontal: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   classicResultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   classicResultSnippet: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 5 },
   classicResultAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
   quoteResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  quoteRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  quoteRow: { marginHorizontal: spacing.lg, paddingVertical: 14, paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, backgroundColor: colors.paperLight },
   quoteLine: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 25 },
   quoteTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 7 },
   quoteAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 3 },
