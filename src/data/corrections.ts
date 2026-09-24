@@ -59,6 +59,11 @@ export function normalizeWorkTitle(value: string): string {
     .replace(/\u7cd6/g, '\u5510');
 }
 
+export function canonicalWorkContentKey(work: Work): string {
+  const opening = chineseOnly(work.lines.slice(0, 2).join('')).slice(0, 16);
+  return `${work.author.trim()}|${opening}`;
+}
+
 export function canonicalWorkKey(work: Work): string {
   const opening = chineseOnly(work.lines.slice(0, 2).join('')).slice(0, 12);
   return `${normalizeWorkTitle(work.title)}|${work.author.trim()}|${opening}`;
