@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.8.2.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.8.3.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v2.8.2
-          path: shici-recite-app-v2.8.2.apk
+          name: shici-recite-app-v2.8.3
+          path: shici-recite-app-v2.8.3.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.8.2
-          name: 诗词背诵 v2.8.2
+          tag_name: v2.8.3
+          name: 诗词背诵 v2.8.3
           body: |
             诗词背诵 Android 测试版。
 
-            修正诗库列表分隔符与箭头显示；Android 启动闪屏改为宣纸色，减少进入时的黑屏。
+            修复应用内检查更新的 403：改为读取静态版本清单，并保留 Releases 页面兜底。之后可直接在应用内下载并唤起系统安装器。
 
             此版本是自包含 release APK，安装后无需连接电脑。
-          files: shici-recite-app-v2.8.2.apk
+          files: shici-recite-app-v2.8.3.apk
           make_latest: true
 
