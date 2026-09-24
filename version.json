@@ -1,7 +1,13 @@
 {
-  "version": "2.8.4",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.4/shici-recite-app-v2.8.4.apk",
-  "size": 80416381,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v2.8.4",
-  "notes": "作者资料、启动闪屏与应景推荐修复版"
+  "version": "2.8.5",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.5/shici-recite-app-v2.8.5.apk",
+  "downloadUrls": [
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.5/shici-recite-app-v2.8.5.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.5/shici-recite-app-v2.8.5.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.5/shici-recite-app-v2.8.5.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.5/shici-recite-app-v2.8.5.apk"
+  ],
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v2.8.5",
+  "notes": "下载完整性与备用线路修复版"
 }

@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.8.4.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.8.5.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v2.8.4
-          path: shici-recite-app-v2.8.4.apk
+          name: shici-recite-app-v2.8.5
+          path: shici-recite-app-v2.8.5.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.8.4
-          name: 诗词背诵 v2.8.4
+          tag_name: v2.8.5
+          name: 诗词背诵 v2.8.5
           body: |
             诗词背诵 Android 测试版。
 
-            修复作者简介的 SecureStore 缓存错误，作者资料可正常回退到 API；推荐优先使用当天节日、节气候选；进一步减少 Android 启动黑屏。
+            修复应用内下载不完整导致的“安装包已损坏”：下载完成后校验文件大小，失败会自动切换 GitHub 加速线路。
 
             此版本是自包含 release APK，安装后无需连接电脑。
-          files: shici-recite-app-v2.8.4.apk
+          files: shici-recite-app-v2.8.5.apk
           make_latest: true
 
