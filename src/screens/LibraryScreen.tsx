@@ -322,10 +322,10 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 <View style={styles.workCopy}>
                   <Text style={styles.workTitle}>{item.work.title}</Text>
                   <Text style={styles.workAuthor}>{item.work.author}{item.work.imported ? ' · API补录待校对' : ''}</Text>
-                  <Text style={styles.workMeta}>{item.work.dynasty} ? {item.work.genre} ? {item.work.collections.slice(0, 2).join(' / ')}</Text>
+                  <Text style={styles.workMeta}>{item.work.dynasty} · {item.work.genre} · {item.work.collections.slice(0, 2).join(' / ')}</Text>
                   <Text style={styles.workTags}>{item.work.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
                 </View>
-                <Text style={styles.arrow}>?</Text>
+                <Text style={styles.arrow}>›</Text>
               </Pressable>
             </View>
           );
