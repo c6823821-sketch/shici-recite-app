@@ -11,6 +11,8 @@ interface RemoteShape {
   matched_line_index?: number;
   confidence?: string;
   note?: string;
+  text_scope?: string;
+  full_text?: boolean;
 }
 
 function endpointUrl(endpoint: string): string {
@@ -42,11 +44,11 @@ export async function lookupRemoteWork(query: string, settings: ApiSettings): Pr
     body: JSON.stringify({
       model: settings.model,
       temperature: 0.1,
-      max_tokens: 2800,
+      max_tokens: 8000,
       messages: [
         {
           role: 'system',
-          content: '你是古籍检索助手。用户给你一句诗词或古文。若你能确定出处，只返回 JSON；不能确定就返回 {"found":false}。禁止编造。JSON 格式：{"found":true,"title":"篇名","author":"作者","dynasty":"朝代","genre":"诗|词|曲|文|典籍","lines":["原文按句分行"],"matched_line_index":0,"confidence":"high|medium|low","note":"简短说明"}。必须保证原文库包含用户给出的原句。',
+          content: '你是古籍检索助手。用户给你一句诗词或古文。若你能确定出处，只返回 JSON；不能确定就返回 {"found":false}。禁止编造。JSON 格式：{"found":true,"title":"篇名","author":"作者","dynasty":"朝代","genre":"诗|词|曲|文|典籍","lines":["原文按句分行"],"matched_line_index":0,"confidence":"high|medium|low","note":"简短说明"}。必须保证原文库包含用户给出的原句。若用户给的是篇名，必须返回该篇完整原文；若给的是名句，必须返回该句所属篇目的完整原文。不能只返回搜索句或摘录。JSON 必须额外包含 "text_scope":"full" 和 "full_text":true。',
         },
         { role: 'user', content: JSON.stringify({ query }) },
       ],
@@ -63,8 +65,18 @@ export async function lookupRemoteWork(query: string, settings: ApiSettings): Pr
     : [];
   if (!parsed.title || !parsed.author || !lines.length) throw new Error('API 返回的篇目信息不完整。');
   const normalizedQuery = normalize(query);
-  if (!lines.some((line) => normalize(line).includes(normalizedQuery))) {
-    throw new Error('API 返回的原文不包含你搜索的原句，已拒绝写入。');
+  const normalizedTitle = normalize(parsed.title);
+  const queryMatchesTitle = normalizedTitle.includes(normalizedQuery)
+    || normalizedQuery.includes(normalizedTitle)
+    || (normalizedTitle.length >= 2 && normalizedQuery.length >= 2
+      && (normalizedTitle.startsWith(normalizedQuery) || normalizedQuery.startsWith(normalizedTitle)));
+  const queryMatchesLine = lines.some((line) => normalize(line).includes(normalizedQuery));
+  if (!queryMatchesTitle && !queryMatchesLine) {
+    throw new Error('API 返回的原文不包含你搜索的原句或篇名，已拒绝写入。');
+  }
+  const fullText = parsed.text_scope === 'full' || parsed.full_text === true || lines.length >= 2;
+  if (!fullText) {
+    throw new Error('API 只返回了摘句，没有返回所属篇目的完整原文，已拒绝写入。');
   }
   const matched = Number.isInteger(parsed.matched_line_index) ? Number(parsed.matched_line_index) : 0;
   const work: Work = {

@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
-import { WORKS } from '../data/works';
+import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
 import { DailyDiscovery, loadDailyDiscovery } from '../services/dailyDiscovery';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
@@ -26,35 +26,39 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [todayRecords, setTodayRecords] = useState<StudyRecord[]>([]);
   const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
+  const [catalog, setCatalog] = useState<Work[]>([]);
 
   useEffect(() => {
-    loadApiSettings().then((value) => {
-      setSettings(value);
-      loadDailyDiscovery(value).then(setDiscovery);
+    loadWorksCatalog().then((catalogValue) => {
+      setCatalog(catalogValue);
+      loadApiSettings().then((value) => {
+        setSettings(value);
+        loadDailyDiscovery(value, catalogValue).then(setDiscovery);
+      });
+      loadTodayRecommendation().then((saved) => {
+        if (saved) {
+          setDaily(saved);
+        } else {
+          const next = randomRecommendation(catalogValue);
+          setDaily(next);
+          void saveTodayRecommendation(next);
+        }
+      });
     });
     loadDailyGoal().then(setGoal);
     loadDueRecords().then(setRecords);
     loadTodayRecords().then(setTodayRecords);
-    loadTodayRecommendation().then((saved) => {
-      if (saved) {
-        setDaily(saved);
-      } else {
-        const next = randomRecommendation(WORKS);
-        setDaily(next);
-        void saveTodayRecommendation(next);
-      }
-    });
   }, []);
 
-  const currentWork = daily ? WORKS.find((work) => work.id === daily.workId) : null;
+  const currentWork = daily ? catalog.find((work) => work.id === daily.workId) : null;
   const doneCount = todayRecords.filter((record) => record.status === 'done').length;
   const pending = records
     .filter((record) => record.status === 'pending')
-    .map((record) => WORKS.find((work) => work.id === record.workId))
+    .map((record) => catalog.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
   const review = records
     .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
-    .map((record) => WORKS.find((work) => work.id === record.workId))
+    .map((record) => catalog.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
 
   const openDaily = () => {
@@ -62,7 +66,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   };
 
   const random = async () => {
-    const next = randomRecommendation(WORKS);
+    const next = randomRecommendation(catalog);
     setDaily(next);
     await saveTodayRecommendation(next);
     setMoodVisible(false);
@@ -76,7 +80,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
     setLoading(true);
     setError('');
     try {
-      const next = await recommendForMood(settings, moodText, WORKS);
+      const next = await recommendForMood(settings, moodText, catalog);
       setDaily(next);
       await saveTodayRecommendation(next);
       setMoodVisible(false);
@@ -149,7 +153,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
             <Text style={styles.sectionTitle}>{discovery.title}</Text>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
             {discovery.items.map((item) => {
-              const work = WORKS.find((candidate) => candidate.id === item.workId);
+              const work = catalog.find((candidate) => candidate.id === item.workId);
               if (!work) return null;
               return (
                 <Pressable key={`${item.workId}-${item.lineIndex}`} onPress={() => onOpenWork(work, item.lineIndex)} style={styles.highlightRow}>

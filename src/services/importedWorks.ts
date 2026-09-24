@@ -1,14 +1,21 @@
 import { Work } from '../types';
 import { getStoredValue, setStoredValue } from './settings';
-import { canonicalWorkKey, correctKnownImportedWork } from '../data/corrections';
+import { canonicalWorkKey, correctKnownImportedWork, normalizeWorkTitle } from '../data/corrections';
 
 const KEY = 'imported_works_v1';
+const longWorkPattern = /腾王阁序|洛神赋|岳阳楼记|出师表|兰亭集序|逍遥游|长恨歌|琵琶行|赤壁赋|阿房宫赋/;
+
+function isIncompleteLongWork(work: Work): boolean {
+  const textLength = work.lines.join('').length;
+  return longWorkPattern.test(normalizeWorkTitle(work.title)) && work.lines.length < 3 && textLength < 120;
+}
 
 function normalizeImportedList(works: Work[]): Work[] {
   const seen = new Set<string>();
   const result: Work[] = [];
   for (const raw of works) {
     const corrected = correctKnownImportedWork(raw);
+    if (isIncompleteLongWork(corrected)) continue;
     const key = canonicalWorkKey(corrected);
     if (seen.has(key)) continue;
     seen.add(key);

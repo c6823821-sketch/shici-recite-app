@@ -1,5 +1,4 @@
 ﻿import { Solar } from 'lunar-typescript';
-import { WORKS } from '../data/works';
 import { ApiSettings, Work } from '../types';
 import { getStoredValue, setStoredValue } from './settings';
 import { loadPreferenceProfile, preferenceScore, topInterests } from './preference';
@@ -55,8 +54,8 @@ function calendarContext(date = new Date()): DiscoveryContext {
   return { title: season.title, reason: `今天属于${season.title.replace('应景', '')}，给你挑几句相近的句子。`, themes: season.themes, keywords: season.keywords };
 }
 
-function pickItems(context: DiscoveryContext, profile: Awaited<ReturnType<typeof loadPreferenceProfile>>): DailyDiscoveryItem[] {
-  const ranked = WORKS.map((work) => {
+function pickItems(context: DiscoveryContext, profile: Awaited<ReturnType<typeof loadPreferenceProfile>>, catalog: Work[]): DailyDiscoveryItem[] {
+  const ranked = catalog.map((work) => {
     const contextScore = work.themes.filter((theme) => context.themes.includes(theme)).length * 4;
     const lineIndex = work.lines.findIndex((line) => context.keywords.some((keyword) => line.includes(keyword)));
     const keywordScore = lineIndex >= 0 ? 3 : 0;
@@ -105,7 +104,7 @@ async function enrichWithApi(settings: ApiSettings, context: DiscoveryContext): 
   };
 }
 
-export async function loadDailyDiscovery(settings: ApiSettings | null): Promise<DailyDiscovery> {
+export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: Work[]): Promise<DailyDiscovery> {
   const key = `daily_discovery_${dateKey()}`;
   const cached = await getStoredValue(key);
   if (cached) {
@@ -130,7 +129,7 @@ export async function loadDailyDiscovery(settings: ApiSettings | null): Promise<
     reason: interests.length
       ? `${context.reason} 也参考了你最近常看、收藏和背诵过的主题。`
       : context.reason,
-    items: pickItems(context, profile),
+    items: pickItems(context, profile, catalog),
     source,
     personalized: interests.length > 0,
     interests,

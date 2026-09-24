@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { FilterSheet } from '../components/FilterSheet';
-import { WORKS } from '../data/works';
+import { loadWorksCatalog } from '../data/worksCatalog';
 import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
 import { lookupRemoteWork } from '../services/remoteLookup';
@@ -18,7 +18,7 @@ import { canonicalWorkKey } from '../data/corrections';
 import { loadApiSettings } from '../services/settings';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
-import { ApiSettings, Classic, Work } from '../types';
+import { ApiSettings, Classic, ClassicSection, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
@@ -27,6 +27,13 @@ interface Props {
 }
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
+
+type SearchTab = 'sentence' | 'work' | 'author';
+
+type LibraryListItem =
+  | { kind: 'work'; work: Work }
+  | { kind: 'line'; work: Work; lineIndex: number; line: string }
+  | { kind: 'classic'; classic: Classic; section: ClassicSection; sectionIndex: number };
 
 function normalizeSearch(value: string): string {
   return value.replace(/[唯惟]/g, '惟').replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
@@ -38,9 +45,12 @@ function matchesDimension(selected: string[], values: string[]): boolean {
 
 export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Props) {
   const [query, setQuery] = useState('');
+  const [searchTab, setSearchTab] = useState<SearchTab>('sentence');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [importedWorks, setImportedWorks] = useState<Work[]>([]);
+  const [catalog, setCatalog] = useState<Work[]>([]);
+  const [catalogReady, setCatalogReady] = useState(false);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteMessage, setRemoteMessage] = useState('');
@@ -48,33 +58,28 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
   useEffect(() => {
     loadImportedWorks().then(setImportedWorks);
+    loadWorksCatalog().then((value) => { setCatalog(value); setCatalogReady(true); });
     loadApiSettings().then(setSettings);
   }, []);
 
   const allWorks = useMemo(() => {
     const seen = new Set<string>();
-    return [...WORKS, ...importedWorks].filter((work) => {
+    return [...catalog, ...importedWorks].filter((work) => {
       const key = canonicalWorkKey(work);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-  }, [importedWorks]);
+  }, [catalog, importedWorks]);
 
   const filteredWorks = useMemo(() => {
-    const needle = query.trim().toLowerCase();
     return allWorks.filter((work) => {
       const eraMatch = matchesDimension(filters.eras, [work.dynasty]);
       const genreMatch = matchesDimension(filters.genres, [work.genre, ...work.collections]);
       const collectionMatch = matchesDimension(filters.collections, work.collections);
       const themeMatch = matchesDimension(filters.themes, work.themes);
       const moodMatch = matchesDimension(filters.moods, work.moods);
-      if (!(eraMatch && genreMatch && collectionMatch && themeMatch && moodMatch)) return false;
-      if (!needle) return true;
-      return [work.title, work.author, work.dynasty, work.genre, ...work.collections, ...work.themes, ...work.lines]
-        .join(' ')
-        .toLowerCase()
-        .includes(needle);
+      return eraMatch && genreMatch && collectionMatch && themeMatch && moodMatch;
     }).sort((a, b) => {
       const orderDelta = (a.order ?? 999) - (b.order ?? 999);
       if (orderDelta !== 0) return orderDelta;
@@ -82,35 +87,48 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
       if (eraDelta !== 0) return eraDelta;
       return a.title.localeCompare(b.title, 'zh-CN');
     });
-  }, [allWorks, filters, query]);
+  }, [allWorks, filters]);
+
+  const normalizedQuery = useMemo(() => normalizeSearch(query.trim()), [query]);
 
   const matchedLines = useMemo(() => {
-    const needle = query.trim();
-    if (needle.length < 2) return [];
+    if (normalizedQuery.length < 2) return [];
     const results: Array<{ work: Work; lineIndex: number; line: string }> = [];
-    for (const work of allWorks) {
+    for (const work of filteredWorks) {
       for (let index = 0; index < work.lines.length; index += 1) {
-        if (work.lines[index].includes(needle)) {
+        if (normalizeSearch(work.lines[index]).includes(normalizedQuery)) {
           results.push({ work, lineIndex: index, line: work.lines[index] });
           break;
         }
       }
-      if (results.length >= 30) break;
+      if (results.length >= 50) break;
     }
     return results;
-  }, [allWorks, query]);
+  }, [filteredWorks, normalizedQuery]);
+
+  const workMatches = useMemo(() => {
+    if (normalizedQuery.length < 2) return [];
+    return filteredWorks.filter((work) => (
+      [work.title, work.intro, ...work.collections]
+        .some((value) => normalizeSearch(value).includes(normalizedQuery))
+    ));
+  }, [filteredWorks, normalizedQuery]);
+
+  const authorMatches = useMemo(() => {
+    if (normalizedQuery.length < 2) return [];
+    return filteredWorks.filter((work) => normalizeSearch(work.author).includes(normalizedQuery));
+  }, [filteredWorks, normalizedQuery]);
 
   const matchedClassics = useMemo(() => {
-    const needle = normalizeSearch(query.trim());
-    if (needle.length < 2) return [];
+    if (normalizedQuery.length < 2) return [];
     return CLASSICS.flatMap((classic) =>
       classic.sections
         .map((section, sectionIndex) => ({ section, sectionIndex }))
-        .filter(({ section }) => normalizeSearch(classic.title).includes(needle) || normalizeSearch(section.title).includes(needle) || normalizeSearch(section.text).includes(needle))
+        .filter(({ section }) => normalizeSearch(classic.title).includes(normalizedQuery) || normalizeSearch(section.title).includes(normalizedQuery) || normalizeSearch(section.text).includes(normalizedQuery))
         .slice(0, 2)
         .map(({ section, sectionIndex }) => ({ classic, section, sectionIndex })),
     ).slice(0, 10);
-  }, [allWorks, query]);
+  }, [normalizedQuery]);
 
   const selected = [
     ...filters.eras,
@@ -120,6 +138,35 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     ...filters.moods,
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
+
+  const searchTabItems: Array<{ key: SearchTab; label: string; count: number }> = [
+    { key: 'sentence', label: '句子', count: matchedLines.length },
+    { key: 'work', label: '篇目', count: workMatches.length + matchedClassics.length },
+    { key: 'author', label: '作者', count: authorMatches.length },
+  ];
+
+  const listItems = useMemo<LibraryListItem[]>(() => {
+    if (!query.trim()) return filteredWorks.map((work) => ({ kind: 'work', work }));
+    if (searchTab === 'sentence') {
+      return matchedLines.map((result) => ({ kind: 'line', ...result }));
+    }
+    if (searchTab === 'work') {
+      return [
+        ...workMatches.map((work) => ({ kind: 'work' as const, work })),
+        ...matchedClassics.map(({ classic, section, sectionIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex })),
+      ];
+    }
+    return authorMatches.map((work) => ({ kind: 'work', work }));
+  }, [authorMatches, filteredWorks, matchedClassics, matchedLines, query, searchTab, workMatches]);
+
+  const resultTitle = !query.trim()
+    ? (hasFilters ? '筛选结果' : '全部篇目')
+    : searchTab === 'sentence'
+      ? '匹配句子'
+      : searchTab === 'work'
+        ? '匹配篇目'
+        : '匹配作者';
+  const resultCount = listItems.length;
 
   const remoteSearch = async (override?: string) => {
     const term = (override ?? query).trim();
@@ -137,8 +184,16 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
       const work = await lookupRemoteWork(term, settings);
       await saveImportedWork(work);
       setImportedWorks(await loadImportedWorks());
-      setRemoteMessage(`已补录《${work.title}》· ${work.author}，会永久保存在本机。`);
-      onOpenWork(work, 0);
+      setRemoteMessage(`已补录《${work.title}》·${work.author}，会永久保存在本机。`);
+      const normalizedTerm = normalizeSearch(term);
+      const normalizedTitle = normalizeSearch(work.title);
+      if (normalizedTitle.includes(normalizedTerm) || normalizedTerm.includes(normalizedTitle)) {
+        setSearchTab('work');
+      } else if (normalizeSearch(work.author).includes(normalizedTerm)) {
+        setSearchTab('author');
+      } else {
+        setSearchTab('sentence');
+      }
     } catch (error) {
       setRemoteMessage(error instanceof Error ? error.message : '联网补录失败。');
     } finally {
@@ -150,7 +205,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     <View>
         <View style={styles.header}>
           <Text style={styles.title}>诗库</Text>
-          <Text style={styles.subtitle}>离线 {WORKS.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
+          <Text style={styles.subtitle}>离线 {catalog.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
         </View>
 
         <View style={styles.searchRow}>
@@ -166,6 +221,20 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             <Text style={styles.filterButtonText}>筛选</Text>
           </Pressable>
         </View>
+
+        {query.trim() ? (
+          <View style={styles.searchTabs}>
+            {searchTabItems.map((tab) => {
+              const active = searchTab === tab.key;
+              return (
+                <Pressable key={tab.key} onPress={() => setSearchTab(tab.key)} style={[styles.searchTab, active && styles.searchTabActive]}>
+                  <Text style={[styles.searchTabText, active && styles.searchTabTextActive]}>{tab.label}</Text>
+                  <Text style={[styles.searchTabCount, active && styles.searchTabTextActive]}>{tab.count}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         <View style={styles.quickGrid}>
           {QUICK_THEMES.map((theme) => {
@@ -188,8 +257,8 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         </View>
 
         <View style={styles.resultHeader}>
-          <Text style={styles.resultTitle}>{hasFilters ? '筛选结果' : '全部篇目'}</Text>
-          <Text style={styles.resultCount}>{filteredWorks.length.toLocaleString('zh-CN')} 篇</Text>
+          <Text style={styles.resultTitle}>{resultTitle}</Text>
+          <Text style={styles.resultCount}>{resultCount.toLocaleString('zh-CN')} 项</Text>
         </View>
 
         {selected.length > 0 ? (
@@ -200,68 +269,63 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             </Pressable>
           </View>
         ) : null}
-          {matchedClassics.length > 0 ? (
-            <View style={styles.classicResults}>
-              <Text style={styles.classicResultsTitle}>典籍 / 名句补充 · 与诗词分开</Text>
-              {matchedClassics.map((item, index) => (
-                <Pressable key={`${item.classic.id}-${index}`} onPress={() => onOpenClassic(item.classic, item.sectionIndex)} style={styles.classicResultRow}>
-                  <Text style={styles.classicResultTitle}>《{item.classic.title}》· {item.section.title}</Text>
-                  <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
-                  <Text style={styles.classicResultAuthor}>{item.classic.author} · {item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-          {matchedLines.length > 0 ? (
-            <View style={styles.quoteResults}>
-              <Text style={styles.quoteResultsTitle}>匹配句子 · 点进去直接定位</Text>
-              {matchedLines.map((result) => (
-                <Pressable key={`${result.work.id}-${result.lineIndex}`} onPress={() => onOpenWork(result.work, result.lineIndex)} style={styles.quoteRow}>
-                  <Text style={styles.quoteLine}>{result.line}</Text>
-                  <Text style={styles.quoteTitle}>《{result.work.title}》</Text>
-                  <Text style={styles.quoteAuthor}>{result.work.author}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
     </View>
   );
 
   useEffect(() => {
     const term = query.trim();
-    if (term.length < 4 || filteredWorks.length > 0 || matchedClassics.length > 0 || !settings?.endpoint.trim()) return;
+    if (!catalogReady || term.length < 2 || matchedLines.length > 0 || workMatches.length > 0 || authorMatches.length > 0 || matchedClassics.length > 0 || !settings?.endpoint.trim()) return;
     if (attemptedRemoteQuery.current === term) return;
     const timer = setTimeout(() => {
       attemptedRemoteQuery.current = term;
       void remoteSearch(term);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [filteredWorks.length, matchedClassics.length, query, settings]);
+  }, [authorMatches.length, catalogReady, matchedClassics.length, matchedLines.length, query, settings, workMatches.length]);
 
   return (
     <View style={styles.container}>
       <FlatList
         style={styles.listView}
-        data={filteredWorks}
-        keyExtractor={(item) => item.id}
+        data={listItems}
+        keyExtractor={(item) => item.kind === 'line' ? `${item.work.id}-${item.lineIndex}` : item.kind === 'classic' ? `${item.classic.id}-${item.sectionIndex}` : item.work.id}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={listHeader}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
-          const previous = index > 0 ? filteredWorks[index - 1] : null;
-          const showEra = !previous || previous.dynasty !== item.dynasty;
+          if (item.kind === 'line') {
+            return (
+              <Pressable onPress={() => onOpenWork(item.work, item.lineIndex)} style={styles.quoteRow}>
+                <Text style={styles.quoteLine}>{item.line}</Text>
+                <Text style={styles.quoteTitle}>《{item.work.title}》</Text>
+                <Text style={styles.quoteAuthor}>{item.work.author}</Text>
+              </Pressable>
+            );
+          }
+          if (item.kind === 'classic') {
+            return (
+              <Pressable onPress={() => onOpenClassic(item.classic, item.sectionIndex)} style={styles.classicResultRow}>
+                <Text style={styles.classicResultTitle}>《{item.classic.title}》·{item.section.title}</Text>
+                <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
+                <Text style={styles.classicResultAuthor}>{item.classic.author}·{item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
+              </Pressable>
+            );
+          }
+          const previousItem = index > 0 ? listItems[index - 1] : null;
+          const previous = previousItem?.kind === 'work' ? previousItem.work : null;
+          const showEra = !previous || previous.dynasty !== item.work.dynasty;
           return (
             <View>
-              {showEra ? <Text style={styles.eraHeader}>{item.dynasty}</Text> : null}
-              <Pressable onPress={() => onOpenWork(item, 0)} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
+              {showEra ? <Text style={styles.eraHeader}>{item.work.dynasty}</Text> : null}
+              <Pressable onPress={() => onOpenWork(item.work, 0)} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
                 <View style={styles.workCopy}>
-                  <Text style={styles.workTitle}>{item.title}</Text>
-                  <Text style={styles.workAuthor}>{item.author}{item.imported ? ' · API补录待校对' : ''}</Text>
-                  <Text style={styles.workMeta}>{item.dynasty} · {item.genre} · {item.collections.slice(0, 2).join(' / ')}</Text>
-                  <Text style={styles.workTags}>{item.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
+                  <Text style={styles.workTitle}>{item.work.title}</Text>
+                  <Text style={styles.workAuthor}>{item.work.author}{item.work.imported ? ' · API补录待校对' : ''}</Text>
+                  <Text style={styles.workMeta}>{item.work.dynasty} ? {item.work.genre} ? {item.work.collections.slice(0, 2).join(' / ')}</Text>
+                  <Text style={styles.workTags}>{item.work.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
                 </View>
-                <Text style={styles.arrow}>›</Text>
+                <Text style={styles.arrow}>?</Text>
               </Pressable>
             </View>
           );
@@ -301,6 +365,12 @@ const styles = StyleSheet.create({
   quickChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   quickText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   quickTextActive: { color: colors.vermilion, fontWeight: '700' },
+  searchTabs: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  searchTab: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.line },
+  searchTabActive: { backgroundColor: colors.paper },
+  searchTabText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  searchTabTextActive: { color: colors.vermilion, fontWeight: '700' },
+  searchTabCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginHorizontal: spacing.lg, marginTop: spacing.sm },
   resultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
