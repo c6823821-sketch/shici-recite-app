@@ -10,7 +10,7 @@ import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 import { CLASSICS } from '../src/data/classics';
 import { splitClassicText, paginateClassicSegments } from '../src/services/classicText';
-import { canonicalWorkKey, correctKnownImportedWork, CORRECTED_WORKS, normalizeWorkTitle, TANGDUOLING_LINES } from '../src/data/corrections';
+import { canonicalWorkKey, correctKnownImportedWork, CORRECTED_WORKS, JIANGCHENGZI_LINES, normalizeWorkTitle, TANGDUOLING_LINES } from '../src/data/corrections';
 
 assert.ok(WORKS.length >= 20000, '离线内容库应至少包含 20,000 篇');
 assert.ok(WORKS.filter((work) => work.collections.includes('诗经')).length >= 300, '诗经应至少包含 300 篇');
@@ -46,6 +46,17 @@ assert.equal(WORKS.some((work) => work.lines.some((line) => line.includes('柳�
 const correctedLiuGuo = WORKS.find((work) => normalizeWorkTitle(work.title) === '唐多令' && work.author === '刘过' && work.lines[0]?.includes('芦叶满汀洲'));
 assert.ok(correctedLiuGuo, '内置库应包含刘过的唐多令');
 assert.deepEqual(correctedLiuGuo.lines, TANGDUOLING_LINES, '刘过唐多令应使用校订文本');
+const correctedJiangChengZi = correctKnownImportedWork({
+  ...CORRECTED_WORKS[0],
+  id: 'legacy-jiang-cheng-zi',
+  title: '江神子·江城子',
+  author: '苏轼',
+  dynasty: '宋',
+  lines: [...JIANGCHENGZI_LINES],
+});
+assert.equal(correctedJiangChengZi.title, '江城子·乙卯正月二十日夜记梦', '江神子名称应校订为江城子题名');
+assert.deepEqual(correctedJiangChengZi.lines, JIANGCHENGZI_LINES, '江城子正文应使用校订文本');
+
 
 
 
@@ -204,7 +215,7 @@ async function testApiServices() {
   assert.equal(remote.title, '卖炭翁');
   assert.equal(remote.imported, true);
 
-  const recommendation = await recommendForMood(settings, '今天很安静');
+  const recommendation = await recommendForMood(settings, '今天很安静', WORKS);
   assert.equal(recommendation.workId, 'jing-ye-si');
   assert.equal(recommendation.quote, '床前明月光，');
 

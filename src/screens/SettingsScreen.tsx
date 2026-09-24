@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { WORKS } from '../data/works';
+import { SAMPLE_WORK } from '../data/sampleWork';
 import { explainWithApi } from '../services/api';
 import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorite } from '../services/favorites';
 import { checkForUpdate, downloadAndInstallUpdate, formatBytes, UpdateInfo } from '../services/updater';
@@ -60,7 +60,7 @@ export function SettingsScreen({ onBack }: Props) {
     setMessage('');
     try {
       const result = await explainWithApi(settings, {
-        work: WORKS[0],
+        work: SAMPLE_WORK,
         lineIndex: 0,
         selectionStart: 0,
         selectionEnd: 0,

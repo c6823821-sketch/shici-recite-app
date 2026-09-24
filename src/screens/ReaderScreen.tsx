@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Card } from 'ts-fsrs';
 import { ExplanationSheet } from '../components/ExplanationSheet';
+import { AuthorSheet } from '../components/AuthorSheet';
 import { FavoriteSheet } from '../components/FavoriteSheet';
 import { explainWithApi } from '../services/api';
 import { loadCard, rateWork } from '../services/fsrs';
@@ -20,6 +21,7 @@ import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite
 import { loadOrCreateContext, WorkContext } from '../services/context';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
+import { AuthorInfo, loadAuthorInfo } from '../services/authorInfo';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
 import { loadWholeTranslationCached } from '../services/wholeTranslationStore';
 import { recordInteraction } from '../services/preference';
@@ -53,6 +55,10 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [authorVisible, setAuthorVisible] = useState(false);
+  const [authorLoading, setAuthorLoading] = useState(false);
+  const [authorError, setAuthorError] = useState('');
+  const [authorInfo, setAuthorInfo] = useState<AuthorInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastLookup, setLastLookup] = useState<{ line: number; start: number; end: number } | null>(null);
@@ -80,6 +86,9 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     setWholeVisible(false);
     setWholeTranslations([]);
     setWholeError('');
+    setAuthorVisible(false);
+    setAuthorError('');
+    setAuthorInfo(null);
   }, [work.id]);
 
   useEffect(() => {
@@ -230,6 +239,22 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     });
   };
 
+  const openAuthor = async () => {
+    setAuthorVisible(true);
+    setAuthorLoading(true);
+    setAuthorError('');
+    setAuthorInfo(null);
+    try {
+      const activeSettings = settings ?? await loadApiSettings();
+      if (!settings) setSettings(activeSettings);
+      setAuthorInfo(await loadAuthorInfo(activeSettings, work.author));
+    } catch (authorFailure) {
+      setAuthorError(authorFailure instanceof Error ? authorFailure.message : '作者资料加载失败。');
+    } finally {
+      setAuthorLoading(false);
+    }
+  };
+
   const markStudy = async (done: boolean) => {
     const next = await rateWork(work.id, done ? 'good' : 'again');
     setCard(next);
@@ -331,7 +356,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.workTitle}>{work.title}</Text>
-          <Text style={styles.workMeta}>{work.dynasty} · {work.author} · {work.genre}</Text>
+          <View style={styles.workMetaRow}>
+            <Text style={styles.workMeta}>{work.dynasty} · </Text>
+            <Pressable onPress={() => void openAuthor()}><Text style={styles.authorLink}>{work.author}</Text></Pressable>
+            <Text style={styles.workMeta}> · {work.genre}</Text>
+          </View>
         </View>
 
         <Pressable onPress={toggleContext} style={styles.contextToggle}>
@@ -448,6 +477,13 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         explanation={explanation}
         onClose={() => setSheetVisible(false)}
         onRetry={lastLookup ? () => lookup(lastLookup.line, lastLookup.start, lastLookup.end) : undefined}
+      />
+      <AuthorSheet
+        visible={authorVisible}
+        loading={authorLoading}
+        error={authorError}
+        author={authorInfo}
+        onClose={() => setAuthorVisible(false)}
       />
     </View>
   );
@@ -592,7 +628,9 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: 70 },
   hero: { paddingTop: spacing.xl, paddingBottom: spacing.md },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 31, fontWeight: '800', letterSpacing: 2, textAlign: 'center' },
-  workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3, textAlign: 'center', marginTop: 10 },
+  workMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3 },
+  authorLink: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 1 },
   contextToggle: { alignSelf: 'center', marginTop: 6, paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line },
   contextToggleText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   contextBox: { marginTop: 10, padding: 14, backgroundColor: colors.paperDeep },

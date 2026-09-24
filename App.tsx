@@ -4,7 +4,8 @@ import { AppState, Platform } from 'react-native';
 import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackHandler, StyleSheet, View } from 'react-native';
-import { WORKS } from './src/data/works';
+import { SAMPLE_WORK } from './src/data/sampleWork';
+import { loadWorksCatalog } from './src/data/worksCatalog';
 import { CLASSICS } from './src/data/classics';
 import { normalizeWorkTitle } from './src/data/corrections';
 import { ClassicScreen } from './src/screens/ClassicScreen';
@@ -26,7 +27,7 @@ type Screen = 'tabs' | 'reader' | 'classic';
 export default function App() {
   const [screen, setScreen] = useState<Screen>('tabs');
   const [tab, setTab] = useState<MainTab>('today');
-  const [work, setWork] = useState<Work>(WORKS[0]);
+  const [work, setWork] = useState<Work>(SAMPLE_WORK);
   const [readerLineIndex, setReaderLineIndex] = useState(0);
   const [classic, setClassic] = useState<Classic | null>(null);
   const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
@@ -98,10 +99,11 @@ export default function App() {
       }
     }
     const imported = await loadImportedWorks();
+    const catalog = await loadWorksCatalog();
     const targetTitle = normalizeWorkTitle(favorite.workTitle);
-    const target = WORKS.find((item) => item.id === favorite.workId)
+    const target = catalog.find((item) => item.id === favorite.workId)
       ?? imported.find((item) => item.id === favorite.workId)
-      ?? WORKS.find((item) => normalizeWorkTitle(item.title) === targetTitle)
+      ?? catalog.find((item) => normalizeWorkTitle(item.title) === targetTitle)
       ?? imported.find((item) => normalizeWorkTitle(item.title) === targetTitle);
     if (target) openWork(target, favorite.lineIndex);
   };

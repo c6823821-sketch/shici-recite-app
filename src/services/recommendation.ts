@@ -1,5 +1,4 @@
 ﻿import { ApiSettings, DailyRecommendation, Work } from '../types';
-import { WORKS } from '../data/works';
 
 interface RecommendationResponse {
   work_id?: string;
@@ -126,8 +125,9 @@ function resolveRecommendation(
   };
 }
 
-export function randomRecommendation(catalog: Work[] = WORKS): DailyRecommendation {
+export function randomRecommendation(catalog: Work[]): DailyRecommendation {
   const work = catalog[Math.floor(Math.random() * catalog.length)] ?? catalog[0];
+  if (!work) throw new Error('???????????');
   const lineIndex = 0;
   return {
     workId: work.id,
@@ -143,7 +143,7 @@ export function randomRecommendation(catalog: Work[] = WORKS): DailyRecommendati
 export async function recommendForMood(
   settings: ApiSettings,
   userText: string,
-  catalog: Work[] = WORKS,
+  catalog: Work[],
 ): Promise<DailyRecommendation> {
   if (!settings.endpoint.trim() || !settings.model.trim()) {
     throw new Error('请先在设置中填写 API 地址和模型名称。');
