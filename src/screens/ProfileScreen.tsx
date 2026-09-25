@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,12 +21,14 @@ import { ApiSettings } from '../types';
 type Section = 'menu' | 'api' | 'favorites';
 
 interface Props {
+  active?: boolean;
+  refreshToken?: number;
   onOpenFavorite: (favorite: FavoriteLine) => void;
 }
 
 const EMPTY: ApiSettings = { endpoint: '', apiKey: '', model: '' };
 
-export function ProfileScreen({ onOpenFavorite }: Props) {
+export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite }: Props) {
   const [section, setSection] = useState<Section>('menu');
   const [settings, setSettings] = useState<ApiSettings>(EMPTY);
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
@@ -35,6 +38,7 @@ export function ProfileScreen({ onOpenFavorite }: Props) {
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [refreshingFavorites, setRefreshingFavorites] = useState(false);
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));
@@ -43,9 +47,18 @@ export function ProfileScreen({ onOpenFavorite }: Props) {
   }, []);
 
   const refreshFavorites = async () => {
-    setFavorites(await loadFavorites());
-    setFolders(await loadFolders());
+    setRefreshingFavorites(true);
+    try {
+      setFavorites(await loadFavorites());
+      setFolders(await loadFolders());
+    } finally {
+      setRefreshingFavorites(false);
+    }
   };
+
+  useEffect(() => {
+    if (active) void refreshFavorites();
+  }, [active, refreshToken]);
 
   const save = async () => {
     await saveApiSettings(settings);
@@ -135,7 +148,10 @@ export function ProfileScreen({ onOpenFavorite }: Props) {
           </ScrollView>
         </KeyboardAvoidingView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshingFavorites} onRefresh={() => void refreshFavorites()} />}
+        >
           {favorites.length === 0 ? <Text style={styles.help}>还没有收藏。阅读时选中句子后点“☆ 收藏”。</Text> : null}
           {folders.map((folder) => {
             const items = favorites.filter((item) => item.folderId === folder.id);

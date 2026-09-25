@@ -280,10 +280,7 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
 
     if (current?.segmentIndex === segmentIndexValue && charIndex === current.start && charIndex === current.end) {
       next = current;
-    } else if (
-      current?.segmentIndex === segmentIndexValue
-      && (charIndex === current.start - 1 || charIndex === current.end + 1)
-    ) {
+    } else if (current?.segmentIndex === segmentIndexValue) {
       next = {
         segmentIndex: segmentIndexValue,
         start: Math.min(current.start, charIndex),
@@ -328,7 +325,7 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
 
   return (
     <View style={styles.container}>
-      <Header title={classic.title} onBack={() => onSectionChange(undefined)} />
+      <Header title={classic.title} onBack={onBack} />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.reader} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.readerTitle}>{section.title}</Text>
@@ -398,6 +395,18 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
                   <View style={styles.selectionActions}>
                     <Pressable onPress={() => void lookupRange(segmentIndex, selectionHere.start, selectionHere.end)} style={styles.selectionAction}>
                       <Text style={styles.selectionActionText}>根据上下文解释</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        const end = Math.max(0, Array.from(segment.text).length - 1);
+                        const whole = { segmentIndex, start: 0, end };
+                        selectionRef.current = whole;
+                        setSelection(whole);
+                        void lookupRange(segmentIndex, 0, end);
+                      }}
+                      style={styles.selectionAction}
+                    >
+                      <Text style={styles.selectionActionMuted}>整句</Text>
                     </Pressable>
                     <Pressable onPress={clearSelection} style={styles.selectionAction}>
                       <Text style={styles.selectionActionMuted}>取消</Text>
