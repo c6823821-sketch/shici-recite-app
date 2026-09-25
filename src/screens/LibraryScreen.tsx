@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { FilterSheet } from '../components/FilterSheet';
+import { CategoryBrowser } from '../components/CategoryBrowser';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
@@ -50,6 +51,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [searchTab, setSearchTab] = useState<SearchTab>('sentence');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [dimension, setDimension] = useState<FilterKey>('themes');
+  const [categoryVisible, setCategoryVisible] = useState(false);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [importedWorks, setImportedWorks] = useState<Work[]>([]);
@@ -247,6 +249,9 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             selectionColor={colors.vermilion}
             style={styles.searchInput}
           />
+          <Pressable onPress={() => setCategoryVisible(true)} style={styles.categoryButton}>
+            <Text style={styles.categoryButtonText}>{'分类'}</Text>
+          </Pressable>
           <Pressable onPress={() => setFilterVisible(true)} style={styles.filterButton}>
             <Text style={styles.filterButtonText}>筛选</Text>
           </Pressable>
@@ -282,38 +287,6 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           </View>
         ) : null}
 
-        {!query.trim() ? (
-          <>
-            <View style={styles.dimensionTabs}>
-              {FILTER_GROUPS.map((group) => {
-                const active = dimension === group.key;
-                return (
-                  <Pressable key={group.key} onPress={() => setDimension(group.key)} style={[styles.dimensionTab, active && styles.dimensionTabActive]}>
-                    <Text style={[styles.dimensionTabText, active && styles.dimensionTabTextActive]}>{group.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <View style={styles.dimensionGrid}>
-              {FILTER_GROUPS.find((group) => group.key === dimension)?.values.map((value) => {
-                const active = filters[dimension].includes(value);
-                return (
-                  <Pressable
-                    key={value}
-                    onPress={() => {
-                      const values = filters[dimension];
-                      const next = active ? values.filter((item) => item !== value) : [...values, value];
-                      setFilters({ ...filters, [dimension]: next });
-                    }}
-                    style={[styles.dimensionChip, active && styles.dimensionChipActive]}
-                  >
-                    <Text style={[styles.dimensionChipText, active && styles.dimensionChipTextActive]}>{value}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </>
-        ) : null}
 
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{resultTitle}</Text>
@@ -399,6 +372,12 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         }
       />
 
+      {categoryVisible ? (
+        <View style={styles.categoryOverlay}>
+          <CategoryBrowser works={allWorks} onOpenWork={onOpenWork} onClose={() => setCategoryVisible(false)} />
+        </View>
+      ) : null}
+
       <FilterSheet
         visible={filterVisible}
         filters={filters}
@@ -417,6 +396,9 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.lg, marginTop: spacing.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
   searchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
+  categoryButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 14 },
+  categoryButtonText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15 },
+  categoryOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 120, elevation: 35, backgroundColor: colors.paper },
   filterButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 18 },
   filterButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16 },
   historyBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
