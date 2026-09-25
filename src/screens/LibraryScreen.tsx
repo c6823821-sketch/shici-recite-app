@@ -17,7 +17,7 @@ import { lookupRemoteWork } from '../services/remoteLookup';
 import { canonicalWorkContentKey, canonicalWorkKey } from '../data/corrections';
 import { splitClassicText } from '../services/classicText';
 import { getStoredValue, loadApiSettings, setStoredValue } from '../services/settings';
-import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
+import { ERA_ORDER, FILTER_GROUPS, FilterKey, FilterState } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Classic, ClassicSection, Work } from '../types';
 
@@ -49,6 +49,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [query, setQuery] = useState('');
   const [searchTab, setSearchTab] = useState<SearchTab>('sentence');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [dimension, setDimension] = useState<FilterKey>('themes');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [importedWorks, setImportedWorks] = useState<Work[]>([]);
@@ -281,25 +282,38 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           </View>
         ) : null}
 
-        {!query.trim() ? <View style={styles.quickGrid}>
-          {QUICK_THEMES.map((theme) => {
-            const active = filters.themes.includes(theme);
-            return (
-                <Pressable
-                  key={theme}
-                  onPress={() => {
-                    const nextThemes = active
-                        ? filters.themes.filter((item) => item !== theme)
-                        : [...filters.themes, theme];
-                    setFilters({ ...filters, themes: nextThemes });
-                  }}
-                  style={[styles.quickChip, active && styles.quickChipActive]}
-                >
-                  <Text style={[styles.quickText, active && styles.quickTextActive]}>{theme}</Text>
-                </Pressable>
-            );
-          })}
-        </View> : null}
+        {!query.trim() ? (
+          <>
+            <View style={styles.dimensionTabs}>
+              {FILTER_GROUPS.map((group) => {
+                const active = dimension === group.key;
+                return (
+                  <Pressable key={group.key} onPress={() => setDimension(group.key)} style={[styles.dimensionTab, active && styles.dimensionTabActive]}>
+                    <Text style={[styles.dimensionTabText, active && styles.dimensionTabTextActive]}>{group.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.dimensionGrid}>
+              {FILTER_GROUPS.find((group) => group.key === dimension)?.values.map((value) => {
+                const active = filters[dimension].includes(value);
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => {
+                      const values = filters[dimension];
+                      const next = active ? values.filter((item) => item !== value) : [...values, value];
+                      setFilters({ ...filters, [dimension]: next });
+                    }}
+                    style={[styles.dimensionChip, active && styles.dimensionChipActive]}
+                  >
+                    <Text style={[styles.dimensionChipText, active && styles.dimensionChipTextActive]}>{value}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
 
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{resultTitle}</Text>
@@ -412,6 +426,16 @@ const styles = StyleSheet.create({
   historyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   historyChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 10, justifyContent: 'center', backgroundColor: colors.paperLight },
   historyText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  dimensionTabs: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  dimensionTab: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
+  dimensionTabActive: { borderBottomWidth: 2, borderBottomColor: colors.vermilion },
+  dimensionTabText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  dimensionTabTextActive: { color: colors.vermilion, fontWeight: '700' },
+  dimensionGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 8 },
+  dimensionChip: { minHeight: 34, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 11, justifyContent: 'center', backgroundColor: colors.paperLight },
+  dimensionChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
+  dimensionChipText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
+  dimensionChipTextActive: { color: colors.vermilion, fontWeight: '700' },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 8 },
   quickChip: { minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 2, paddingHorizontal: 13, backgroundColor: colors.paperLight },
   quickChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },

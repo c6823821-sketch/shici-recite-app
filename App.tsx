@@ -29,6 +29,7 @@ export default function App() {
   const [tab, setTab] = useState<MainTab>('today');
   const [work, setWork] = useState<Work>(SAMPLE_WORK);
   const [readerLineIndex, setReaderLineIndex] = useState(0);
+  const [readerReturnTab, setReaderReturnTab] = useState<MainTab>('today');
   const [classic, setClassic] = useState<Classic | null>(null);
   const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
   const [classicSegmentIndex, setClassicSegmentIndex] = useState<number | undefined>();
@@ -66,6 +67,7 @@ export default function App() {
         return true;
       }
       if (screen === 'reader') {
+        setTab(readerReturnTab);
         setScreen('tabs');
         return true;
       }
@@ -76,9 +78,10 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [classic, classicFromSearch, classicSectionIndex, screen, tab]);
+  }, [classic, classicFromSearch, classicSectionIndex, readerReturnTab, screen, tab]);
 
   const openWork = (next: Work, lineIndex = 0) => {
+    setReaderReturnTab(tab);
     setWork(next);
     setReaderLineIndex(lineIndex);
     setScreen('reader');
@@ -112,6 +115,11 @@ export default function App() {
       ?? catalog.find((item) => normalizeWorkTitle(item.title) === targetTitle)
       ?? imported.find((item) => normalizeWorkTitle(item.title) === targetTitle);
     if (target) openWork(target, favorite.lineIndex);
+  };
+
+  const closeReader = () => {
+    setTab(readerReturnTab);
+    setScreen('tabs');
   };
 
   const closeClassic = () => {
@@ -162,7 +170,7 @@ export default function App() {
           <ReaderScreen
             work={work}
             initialLineIndex={readerLineIndex}
-            onBack={() => setScreen('tabs')}
+            onBack={closeReader}
             onOpenSettings={openSettings}
           />
         </View>
