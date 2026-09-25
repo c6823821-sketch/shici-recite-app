@@ -5,7 +5,12 @@ import { Platform } from 'react-native';
 
 const OWNER = 'c6823821-sketch';
 const REPO = 'shici-recite-app';
-const MANIFEST_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/version.json`;
+const MANIFEST_URLS = [
+  `https://ghproxy.net/https://raw.githubusercontent.com/${OWNER}/${REPO}/main/version.json`,
+  `https://gh-proxy.com/https://raw.githubusercontent.com/${OWNER}/${REPO}/main/version.json`,
+  `https://ghfast.top/https://raw.githubusercontent.com/${OWNER}/${REPO}/main/version.json`,
+  `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/version.json`,
+];
 const LATEST_PAGE = `https://github.com/${OWNER}/${REPO}/releases/latest`;
 const APK_PREFIX = 'shici-recite-app-';
 
@@ -42,28 +47,45 @@ function isNewer(latest: string, current: string): boolean {
   return false;
 }
 
+async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'shici-recite-app' },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchManifest(): Promise<UpdateInfo | null> {
-  const response = await fetch(MANIFEST_URL, {
-    headers: { Accept: 'application/json', 'User-Agent': 'shici-recite-app' },
-  });
-  if (!response.ok) throw new Error(`?????????${response.status}?`);
-  const data = (await response.json()) as Manifest;
-  const version = (data.version ?? '').replace(/^v/i, '');
-  if (!version) throw new Error('??????????');
-  return {
-    version,
-    downloadUrl: data.downloadUrl ?? `https://github.com/${OWNER}/${REPO}/releases/download/v${version}/${APK_PREFIX}v${version}.apk`,
-    size: typeof data.size === 'number' ? data.size : 0,
-    releaseUrl: data.releaseUrl ?? `https://github.com/${OWNER}/${REPO}/releases/tag/v${version}`,
-    notes: data.notes ?? '',
-    downloadUrls: Array.isArray(data.downloadUrls) ? data.downloadUrls.filter((url): url is string => typeof url === 'string' && url.startsWith('http')) : undefined,
-  };
+  let lastError: unknown = null;
+  for (const url of MANIFEST_URLS) {
+    try {
+      const response = await fetchWithTimeout(url);
+      if (!response.ok) throw new Error(`?????????${response.status}?`);
+      const data = (await response.json()) as Manifest;
+      const version = (data.version ?? '').replace(/^v/i, '');
+      if (!version) throw new Error('??????????');
+      return {
+        version,
+        downloadUrl: data.downloadUrl ?? `https://github.com/${OWNER}/${REPO}/releases/download/v${version}/${APK_PREFIX}v${version}.apk`,
+        size: typeof data.size === 'number' ? data.size : 0,
+        releaseUrl: data.releaseUrl ?? `https://github.com/${OWNER}/${REPO}/releases/tag/v${version}`,
+        notes: data.notes ?? '',
+        downloadUrls: Array.isArray(data.downloadUrls) ? data.downloadUrls.filter((item): item is string => typeof item === 'string' && item.startsWith('http')) : undefined,
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('?????????');
 }
 
 async function fetchLatestPage(): Promise<UpdateInfo> {
-  const response = await fetch(LATEST_PAGE, {
-    headers: { 'User-Agent': 'shici-recite-app', Accept: 'text/html' },
-  });
+  const response = await fetchWithTimeout(LATEST_PAGE);
   if (!response.ok) throw new Error(`?????????${response.status}?`);
   const match = response.url.match(/\/releases\/tag\/v?([0-9]+(?:\.[0-9]+)*)/i);
   const version = match?.[1];
