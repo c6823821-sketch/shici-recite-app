@@ -65,7 +65,14 @@ function pickItems(context: DiscoveryContext, profile: Awaited<ReturnType<typeof
     const personalScore = preferenceScore(work, profile);
     return { work, lineIndex: lineIndex >= 0 ? lineIndex : 0, score: contextScore + keywordScore + personalScore };
   }).sort((left, right) => right.score - left.score);
-  return ranked.slice(0, 3).map((item) => ({ workId: item.work.id, lineIndex: item.lineIndex, quote: item.work.lines[item.lineIndex] ?? item.work.lines[0] }));
+
+  const pool = ranked.slice(0, Math.min(60, ranked.length));
+  if (pool.length === 0) return [];
+  let seed = 0;
+  for (const character of dateKey()) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
+  const start = seed % pool.length;
+  const ordered = [...pool.slice(start), ...pool.slice(0, start)];
+  return ordered.slice(0, 3).map((item) => ({ workId: item.work.id, lineIndex: item.lineIndex, quote: item.work.lines[item.lineIndex] ?? item.work.lines[0] }));
 }
 
 function endpointUrl(endpoint: string): string {

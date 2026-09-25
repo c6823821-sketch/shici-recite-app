@@ -49,27 +49,27 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.9.1.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v2.9.2.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v2.9.1
-          path: shici-recite-app-v2.9.1.apk
+          name: shici-recite-app-v2.9.2
+          path: shici-recite-app-v2.9.2.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.9.1
-          name: 诗词背诵 v2.9.1
+          tag_name: v2.9.2
+          name: 诗词背诵 v2.9.2
           body: |
             诗词背诵 Android 测试版。
 
-            更新检查和 APK 下载支持多条 GitHub 加速线路，且每条请求有超时和完整性校验，不再长时间卡在 0%。
+            今日推荐、分类浏览和词牌搜索界面升级；新增古风封面、分类全局搜索和 API 词牌补录。
 
             此版本是自包含 release APK，安装后无需连接电脑。
-          files: shici-recite-app-v2.9.1.apk
+          files: shici-recite-app-v2.9.2.apk
           make_latest: true
 

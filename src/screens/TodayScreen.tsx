@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ImageBackground, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
@@ -114,6 +114,9 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
         <Text style={styles.subtitle}>先读一句，再决定今天背什么。</Text>
 
         <View style={styles.recommendCard}>
+          <ImageBackground source={require('../../assets/covers/cover-moon.png')} style={styles.recommendArt} imageStyle={styles.recommendArtImage}>
+            <View style={styles.recommendArtShade} />
+          </ImageBackground>
           <View style={styles.cardHeader}>
             <Text style={styles.cardLabel}>今日荐诗</Text>
             <View style={styles.cardHeaderRight}>
@@ -247,18 +250,21 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },
   subtitle: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, marginTop: 8 },
-  recommendCard: { marginTop: spacing.xl, backgroundColor: colors.paperDeep, borderLeftWidth: 4, borderLeftColor: colors.vermilion, padding: spacing.lg },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  recommendCard: { marginTop: spacing.xl, backgroundColor: colors.paperDeep, borderLeftWidth: 4, borderLeftColor: colors.vermilion, padding: 0, overflow: 'hidden' },
+  recommendArt: { width: '100%', height: 150, justifyContent: 'flex-end' },
+  recommendArtImage: { resizeMode: 'cover' },
+  recommendArtShade: { flex: 1, backgroundColor: 'rgba(243,237,223,0.10)' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   cardSource: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   cardHeaderRight: { alignItems: 'center', gap: 6 },
   moodCircleSmall: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
   moodCircleSmallText: { color: colors.white, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
-  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 38, marginTop: spacing.lg, fontWeight: '700' },
-  poemMeta: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, marginTop: 13 },
-  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 12 },
+  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 38, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
+  poemMeta: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, marginTop: 13, marginHorizontal: spacing.lg },
+  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 12, marginHorizontal: spacing.lg },
   loader: { marginVertical: 40 },
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg, marginHorizontal: spacing.lg, marginBottom: spacing.lg },
   primaryButton: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   randomButton: { minHeight: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },

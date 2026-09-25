@@ -14,6 +14,7 @@ import { CompositionForm, CompositionGenre, GENRE_FORMS, formWithVariant } from 
 import { scoreComposition, CATEGORY_LABELS, CompositionScore } from '../services/compositionScoring';
 import { LocalPrecheck, precheckComposition } from '../services/prosody';
 import { loadApiSettings } from '../services/settings';
+import { lookupCompositionForm } from '../services/formLookup';
 import { createSavedComposition, loadSavedCompositions, removeSavedComposition, SavedComposition, saveSavedComposition } from '../services/compositions';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings } from '../types';
@@ -39,11 +40,21 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   const [saved, setSaved] = useState<SavedComposition[]>([]);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState('');
+  const [extraForms, setExtraForms] = useState<CompositionForm[]>([]);
+  const [formQuery, setFormQuery] = useState('');
+  const [formSearching, setFormSearching] = useState(false);
+  const [formMessage, setFormMessage] = useState('');
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadSavedCompositions().then(setSaved);
   }, []);
+
+  const availableForms = useMemo(() => {
+    const forms = genre === '词' ? [...GENRE_FORMS[genre], ...extraForms] : GENRE_FORMS[genre];
+    const needle = formQuery.trim();
+    return needle ? forms.filter((item) => item.label.includes(needle)) : forms;
+  }, [extraForms, formQuery, genre]);
 
   const activeForm = useMemo(() => formWithVariant(form, variantIndex), [form, variantIndex]);
   const precheck = useMemo<LocalPrecheck>(() => precheckComposition(text, activeForm), [activeForm, text]);
@@ -55,6 +66,32 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
     setScore(null);
     setError('');
     setSaveMessage('');
+  };
+
+  const searchForm = async () => {
+    if (!formQuery.trim()) {
+      setFormMessage('先输入词牌名。');
+      return;
+    }
+    const activeSettings = settings ?? await loadApiSettings();
+    if (!settings) setSettings(activeSettings);
+    if (!activeSettings?.endpoint.trim() || !activeSettings.model.trim()) {
+      setFormMessage('请先在“我的 → API 设置”中配置接口。');
+      return;
+    }
+    setFormSearching(true);
+    setFormMessage('');
+    try {
+      const result = await lookupCompositionForm(activeSettings, genre, formQuery);
+      setExtraForms((current) => [result, ...current.filter((item) => item.label !== result.label)]);
+      setForm(result);
+      setVariantIndex(0);
+      setFormMessage('已找到这个词牌，请核对格例后使用。');
+    } catch (error) {
+      setFormMessage(error instanceof Error ? error.message : '词牌检索失败。');
+    } finally {
+      setFormSearching(false);
+    }
   };
 
   const saveDraft = async () => {
@@ -147,9 +184,26 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>{genre === '诗' ? '选择诗体' : genre === '词' ? '选择词牌' : '选择曲牌'}</Text>
+        <Text style={styles.sectionLabel}>
+        {genre === '词' ? (
+          <View style={styles.formSearchRow}>
+            <TextInput
+              value={formQuery}
+              onChangeText={(value) => { setFormQuery(value); setFormMessage(''); }}
+              placeholder={'词牌没有？输入词牌名搜索'}
+              placeholderTextColor={colors.muted}
+              selectionColor={colors.vermilion}
+              style={styles.formSearchInput}
+            />
+            <Pressable onPress={() => void searchForm()} disabled={formSearching} style={styles.formSearchButton}>
+              {formSearching ? <ActivityIndicator color={colors.white} /> : <Text style={styles.formSearchText}>{'查找'}</Text>}
+            </Pressable>
+          </View>
+        ) : null}
+        {formMessage ? <Text style={styles.formSearchMessage}>{formMessage}</Text> : null}
+{genre === '诗' ? '选择诗体' : genre === '词' ? '选择词牌' : '选择曲牌'}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.formRow}>
-          {GENRE_FORMS[genre].map((item) => {
+          {availableForms.map((item) => {
             const active = form.id === item.id;
             return (
               <Pressable
@@ -381,6 +435,11 @@ const styles = StyleSheet.create({
   genreTextActive: { color: colors.ink, fontWeight: '800' },
   genreUnderline: { width: 26, height: 2, backgroundColor: colors.vermilion, marginTop: 6 },
   sectionLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 2, marginTop: spacing.xl, marginBottom: 10 },
+  formSearchRow: { flexDirection: 'row', marginTop: 8, marginBottom: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  formSearchInput: { flex: 1, minHeight: 46, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
+  formSearchButton: { minWidth: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  formSearchText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  formSearchMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginBottom: 8 },
   formRow: { gap: 8, paddingBottom: 3 },
   formChip: { borderWidth: 1, borderColor: colors.line, borderRadius: 2, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.paperLight },
   formChipActive: { borderColor: colors.vermilion, backgroundColor: colors.paper },

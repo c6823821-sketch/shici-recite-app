@@ -1,5 +1,5 @@
 ﻿import React, { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, ImageBackground, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FILTER_GROUPS, FilterKey } from '../data/taxonomy';
 import { Work } from '../types';
 import { colors, fonts, spacing } from '../theme';
@@ -50,6 +50,9 @@ export function CategoryBrowser({ initialDimension = 'themes', works, onOpenWork
 
   const detail = useMemo(() => {
     if (!category) return [];
+    if (category === '__search__') {
+      return works.filter((work) => textMatches(work, query)).slice(0, 300).map((work) => ({ work }));
+    }
     if (dimension === 'fly') {
       const needle = query.trim();
       const rows: Array<{ work: Work; lineIndex: number; line: string }> = [];
@@ -117,6 +120,26 @@ export function CategoryBrowser({ initialDimension = 'themes', works, onOpenWork
         />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
+          <ImageBackground source={require('../../assets/covers/cover-blossom.png')} style={styles.categoryCover} imageStyle={styles.categoryCoverImage}>
+            <View style={styles.categoryCoverShade}>
+              <Text style={styles.categoryCoverTitle}>{'诗库分类'}</Text>
+              <Text style={styles.categoryCoverText}>{'按朝代、体裁、主题和字令探索诗词'}</Text>
+            </View>
+          </ImageBackground>
+          <View style={styles.homeSearchRow}>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={() => setCategory('__search__')}
+              placeholder={'搜索诗词、作者或句子'}
+              placeholderTextColor={colors.muted}
+              selectionColor={colors.vermilion}
+              style={styles.homeSearchInput}
+            />
+            <Pressable onPress={() => setCategory('__search__')} style={styles.homeSearchButton}>
+              <Text style={styles.homeSearchButtonText}>{'搜索'}</Text>
+            </Pressable>
+          </View>
           <Text style={styles.sectionLabel}>分类维度</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dimensionTabs}>
             {DIMENSIONS.map((item) => {
@@ -130,7 +153,7 @@ export function CategoryBrowser({ initialDimension = 'themes', works, onOpenWork
           </ScrollView>
           <Text style={styles.hint}>{dimension === 'fly' ? '点一个字令，查看所有包含这个字的诗句。' : '每个分类独立一行，点进去后可继续搜索。'}</Text>
           {categoryRows.map((value) => (
-            <Pressable key={value} onPress={() => setCategory(value)} style={styles.categoryRow}>
+            <Pressable key={value} onPress={() => { setCategory(value); setQuery(''); }} style={styles.categoryRow}>
               <Text style={styles.categoryLabel}>{value}</Text>
               <Text style={styles.arrow}>›</Text>
             </Pressable>
@@ -150,12 +173,21 @@ const styles = StyleSheet.create({
   closeText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15 },
   headerTitle: { flex: 1, textAlign: 'center', color: colors.ink, fontFamily: fonts.title, fontSize: 21, fontWeight: '700' },
   content: { paddingBottom: 100 },
+  categoryCover: { height: 156, marginTop: spacing.md },
+  categoryCoverImage: { resizeMode: 'cover' },
+  categoryCoverShade: { flex: 1, justifyContent: 'flex-end', padding: spacing.lg, backgroundColor: 'rgba(40,34,26,0.20)' },
+  categoryCoverTitle: { color: colors.white, fontFamily: fonts.title, fontSize: 28, fontWeight: '800' },
+  categoryCoverText: { color: colors.white, fontFamily: fonts.sans, fontSize: 12, marginTop: 6 },
   sectionLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 2, marginHorizontal: spacing.lg, marginTop: spacing.lg, marginBottom: 12 },
   dimensionTabs: { paddingHorizontal: spacing.lg, gap: 8 },
   dimensionTab: { minHeight: 40, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: colors.paperLight },
   dimensionTabActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   dimensionTabText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   dimensionTabTextActive: { color: colors.vermilion, fontWeight: '700' },
+  homeSearchRow: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: spacing.lg, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  homeSearchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
+  homeSearchButton: { minWidth: 72, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  homeSearchButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   hint: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginHorizontal: spacing.lg, marginTop: 14, marginBottom: 10 },
   categoryRow: { minHeight: 58, marginHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   categoryLabel: { flex: 1, color: colors.ink, fontFamily: fonts.body, fontSize: 18 },
