@@ -15,25 +15,27 @@ import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
 import { lookupRemoteWork } from '../services/remoteLookup';
 import { canonicalWorkContentKey, canonicalWorkKey } from '../data/corrections';
-import { loadApiSettings } from '../services/settings';
+import { splitClassicText } from '../services/classicText';
+import { getStoredValue, loadApiSettings, setStoredValue } from '../services/settings';
 import { ERA_ORDER, FilterState, QUICK_THEMES } from '../data/taxonomy';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Classic, ClassicSection, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
-  onOpenClassic: (classic: Classic, sectionIndex?: number) => void;
+  onOpenClassic: (classic: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch?: boolean) => void;
   onOpenSettings: () => void;
 }
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
+const SEARCH_HISTORY_KEY = 'search_history_v1';
 
 type SearchTab = 'sentence' | 'work' | 'author';
 
 type LibraryListItem =
   | { kind: 'work'; work: Work }
   | { kind: 'line'; work: Work; lineIndex: number; line: string }
-  | { kind: 'classic'; classic: Classic; section: ClassicSection; sectionIndex: number };
+  | { kind: 'classic'; classic: Classic; section: ClassicSection; sectionIndex: number; segmentIndex: number };
 
 function normalizeSearch(value: string): string {
   return value.replace(/[唯惟]/g, '惟').replace(/[\s，。！？；：、,.!?;:'"“”‘’《》〈〉()（）]/g, '');
@@ -46,6 +48,7 @@ function matchesDimension(selected: string[], values: string[]): boolean {
 export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Props) {
   const [query, setQuery] = useState('');
   const [searchTab, setSearchTab] = useState<SearchTab>('sentence');
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [importedWorks, setImportedWorks] = useState<Work[]>([]);
@@ -60,6 +63,10 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     loadImportedWorks().then(setImportedWorks);
     loadWorksCatalog().then((value) => { setCatalog(value); setCatalogReady(true); });
     loadApiSettings().then(setSettings);
+    getStoredValue(SEARCH_HISTORY_KEY).then((raw) => {
+      if (!raw) return;
+      try { setSearchHistory(JSON.parse(raw) as string[]); } catch { /* ignore */ }
+    });
   }, []);
 
   const allWorks = useMemo(() => {
@@ -129,7 +136,11 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         .map((section, sectionIndex) => ({ section, sectionIndex }))
         .filter(({ section }) => normalizeSearch(classic.title).includes(normalizedQuery) || normalizeSearch(section.title).includes(normalizedQuery) || normalizeSearch(section.text).includes(normalizedQuery))
         .slice(0, 2)
-        .map(({ section, sectionIndex }) => ({ classic, section, sectionIndex })),
+        .map(({ section, sectionIndex }) => {
+          const segments = splitClassicText(section.text);
+          const segmentIndex = Math.max(0, segments.findIndex((segment) => normalizeSearch(segment.text).includes(normalizedQuery)));
+          return { classic, section, sectionIndex, segmentIndex };
+        }),
     ).slice(0, 10);
   }, [normalizedQuery]);
 
@@ -156,7 +167,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     if (searchTab === 'work') {
       return [
         ...workMatches.map((work) => ({ kind: 'work' as const, work })),
-        ...matchedClassics.map(({ classic, section, sectionIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex })),
+        ...matchedClassics.map(({ classic, section, sectionIndex, segmentIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex, segmentIndex })),
       ];
     }
     return authorMatches.map((work) => ({ kind: 'work', work }));
@@ -170,6 +181,19 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         ? '匹配篇目'
         : '匹配作者';
   const resultCount = listItems.length;
+
+  const rememberSearch = async (value: string) => {
+    const term = value.trim();
+    if (term.length < 2) return;
+    const next = [term, ...searchHistory.filter((item) => item !== term)].slice(0, 10);
+    setSearchHistory(next);
+    await setStoredValue(SEARCH_HISTORY_KEY, JSON.stringify(next));
+  };
+
+  const clearSearchHistory = async () => {
+    setSearchHistory([]);
+    await setStoredValue(SEARCH_HISTORY_KEY, JSON.stringify([]));
+  };
 
   const remoteSearch = async (override?: string) => {
     const term = (override ?? query).trim();
@@ -215,6 +239,8 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           <TextInput
             value={query}
             onChangeText={setQuery}
+            onSubmitEditing={() => void rememberSearch(query)}
+            onBlur={() => void rememberSearch(query)}
             placeholder="搜索篇名、作者或正文"
             placeholderTextColor={colors.muted}
             selectionColor={colors.vermilion}
@@ -236,6 +262,22 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 </Pressable>
               );
             })}
+          </View>
+        ) : null}
+
+        {!query.trim() && searchHistory.length > 0 ? (
+          <View style={styles.historyBlock}>
+            <View style={styles.historyHeader}>
+              <Text style={styles.historyLabel}>{'最近搜索'}</Text>
+              <Pressable onPress={() => void clearSearchHistory()}><Text style={styles.historyClear}>{'清除'}</Text></Pressable>
+            </View>
+            <View style={styles.historyRow}>
+              {searchHistory.map((term) => (
+                <Pressable key={term} onPress={() => setQuery(term)} style={styles.historyChip}>
+                  <Text style={styles.historyText}>{term}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         ) : null}
 
@@ -308,7 +350,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           }
           if (item.kind === 'classic') {
             return (
-              <Pressable onPress={() => onOpenClassic(item.classic, item.sectionIndex)} style={styles.classicResultRow}>
+              <Pressable onPress={() => onOpenClassic(item.classic, item.sectionIndex, item.segmentIndex, true)} style={styles.classicResultRow}>
                 <Text style={styles.classicResultTitle}>《{item.classic.title}》·{item.section.title}</Text>
                 <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
                 <Text style={styles.classicResultAuthor}>{item.classic.author}·{item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
@@ -363,6 +405,13 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
   filterButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 18 },
   filterButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16 },
+  historyBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  historyLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
+  historyClear: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  historyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  historyChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 10, justifyContent: 'center', backgroundColor: colors.paperLight },
+  historyText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 8 },
   quickChip: { minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 2, paddingHorizontal: 13, backgroundColor: colors.paperLight },
   quickChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },

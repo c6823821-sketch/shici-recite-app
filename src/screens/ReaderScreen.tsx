@@ -25,7 +25,7 @@ import { AuthorInfo, loadAuthorInfo } from '../services/authorInfo';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
 import { loadWholeTranslationCached } from '../services/wholeTranslationStore';
 import { recordInteraction } from '../services/preference';
-import { toChars } from '../services/text';
+import { sentenceAroundLine, toChars } from '../services/text';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Explanation, Work } from '../types';
 
@@ -321,6 +321,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     newFolderName: string,
   ) => {
     if (favoriteLine === null) return;
+    const quote = sentenceAroundLine(work.lines, favoriteLine).text || work.lines[favoriteLine];
     let folderId = selectedFolderId ?? undefined;
     if (newFolderName.trim()) {
       const folder = createFolder(newFolderName.trim());
@@ -333,8 +334,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       workId: work.id,
       workTitle: work.title,
       lineIndex: favoriteLine,
-      quote: work.lines[favoriteLine],
-      name: work.lines[favoriteLine].slice(0, 18),
+      quote,
+      name: quote.slice(0, 18),
       tags: [],
       folderId,
     }));

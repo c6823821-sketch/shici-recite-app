@@ -32,6 +32,7 @@ export default function App() {
   const [classic, setClassic] = useState<Classic | null>(null);
   const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
   const [classicSegmentIndex, setClassicSegmentIndex] = useState<number | undefined>();
+  const [classicFromSearch, setClassicFromSearch] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -48,6 +49,10 @@ export default function App() {
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (screen === 'classic') {
+        if (classicFromSearch) {
+          setScreen('tabs');
+          return true;
+        }
         if (classicSectionIndex !== undefined) {
           setClassicSectionIndex(undefined);
           setClassicSegmentIndex(undefined);
@@ -71,7 +76,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [classic, classicSectionIndex, screen, tab]);
+  }, [classic, classicFromSearch, classicSectionIndex, screen, tab]);
 
   const openWork = (next: Work, lineIndex = 0) => {
     setWork(next);
@@ -79,10 +84,11 @@ export default function App() {
     setScreen('reader');
   };
 
-  const openClassic = (next: Classic, sectionIndex?: number, segmentIndex?: number) => {
+  const openClassic = (next: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch = false) => {
     setClassic(next);
     setClassicSectionIndex(sectionIndex);
     setClassicSegmentIndex(segmentIndex);
+    setClassicFromSearch(fromSearch);
     setScreen('classic');
   };
 
@@ -94,7 +100,7 @@ export default function App() {
       const sectionIndex = separator > 0 ? Number(suffix.slice(separator + 1)) : Number.NaN;
       const target = CLASSICS.find((item) => item.id === classicId);
       if (target && Number.isInteger(sectionIndex) && sectionIndex >= 0) {
-        openClassic(target, sectionIndex, favorite.lineIndex);
+        openClassic(target, sectionIndex, favorite.lineIndex, true);
         return;
       }
     }
@@ -106,6 +112,19 @@ export default function App() {
       ?? catalog.find((item) => normalizeWorkTitle(item.title) === targetTitle)
       ?? imported.find((item) => normalizeWorkTitle(item.title) === targetTitle);
     if (target) openWork(target, favorite.lineIndex);
+  };
+
+  const closeClassic = () => {
+    if (classicFromSearch) {
+      setScreen('tabs');
+      return;
+    }
+    if (classicSectionIndex !== undefined) {
+      setClassicSectionIndex(undefined);
+      setClassicSegmentIndex(undefined);
+      return;
+    }
+    setScreen('tabs');
   };
 
   const openSettings = () => {
@@ -129,7 +148,11 @@ export default function App() {
             <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
           </View>
           <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
-            <ProfileScreen onOpenFavorite={(item) => { void openFavorite(item); }} />
+            <ProfileScreen
+              active={tab === 'profile'}
+              refreshToken={screen === 'tabs' && tab === 'profile' ? 1 : 0}
+              onOpenFavorite={(item) => { void openFavorite(item); }}
+            />
           </View>
         </View>
         <MainTabBar active={tab} onChange={setTab} />
@@ -152,7 +175,7 @@ export default function App() {
             initialSegmentIndex={classicSegmentIndex}
             onClassicChange={setClassic}
             onSectionChange={(index) => { setClassicSectionIndex(index); setClassicSegmentIndex(undefined); }}
-            onBack={() => setScreen('tabs')}
+            onBack={closeClassic}
           />
         </View>
       ) : null}
