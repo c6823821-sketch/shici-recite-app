@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { FilterSheet } from '../components/FilterSheet';
-import { CategoryBrowser } from '../components/CategoryBrowser';
+import { CategoryBrowser, DimensionKey } from '../components/CategoryBrowser';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { CLASSICS } from '../data/classics';
 import { loadImportedWorks, saveImportedWork } from '../services/importedWorks';
@@ -52,6 +52,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [dimension, setDimension] = useState<FilterKey>('themes');
   const [categoryVisible, setCategoryVisible] = useState(false);
+  const [categoryMode, setCategoryMode] = useState<DimensionKey>('themes');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [importedWorks, setImportedWorks] = useState<Work[]>([]);
@@ -257,6 +258,17 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           </Pressable>
         </View>
 
+        <View style={styles.heroActions}>
+          <Pressable onPress={() => { setCategoryMode('themes'); setCategoryVisible(true); }} style={styles.heroAction}>
+            <Text style={styles.heroActionTitle}>{'分类浏览'}</Text>
+            <Text style={styles.heroActionDetail}>{'多维度筛选'}</Text>
+          </Pressable>
+          <Pressable onPress={() => { setCategoryMode('fly'); setCategoryVisible(true); }} style={styles.heroAction}>
+            <Text style={styles.heroActionTitle}>{'飞花令'}</Text>
+            <Text style={styles.heroActionDetail}>{'按字找句'}</Text>
+          </Pressable>
+        </View>
+
         {query.trim() ? (
           <View style={styles.searchTabs}>
             {searchTabItems.map((tab) => {
@@ -374,7 +386,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
       {categoryVisible ? (
         <View style={styles.categoryOverlay}>
-          <CategoryBrowser works={allWorks} onOpenWork={onOpenWork} onClose={() => setCategoryVisible(false)} />
+          <CategoryBrowser key={categoryMode} initialDimension={categoryMode} works={allWorks} onOpenWork={onOpenWork} onClose={() => setCategoryVisible(false)} />
         </View>
       ) : null}
 
@@ -401,6 +413,10 @@ const styles = StyleSheet.create({
   categoryOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 120, elevation: 35, backgroundColor: colors.paper },
   filterButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 18 },
   filterButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16 },
+  heroActions: { flexDirection: 'row', gap: 10, marginHorizontal: spacing.lg, marginTop: 12 },
+  heroAction: { flex: 1, minHeight: 62, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, paddingHorizontal: 12, justifyContent: 'center' },
+  heroActionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
+  heroActionDetail: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   historyBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   historyLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },

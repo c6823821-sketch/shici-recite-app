@@ -1,13 +1,13 @@
 {
-  "version": "2.8.9",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.9/shici-recite-app-v2.8.9.apk",
+  "version": "2.9.0",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.0/shici-recite-app-v2.9.0.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.9/shici-recite-app-v2.8.9.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.9/shici-recite-app-v2.8.9.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.9/shici-recite-app-v2.8.9.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.8.9/shici-recite-app-v2.8.9.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.0/shici-recite-app-v2.9.0.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.0/shici-recite-app-v2.9.0.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.0/shici-recite-app-v2.9.0.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.0/shici-recite-app-v2.9.0.apk"
   ],
-  "size": 80429005,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v2.8.9",
-  "notes": "分类浏览、飞花令与整句收藏版"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v2.9.0",
+  "notes": "分类浏览与飞花令版"
 }

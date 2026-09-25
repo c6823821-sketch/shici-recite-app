@@ -4,7 +4,7 @@ import { FILTER_GROUPS, FilterKey } from '../data/taxonomy';
 import { Work } from '../types';
 import { colors, fonts, spacing } from '../theme';
 
-type DimensionKey = FilterKey | 'fly';
+export type DimensionKey = FilterKey | 'fly';
 
 const FLYING_CHARS = ['月', '花', '春', '秋', '风', '雨', '山', '水', '江', '云', '雪', '酒', '夜', '天', '人', '日', '草', '柳', '梅', '竹', '松', '菊', '鸟', '马', '舟', '海', '湖', '愁', '情', '心', '梦', '故', '归', '别', '相', '思', '君', '家', '国', '剑'];
 const DIMENSIONS: Array<{ key: DimensionKey; label: string }> = [
@@ -13,6 +13,7 @@ const DIMENSIONS: Array<{ key: DimensionKey; label: string }> = [
 ];
 
 interface Props {
+  initialDimension?: DimensionKey;
   works: Work[];
   onOpenWork: (work: Work, lineIndex?: number) => void;
   onClose: () => void;
@@ -40,8 +41,8 @@ function textMatches(work: Work, query: string): boolean {
     .includes(needle);
 }
 
-export function CategoryBrowser({ works, onOpenWork, onClose }: Props) {
-  const [dimension, setDimension] = useState<DimensionKey>('themes');
+export function CategoryBrowser({ initialDimension = 'themes', works, onOpenWork, onClose }: Props) {
+  const [dimension, setDimension] = useState<DimensionKey>(initialDimension);
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
