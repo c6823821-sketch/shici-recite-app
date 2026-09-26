@@ -2,6 +2,15 @@
 import { ApiSettings } from '../types';
 import { getStoredValue, setStoredValue } from './settings';
 
+function safeCacheKey(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 function endpointUrl(endpoint: string): string {
   const value = endpoint.trim();
   if (!value) return '';
@@ -33,7 +42,7 @@ export async function lookupCompositionForm(settings: ApiSettings, genre: Compos
   if (!settings.endpoint.trim() || !settings.model.trim()) throw new Error('请先配置 API。');
   const label = query.trim();
   if (!label) throw new Error('请先输入词牌名。');
-  const cacheKey = `composition_form_${genre}_${label.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  const cacheKey = `composition_form_${safeCacheKey(`${genre}_${label}`)}`;
   const cached = await getStoredValue(cacheKey);
   if (cached) {
     try { return JSON.parse(cached) as CompositionForm; } catch { /* ignore */ }

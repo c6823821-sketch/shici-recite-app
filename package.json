@@ -1,6 +1,6 @@
 {
   "name": "shici-recite-app",
-  "version": "2.9.2",
+  "version": "2.9.3",
   "main": "index.ts",
   "dependencies": {
     "expo": "~57.0.24",
