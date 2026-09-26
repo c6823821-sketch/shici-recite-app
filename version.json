@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk"
   ],
-  "size": 0,
+  "size": 92528408,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.10",
-  "notes": "修正应景卡片分隔位置与颜色层级，并为搜索结果增加查看全文入口。"
+  "notes": "修正应景卡片分隔位置与颜色层级，并为搜索结果增加查看全文入口。",
+  "sha256": "5b933a4fe2bacd2c6cd4adf5f7d1bc06f45d6d18e61f3be605024476db19b900"
 }
