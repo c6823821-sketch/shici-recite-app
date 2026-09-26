@@ -91,3 +91,15 @@ git reset --hard v3.0.6
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.8 应景分隔回滚
+
+回到 v3.0.7：
+
+```powershell
+git checkout main
+git reset --hard v3.0.7
+git clean -fd
+git push origin main --force-with-lease
+```

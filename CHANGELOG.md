@@ -1,3 +1,49 @@
+# v3.0.8 应景卡片分隔修正
+
+发布时间：2026-09-26
+
+## 修复
+
+- 删除诗句与出处之间的错误内部横线。
+- 不再用横线把同一首诗的正文和篇名拆开。
+- 秋日应景卡片改用完整外边框区分。
+- 卡片间距从 20px 增加到 24px。
+- 推荐说明“秋分已过……”与第一张卡片之间增加 20px 间距。
+- 卡片背景改为暖白 #FFFDF8，边框改为更明显的浅灰棕。
+- 每条仍保留完整诗句、出处和“查看原诗”。
+- 不再添加“应景句一/二/三”等多余编号。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.7：
+
+```powershell
+git checkout main
+git reset --hard v3.0.7
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.7 应景卡片边界修复
 
 发布时间：2026-09-26

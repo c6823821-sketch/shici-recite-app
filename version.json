@@ -1,14 +1,13 @@
 {
-  "version": "3.0.7",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
+  "version": "3.0.8",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk"
   ],
-  "size": 92521000,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.7",
-  "notes": "应景卡片边界加强，删除多余编号，明确卡片间距和内部横线。",
-  "sha256": "20cd4f3c0e32691f3f40facfa8ca9faa3bb08921efc8fc0c4e787ca40216cf52"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.8",
+  "notes": "修复应景卡片内部横线位置，删除错误分隔，改为整卡边界与 24px 间距。"
 }
