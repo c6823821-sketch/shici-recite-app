@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.1/shici-recite-app-v3.0.1.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.1/shici-recite-app-v3.0.1.apk"
   ],
-  "size": 0,
+  "size": 92509940,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.1",
-  "notes": "首页首屏重排、背诵任务具体篇目展示、诗库 20px 边距和卡片化修复。"
+  "notes": "首页首屏重排、背诵任务具体篇目展示、诗库 20px 边距和卡片化修复。",
+  "sha256": "fe9677fcd654ea80ad601220631b65fe808d24c49ef7e0c1a6f5d849a9c3a488"
 }
