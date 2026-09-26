@@ -360,6 +360,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 <Text style={styles.quoteLine}>{item.line}</Text>
                 <Text style={styles.quoteTitle}>《{item.work.title}》</Text>
                 <Text style={styles.quoteAuthor}>{item.work.author}</Text>
+                <View style={styles.resultActionRow}><Text style={styles.resultAction}>查看全文</Text></View>
               </Pressable>
             );
           }
@@ -369,6 +370,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 <Text style={styles.classicResultTitle}>《{item.classic.title}》·{item.section.title}</Text>
                 <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
                 <Text style={styles.classicResultAuthor}>{item.classic.author}·{item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
+                <View style={styles.resultActionRow}><Text style={styles.resultAction}>查看全文</Text></View>
               </Pressable>
             );
           }
@@ -497,6 +499,8 @@ const styles = StyleSheet.create({
   classicResultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   classicResultSnippet: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 5 },
   classicResultAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  resultActionRow: { marginTop: 10, alignItems: 'flex-end' },
+  resultAction: { minHeight: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: '#E0B9B2', paddingHorizontal: 12, color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
   quoteResults: { marginHorizontal: 0, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   quoteRow: { marginBottom: 12, padding: spacing.md, borderRadius: 16, backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },

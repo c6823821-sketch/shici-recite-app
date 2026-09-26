@@ -217,7 +217,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeader}>
               <View>
-                <Text style={styles.sectionTitle}>{discovery.title}</Text>
+                <Text style={styles.discoveryTitle}>{discovery.title}</Text>
                 <Text style={styles.sectionMeta}>时节与兴趣 · 每日轮换</Text>
               </View>
               <Pressable
@@ -335,6 +335,7 @@ const styles = StyleSheet.create({
   sectionBlock: { marginTop: spacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 19, fontWeight: '800' },
+  discoveryTitle: { color: '#806B4E', fontFamily: fonts.title, fontSize: 21, fontWeight: '800' },
   sectionMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   emptyReview: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, paddingVertical: 8 },
   reviewRow: { minHeight: 70, marginBottom: 8, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 16 },
@@ -342,17 +343,17 @@ const styles = StyleSheet.create({
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
   reviewMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   reviewAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
-  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 24 },
+  discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 24 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#FFFDF8', borderWidth: 2, borderLeftWidth: 4, borderColor: '#9D8F7A', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 },
+  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#F7F0E5', borderWidth: 2, borderLeftWidth: 4, borderColor: '#AA9A82', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
   highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
-  highlightQuote: { color: '#29251F', fontFamily: fonts.title, fontSize: 20, lineHeight: 34, fontWeight: '700' },
+  highlightQuote: { color: '#25211C', fontFamily: fonts.title, fontSize: 21, lineHeight: 35, fontWeight: '800' },
   highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
-  highlightSource: { flex: 1, color: '#7A7065', fontFamily: fonts.sans, fontSize: 12 },
+  highlightSource: { flex: 1, color: '#887D6E', fontFamily: fonts.sans, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightSeparator: { height: 1, backgroundColor: '#B7AA96', marginBottom: 24, marginHorizontal: 4 },
+  highlightSeparator: { height: 2, backgroundColor: '#B4A58E', marginBottom: 24, marginHorizontal: 4 },
 });

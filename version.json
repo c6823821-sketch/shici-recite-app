@@ -1,14 +1,13 @@
 {
-  "version": "3.0.9",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.9/shici-recite-app-v3.0.9.apk",
+  "version": "3.0.10",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.9/shici-recite-app-v3.0.9.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.9/shici-recite-app-v3.0.9.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.9/shici-recite-app-v3.0.9.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.9/shici-recite-app-v3.0.9.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.10/shici-recite-app-v3.0.10.apk"
   ],
-  "size": 92522700,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.9",
-  "notes": "将应景分隔线放在两张卡片之间，并对诗句、出处和卡片背景做颜色与字体区分。",
-  "sha256": "a3bb94e9c3caae921791ebea70ac7f9296fc8886631c3db9e7b83e56a7de70e0"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.10",
+  "notes": "修正应景卡片分隔位置与颜色层级，并为搜索结果增加查看全文入口。"
 }

@@ -1,3 +1,57 @@
+# v3.0.10 应景卡片与全文入口修复
+
+发布时间：2026-09-26
+
+## 应景卡片
+
+- 删除同一张卡片内部把诗句和出处切开的错误横线。
+- 分隔线只出现在两张卡片之间。
+- 推荐说明和第一张卡片之间增加空间。
+- 秋日应景标题改为墨棕色，与诗句颜色区分。
+- 诗句改为更深墨色、较大字号和加粗字重。
+- 出处改为浅灰无衬线字体。
+- 卡片使用暖色背景和明显外边框，保持 24px 卡片间距。
+- 保留“查看原诗”和“换一组”。
+
+## 搜索结果全文入口
+
+- 搜索到的句子卡片新增“查看全文”按钮。
+- 典籍匹配结果也新增“查看全文”按钮。
+- 不再只显示匹配的零散句子，无法判断全文在哪里。
+- 如果本地没有完整篇目，仍可使用原有联网补录入口。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.9：
+
+```powershell
+git checkout main
+git reset --hard v3.0.9
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.9 应景分隔线位置修正
 
 发布时间：2026-09-26
