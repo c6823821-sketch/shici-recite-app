@@ -1,3 +1,74 @@
+# v3.0.4 学习记录与卡片边界修复
+
+发布时间：2026-09-26
+
+## 心情搜索框
+
+- 心情入口改成明显的搜索框结构。
+- 增加左侧搜索图标、弱化提示文字和右侧“推荐”按钮。
+- 提示文字：
+  “输入想法或心情，推荐一首诗词”
+- 点击搜索框或“推荐”按钮后打开心情荐诗面板。
+
+## 应景推荐独立卡片
+
+- 每条秋日应景句增加“应景句 1 / 2 / 3”标签。
+- 增加独立分隔线、左侧朱砂强调线和更明显的卡片边框。
+- 卡片之间固定 16px 间距，避免三句黏在一起。
+- 每条卡片底部保留“查看原诗”。
+
+## 我的背诵记录
+
+- “我的”页新增“背诵记录”入口。
+- 背诵记录分为：
+  - 已背诗词
+  - 后续复习
+- 每条记录显示：
+  - 诗词名称
+  - 作者与朝代
+  - 已背 / 待复习 / 已安排状态
+  - 下次复习日期
+- 点击记录可直接进入对应诗词。
+- 数据完全保存在本机，不影响 API 设置和收藏。
+
+## Git 凭证弹窗
+
+- 此前弹窗来自 Git 对 gh-proxy 代理地址的凭证识别，不是 App 登录。
+- 已移除 ghproxy.net 和 gh-proxy.com 的 credential provider 配置。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `App.tsx`
+- `src/services/dailyDiscovery.ts`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+
+## 回滚本次修改
+
+回到 v3.0.3：
+
+```powershell
+git checkout main
+git reset --hard v3.0.3
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.3 卡片边界与每日推荐缓存修复
 
 发布时间：2026-09-26

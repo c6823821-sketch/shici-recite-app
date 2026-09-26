@@ -203,6 +203,7 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
           >
             <Text style={styles.moodSearchIcon}>⌕</Text>
             <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
+            <View style={styles.moodSearchAction}><Text style={styles.moodSearchActionText}>推荐</Text></View>
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -323,7 +324,7 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
               </Pressable>
             </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
-            {discovery.items.map((item) => {
+            {discovery.items.map((item, index) => {
               const work = catalog.find((candidate) => candidate.id === item.workId);
               if (!work) return null;
               return (
@@ -332,6 +333,11 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
                   onPress={() => onOpenWork(work, item.lineIndex)}
                   style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
                 >
+                  <View style={styles.highlightTop}>
+                    <Text style={styles.highlightNumber}>应景句 {index + 1}</Text>
+                    <Text style={styles.highlightTap}>点击卡片查看原诗</Text>
+                  </View>
+                  <View style={styles.highlightDivider} />
                   <Text style={styles.highlightQuote}>{item.quote}</Text>
                   <View style={styles.highlightFooter}>
                     <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
@@ -412,7 +418,9 @@ const styles = StyleSheet.create({
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: '#DED6C8', backgroundColor: '#F6F2EA', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   moodSearchIcon: { color: colors.muted, fontFamily: fonts.sans, fontSize: 20, marginRight: 8 },
-  moodPromptText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  moodPromptText: { flex: 1, color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
@@ -435,7 +443,11 @@ const styles = StyleSheet.create({
   discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 12 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 16, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: '#CFC6B7', borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
+  highlightRow: { marginBottom: 16, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderLeftWidth: 3, borderColor: '#CFC6B7', borderLeftColor: colors.vermilion, borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
+  highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
+  highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
   highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30 },
   highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
   highlightSource: { flex: 1, color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },

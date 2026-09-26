@@ -43,3 +43,15 @@ git reset --hard v3.0.2
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.4 学习记录回滚
+
+回到 v3.0.3：
+
+```powershell
+git checkout main
+git reset --hard v3.0.3
+git clean -fd
+git push origin main --force-with-lease
+```

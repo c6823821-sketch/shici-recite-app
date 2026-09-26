@@ -12,23 +12,26 @@ import {
   View,
 } from 'react-native';
 import { explainWithApi } from '../services/api';
+import { loadWorksCatalog } from '../data/worksCatalog';
+import { loadStudyRecords, StudyRecord } from '../services/studyQueue';
 import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorite } from '../services/favorites';
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { checkForUpdate, downloadAndInstallUpdate, formatBytes, UpdateInfo } from '../services/updater';
 import { colors, fonts, spacing } from '../theme';
-import { ApiSettings } from '../types';
+import { ApiSettings, Work } from '../types';
 
-type Section = 'menu' | 'api' | 'favorites';
+type Section = 'menu' | 'api' | 'favorites' | 'history';
 
 interface Props {
   active?: boolean;
   refreshToken?: number;
   onOpenFavorite: (favorite: FavoriteLine) => void;
+  onOpenWork: (work: Work, lineIndex?: number) => void;
 }
 
 const EMPTY: ApiSettings = { endpoint: '', apiKey: '', model: '' };
 
-export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite }: Props) {
+export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite, onOpenWork }: Props) {
   const [section, setSection] = useState<Section>('menu');
   const [settings, setSettings] = useState<ApiSettings>(EMPTY);
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
@@ -39,6 +42,9 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const [installing, setInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [refreshingFavorites, setRefreshingFavorites] = useState(false);
+  const [historyRecords, setHistoryRecords] = useState<StudyRecord[]>([]);
+  const [historyCatalog, setHistoryCatalog] = useState<Work[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));
@@ -59,6 +65,26 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   useEffect(() => {
     if (active) void refreshFavorites();
   }, [active, refreshToken]);
+
+  const refreshHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const [records, catalog] = await Promise.all([loadStudyRecords(), loadWorksCatalog()]);
+      setHistoryRecords(records);
+      setHistoryCatalog(catalog);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const latestRecordMap = new Map<string, StudyRecord>();
+  for (const record of historyRecords) {
+    const previous = latestRecordMap.get(record.workId);
+    if (!previous || record.updatedAt > previous.updatedAt) latestRecordMap.set(record.workId, record);
+  }
+  const latestRecords = [...latestRecordMap.values()];
+  const learnedRecords = latestRecords.filter((record) => record.status === 'done');
+  const upcomingRecords = latestRecords.filter((record) => record.status === 'pending' || (record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() > Date.now()));
 
   const save = async () => {
     await saveApiSettings(settings);
@@ -119,6 +145,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
       {section === 'menu' ? (
         <ScrollView contentContainerStyle={styles.content}>
           <MenuRow title="API 设置" detail="地址、Key、模型" onPress={() => { setMessage(''); setSection('api'); }} />
+          <MenuRow title="背诵记录" detail={`${learnedRecords.length} 首已背 · ${upcomingRecords.length} 首后续复习`} onPress={() => { void refreshHistory(); setSection('history'); }} />
           <MenuRow title="我的收藏" detail={`${favorites.length} 条句子 · ${folders.length} 个收藏夹`} onPress={() => setSection('favorites')} />
           <MenuRow title="检查更新" detail={checking ? '正在检查…' : '应用内下载并安装新版'} onPress={checkUpdate} />
           {updateInfo ? (
@@ -147,7 +174,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
             {message ? <Text style={styles.message}>{message}</Text> : null}
           </ScrollView>
         </KeyboardAvoidingView>
-      ) : (
+      ) : section === 'favorites' ? (
         <ScrollView
           contentContainerStyle={styles.content}
           refreshControl={<RefreshControl refreshing={refreshingFavorites} onRefresh={() => void refreshFavorites()} />}
@@ -166,8 +193,28 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
           {favorites.some((item) => !item.folderId) ? <Text style={styles.folderTitle}>未分类</Text> : null}
           {favorites.filter((item) => !item.folderId).map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} onOpen={() => onOpenFavorite(item)} />)}
         </ScrollView>
-      )}
-    </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={<RefreshControl refreshing={historyLoading} onRefresh={() => void refreshHistory()} />}
+        >
+          <Text style={styles.help}>这里记录背诵页里标记为“背对了”或“没背出”的诗词。数据只保存在本机。</Text>
+
+          <Text style={styles.historySectionTitle}>已背诗词</Text>
+          {learnedRecords.length ? learnedRecords.map((record) => {
+            const work = historyCatalog.find((item) => item.id === record.workId);
+            if (!work) return null;
+            return <HistoryRow key={record.workId} work={work} status="已背" dueAt={record.dueAt} onOpen={() => onOpenWork(work, 0)} />;
+          }) : <Text style={styles.historyEmpty}>还没有已背诗词，完成一次背诵后会出现在这里。</Text>}
+
+          <Text style={styles.historySectionTitle}>后续复习</Text>
+          {upcomingRecords.length ? upcomingRecords.map((record) => {
+            const work = historyCatalog.find((item) => item.id === record.workId);
+            if (!work) return null;
+            return <HistoryRow key={record.workId} work={work} status={record.status === 'pending' ? '待复习' : '已安排'} dueAt={record.dueAt} onOpen={() => onOpenWork(work, 0)} />;
+          }) : <Text style={styles.historyEmpty}>目前没有还没安排的复习。</Text>}
+        </ScrollView>
+      )}    </View>
   );
 }
 
@@ -202,6 +249,38 @@ function FavoriteItem({ item, onDeleted, onOpen }: { item: FavoriteLine; onDelet
         <Text style={styles.delete}>删除</Text>
       </Pressable>
     </View>
+  );
+}
+
+function reviewTimeLabel(dueAt?: string): string {
+  if (!dueAt) return '等待安排';
+  const date = new Date(dueAt);
+  if (Number.isNaN(date.getTime())) return '等待安排';
+  return (date.getMonth() + 1) + ' 月 ' + date.getDate() + ' 日';
+}
+
+function HistoryRow({
+  work,
+  status,
+  dueAt,
+  onOpen,
+}: {
+  work: Work;
+  status: string;
+  dueAt?: string;
+  onOpen: () => void;
+}) {
+  return (
+    <Pressable onPress={onOpen} style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
+      <View style={styles.historyCopy}>
+        <Text style={styles.historyTitle}>{work.title}</Text>
+        <Text style={styles.historyMeta}>{work.author} · {work.dynasty}</Text>
+      </View>
+      <View style={styles.historySide}>
+        <Text style={styles.historyStatus}>{status}</Text>
+        <Text style={styles.historyDue}>{reviewTimeLabel(dueAt)}</Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -242,4 +321,14 @@ const styles = StyleSheet.create({
   favoriteQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, lineHeight: 26 },
   deleteButton: { minWidth: 48, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   delete: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12 },
+  historySectionTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '800', marginTop: 24, marginBottom: 12 },
+  historyEmpty: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, paddingVertical: 8 },
+  historyRow: { minHeight: 76, marginBottom: 12, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: '#DED6C8', backgroundColor: colors.paperLight, flexDirection: 'row', alignItems: 'center', shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
+  historyCopy: { flex: 1, minWidth: 0 },
+  historyTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
+  historyMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 5 },
+  historySide: { alignItems: 'flex-end', marginLeft: 12 },
+  historyStatus: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  historyDue: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
+  pressed: { opacity: 0.65 },
 });

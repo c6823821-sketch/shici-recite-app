@@ -190,6 +190,7 @@ export default function App() {
               active={tab === 'profile'}
               refreshToken={screen === 'tabs' && tab === 'profile' ? 1 : 0}
               onOpenFavorite={(item) => { void openFavorite(item); }}
+              onOpenWork={openWork}
             />
           </View>
         </View>
