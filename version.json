@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk"
   ],
-  "size": 0,
+  "size": 92531036,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.11",
-  "notes": "补充陈情表全文，严格校验长文全文，恢复主页荐诗排版并减淡应景分隔线。"
+  "notes": "补充陈情表全文，严格校验长文全文，恢复主页荐诗排版并减淡应景分隔线。",
+  "sha256": "e0d61ce4177ec4eec3d1c371f9c2c948678ebfbf6d82d894a40d89f1984aea50"
 }
