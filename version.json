@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.2/shici-recite-app-v3.0.2.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.2/shici-recite-app-v3.0.2.apk"
   ],
-  "size": 0,
+  "size": 92522704,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.2",
-  "notes": "修复每日应景推荐重复、心情入口不明确、应景卡片不完整和诗库箭头问题。"
+  "notes": "修复每日应景推荐重复、心情入口不明确、应景卡片不完整和诗库箭头问题。",
+  "sha256": "4080c9f70319b5efdb6fefd67c12fb574f6bf284ecd90957c538ea717d4aa2a8"
 }
