@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.8/shici-recite-app-v3.0.8.apk"
   ],
-  "size": 0,
+  "size": 92520712,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.8",
-  "notes": "修复应景卡片内部横线位置，删除错误分隔，改为整卡边界与 24px 间距。"
+  "notes": "修复应景卡片内部横线位置，删除错误分隔，改为整卡边界与 24px 间距。",
+  "sha256": "4d9919e751ed246628d65077f431cf1d68b48a8aaeed2e984def6a6b3cb54a19"
 }
