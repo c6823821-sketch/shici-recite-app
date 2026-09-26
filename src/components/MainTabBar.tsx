@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts } from '../theme';
+import { colors, fonts, radius } from '../theme';
 
 export type MainTab = 'today' | 'library' | 'compose' | 'profile';
 
@@ -20,7 +20,7 @@ const TABS: Array<{ key: MainTab; label: string; mark: string }> = [
 export function MainTabBar({ active, onChange }: Props) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8), minHeight: 62 + Math.max(insets.bottom, 8) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {TABS.map((tab) => {
         const selected = active === tab.key;
         return (
@@ -37,12 +37,12 @@ export function MainTabBar({ active, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  bar: { minHeight: 70, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.paperLight, borderTopWidth: 1, borderTopColor: colors.line, paddingBottom: 6 },
-  tab: { flex: 1, minHeight: 62, alignItems: 'center', justifyContent: 'center' },
-  mark: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 2 },
-  markActive: { borderColor: colors.vermilion, backgroundColor: colors.vermilion },
-  markText: { color: colors.muted, fontFamily: fonts.title, fontSize: 15, fontWeight: '700' },
-  markTextActive: { color: colors.white },
-  label: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 3 },
-  labelActive: { color: colors.vermilion, fontWeight: '700' },
+  bar: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.paperLight, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, paddingTop: 6 },
+  tab: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center' },
+  mark: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: radius.button },
+  markActive: { backgroundColor: '#FBE9E7' },
+  markText: { color: colors.muted, fontFamily: fonts.title, fontSize: 15, fontWeight: '600' },
+  markTextActive: { color: colors.vermilion, fontWeight: '800' },
+  label: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 2 },
+  labelActive: { color: colors.ink, fontWeight: '700' },
 });

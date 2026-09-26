@@ -2,7 +2,7 @@
   "expo": {
     "name": "诗词背诵",
     "slug": "shici-recite-app",
-    "version": "2.9.3",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.shicirecite.app",
-      "versionCode": 43,
+      "versionCode": 44,
       "adaptiveIcon": {
         "backgroundColor": "#F3EDDF",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,25 +25,13 @@
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "softwareKeyboardLayoutMode": "resize",
-      "splash": {
-        "backgroundColor": "#F3EDDF",
-        "resizeMode": "contain"
-      },
       "backgroundColor": "#F3EDDF"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "splash": {
-      "backgroundColor": "#F3EDDF",
-      "resizeMode": "contain"
-    },
     "backgroundColor": "#F3EDDF",
     "androidStatusBar": {
-      "backgroundColor": "#F3EDDF",
-      "barStyle": "dark-content"
-    },
-    "androidNavigationBar": {
       "backgroundColor": "#F3EDDF",
       "barStyle": "dark-content"
     }

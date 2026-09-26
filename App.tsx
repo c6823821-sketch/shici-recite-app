@@ -1,4 +1,4 @@
-﻿import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -13,6 +13,7 @@ import { Classic } from './src/types';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
+import { FocusReciteScreen } from './src/screens/FocusReciteScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
 import { CompositionScreen } from './src/screens/CompositionScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -21,7 +22,7 @@ import { Work } from './src/types';
 import { FavoriteLine } from './src/services/favorites';
 import { loadImportedWorks } from './src/services/importedWorks';
 
-type Screen = 'tabs' | 'reader' | 'classic';
+type Screen = 'tabs' | 'reader' | 'classic' | 'focus';
 
 
 export default function App() {
@@ -34,6 +35,9 @@ export default function App() {
   const [classicSectionIndex, setClassicSectionIndex] = useState<number | undefined>();
   const [classicSegmentIndex, setClassicSegmentIndex] = useState<number | undefined>();
   const [classicFromSearch, setClassicFromSearch] = useState(false);
+  const [focusWorks, setFocusWorks] = useState<Work[]>([]);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const [focusRevision, setFocusRevision] = useState(0);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -49,6 +53,12 @@ export default function App() {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (screen === 'focus') {
+        setScreen('tabs');
+        setTab('today');
+        setFocusRevision((value) => value + 1);
+        return true;
+      }
       if (screen === 'classic') {
         if (classicFromSearch) {
           setScreen('tabs');
@@ -85,6 +95,20 @@ export default function App() {
     setWork(next);
     setReaderLineIndex(lineIndex);
     setScreen('reader');
+  };
+
+  const openFocus = (nextWorks: Work[], initialIndex = 0) => {
+    const unique = [...new Map(nextWorks.map((item) => [item.id, item])).values()];
+    if (!unique.length) return;
+    setFocusWorks(unique);
+    setFocusIndex(Math.max(0, Math.min(initialIndex, unique.length - 1)));
+    setScreen('focus');
+  };
+
+  const closeFocus = () => {
+    setScreen('tabs');
+    setTab('today');
+    setFocusRevision((value) => value + 1);
   };
 
   const openClassic = (next: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch = false) => {
@@ -138,6 +162,7 @@ export default function App() {
   const openSettings = () => {
     setScreen('tabs');
     setTab('profile');
+    setFocusRevision((value) => value + 1);
   };
 
   return (
@@ -147,7 +172,12 @@ export default function App() {
       <View style={styles.tabs}>
         <View style={styles.content}>
           <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
-            <TodayScreen onOpenWork={openWork} onOpenSettings={openSettings} />
+            <TodayScreen
+              onOpenWork={openWork}
+              onOpenFocus={openFocus}
+              onOpenSettings={openSettings}
+              refreshToken={focusRevision}
+            />
           </View>
           <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
             <LibraryScreen onOpenWork={openWork} onOpenClassic={openClassic} onOpenSettings={openSettings} />
@@ -163,7 +193,7 @@ export default function App() {
             />
           </View>
         </View>
-        <MainTabBar active={tab} onChange={setTab} />
+        {screen === 'tabs' ? <MainTabBar active={tab} onChange={setTab} /> : null}
       </View>
       {screen === 'reader' ? (
         <View style={styles.readerOverlay}>
@@ -171,6 +201,16 @@ export default function App() {
             work={work}
             initialLineIndex={readerLineIndex}
             onBack={closeReader}
+            onOpenSettings={openSettings}
+          />
+        </View>
+      ) : null}
+      {screen === 'focus' ? (
+        <View style={styles.focusOverlay}>
+          <FocusReciteScreen
+            works={focusWorks}
+            initialIndex={focusIndex}
+            onBack={closeFocus}
             onOpenSettings={openSettings}
           />
         </View>
@@ -198,8 +238,6 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabPane: { flex: 1 },
   hidden: { display: 'none' },
+  focusOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 400, elevation: 80, backgroundColor: colors.paper },
   readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40, backgroundColor: colors.paper },
 });
-
-
-
