@@ -1,3 +1,50 @@
+# v3.0.9 应景分隔线位置修正
+
+发布时间：2026-09-26
+
+## 修复
+
+- 删除同一张卡片内部错误的横线，不再切断诗句和篇名。
+- 将分隔线移动到两张卡片之间。
+- 上一首出处结束后，才显示下一条分隔线，然后开始下一首。
+- 卡片之间保留 24px 空隙。
+- 推荐说明与第一张卡片之间保留 24px 空隙。
+- 卡片背景改为暖白。
+- 诗句颜色加深为正文墨色，字号提高到 20px，字重提高到 700。
+- 出处改为 12px 灰色无衬线字体，和诗句严格区分。
+- 卡片边框调整得更清晰，但不再在卡片内部乱切线。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.8：
+
+```powershell
+git checkout main
+git reset --hard v3.0.8
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.8 应景卡片分隔修正
 
 发布时间：2026-09-26

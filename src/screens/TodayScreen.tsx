@@ -229,21 +229,23 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
               </Pressable>
             </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
-            {discovery.items.map((item) => {
+            {discovery.items.map((item, index) => {
               const work = catalog.find((candidate) => candidate.id === item.workId);
               if (!work) return null;
               return (
-                <Pressable
-                  key={item.workId + '-' + item.lineIndex}
-                  onPress={() => onOpenWork(work, item.lineIndex)}
-                  style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
-                >
-                  <Text style={styles.highlightQuote}>{item.quote}</Text>
-                  <View style={styles.highlightFooter}>
-                    <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
-                    <Text style={styles.highlightAction}>查看原诗</Text>
-                  </View>
-                </Pressable>
+                <View key={item.workId + '-' + item.lineIndex}>
+                  <Pressable
+                    onPress={() => onOpenWork(work, item.lineIndex)}
+                    style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.highlightQuote}>{item.quote}</Text>
+                    <View style={styles.highlightFooter}>
+                      <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
+                      <Text style={styles.highlightAction}>查看原诗</Text>
+                    </View>
+                  </Pressable>
+                  {index < discovery.items.length - 1 ? <View style={styles.highlightSeparator} /> : null}
+                </View>
               );
             })}
           </View>
@@ -340,16 +342,17 @@ const styles = StyleSheet.create({
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
   reviewMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   reviewAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
-  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 20 },
+  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 24 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#FFFDF8', borderWidth: 2, borderLeftWidth: 4, borderColor: '#A99C88', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 },
+  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#FFFDF8', borderWidth: 2, borderLeftWidth: 4, borderColor: '#9D8F7A', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
   highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
-  highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30 },
+  highlightQuote: { color: '#29251F', fontFamily: fonts.title, fontSize: 20, lineHeight: 34, fontWeight: '700' },
   highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
-  highlightSource: { flex: 1, color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  highlightSource: { flex: 1, color: '#7A7065', fontFamily: fonts.sans, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  highlightSeparator: { height: 1, backgroundColor: '#B7AA96', marginBottom: 24, marginHorizontal: 4 },
 });
