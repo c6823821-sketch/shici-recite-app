@@ -158,7 +158,7 @@ async function enrichWithApi(settings: ApiSettings, context: DiscoveryContext): 
 }
 
 export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: Work[]): Promise<DailyDiscovery> {
-  const key = `daily_discovery_v3_${dateKey()}`;
+  const key = `daily_discovery_v4_${dateKey()}`;
   const cached = await getStoredValue(key);
   if (cached) {
     try { return JSON.parse(cached) as DailyDiscovery; } catch { /* regenerate */ }
@@ -214,7 +214,7 @@ export async function rotateDailyDiscovery(current: DailyDiscovery, catalog: Wor
     dateKey: dateKey(),
     items,
   };
-  await setStoredValue("daily_discovery_v3_" + dateKey(), JSON.stringify(next));
+  await setStoredValue("daily_discovery_v4_" + dateKey(), JSON.stringify(next));
   await rememberDiscovery(next.dateKey, next.items);
   return next;
 }

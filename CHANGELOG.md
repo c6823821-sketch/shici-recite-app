@@ -1,3 +1,59 @@
+# v3.0.5 每日推荐强制刷新
+
+发布时间：2026-09-26
+
+## 关键修复
+
+- 每日推荐缓存从 v3 升级到 v4。
+- 安装 v3.0.5 后，第一次打开会忽略 v3.0.3 / v3.0.4 留下的当天缓存，强制重新生成秋日推荐。
+- 继续保留最近 30 天推荐历史排除。
+- “换一组”会排除当天和最近 30 天已经出现过的篇目。
+- 这一版本解决“升级后今天仍然看到旧三句”的问题。
+
+## 同时包含
+
+- 心情入口的搜索框 + “推荐”按钮。
+- 秋日应景的“应景句 1 / 2 / 3”独立卡片和分隔线。
+- “我的 → 背诵记录”：
+  - 已背诗词
+  - 后续复习
+  - 下次复习日期
+  - 点击进入原诗
+
+## 修改文件
+
+- `src/services/dailyDiscovery.ts`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `App.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.4：
+
+```powershell
+git checkout main
+git reset --hard v3.0.4
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.4 学习记录与卡片边界修复
 
 发布时间：2026-09-26
