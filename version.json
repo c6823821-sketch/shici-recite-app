@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.5/shici-recite-app-v3.0.5.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.5/shici-recite-app-v3.0.5.apk"
   ],
-  "size": 0,
+  "size": 92524988,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.5",
-  "notes": "强制刷新每日推荐缓存，并补齐学习记录、心情搜索框和应景卡片边界。"
+  "notes": "强制刷新每日推荐缓存，并补齐学习记录、心情搜索框和应景卡片边界。",
+  "sha256": "4d77e6ae63da6707aff03a8c6746c7ef36bf0b149d3144cfe91b19a6aa56eeee"
 }
