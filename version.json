@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.4/shici-recite-app-v3.0.4.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.4/shici-recite-app-v3.0.4.apk"
   ],
-  "size": 0,
+  "size": 92524988,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.4",
-  "notes": "强化心情搜索框、应景独立卡片，并在“我的”新增已背诗词与后续复习记录。"
+  "notes": "强化心情搜索框、应景独立卡片，并在“我的”新增已背诗词与后续复习记录。",
+  "sha256": "f6d1d5b693a81d76a63086559321841c398518f677360d86bca6875b1fbb077e"
 }
