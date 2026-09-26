@@ -13,6 +13,7 @@ import { Classic } from './src/types';
 import { MainTabBar, MainTab } from './src/components/MainTabBar';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { LibraryScreen } from './src/screens/LibraryScreen';
+import { ReciteScreen } from './src/screens/ReciteScreen';
 import { FocusReciteScreen } from './src/screens/FocusReciteScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
 import { CompositionScreen } from './src/screens/CompositionScreen';
@@ -55,7 +56,7 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (screen === 'focus') {
         setScreen('tabs');
-        setTab('today');
+        setTab('recite');
         setFocusRevision((value) => value + 1);
         return true;
       }
@@ -107,7 +108,7 @@ export default function App() {
 
   const closeFocus = () => {
     setScreen('tabs');
-    setTab('today');
+    setTab('recite');
     setFocusRevision((value) => value + 1);
   };
 
@@ -174,13 +175,19 @@ export default function App() {
           <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
             <TodayScreen
               onOpenWork={openWork}
-              onOpenFocus={openFocus}
               onOpenSettings={openSettings}
               refreshToken={focusRevision}
             />
           </View>
           <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
             <LibraryScreen onOpenWork={openWork} onOpenClassic={openClassic} onOpenSettings={openSettings} />
+          </View>
+          <View style={[styles.tabPane, tab !== 'recite' && styles.hidden]}>
+            <ReciteScreen
+              onOpenFocus={openFocus}
+              onOpenWork={openWork}
+              refreshToken={focusRevision}
+            />
           </View>
           <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
             <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />

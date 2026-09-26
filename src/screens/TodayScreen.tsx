@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ImageBackground,
@@ -28,12 +28,11 @@ import { ApiSettings, DailyRecommendation, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
-  onOpenFocus: (works: Work[], initialIndex?: number) => void;
   onOpenSettings: () => void;
   refreshToken?: number;
 }
 
-export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshToken = 0 }: Props) {
+export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Props) {
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [moodVisible, setMoodVisible] = useState(false);
@@ -86,11 +85,9 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
 
   useEffect(() => {
     let alive = true;
-    void Promise.all([loadDailyGoal(), loadDueRecords(), loadTodayRecords()]).then(([nextGoal, due, today]) => {
+    void loadDueRecords().then((due) => {
       if (!alive) return;
-      setGoal(nextGoal);
       setRecords(due);
-      setTodayRecords(today);
     });
     return () => {
       alive = false;
@@ -98,40 +95,14 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
   }, [refreshToken]);
 
   const currentWork = daily ? catalog.find((work) => work.id === daily.workId) ?? null : null;
-  const doneCount = todayRecords.filter((record) => record.status === 'done').length;
-  const pending = records
-    .filter((record) => record.status === 'pending')
-    .map((record) => catalog.find((work) => work.id === record.workId))
-    .filter((work): work is Work => Boolean(work));
   const review = records
     .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
     .map((record) => catalog.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
-
-  const focusQueue = useMemo(() => {
-    const queue = new Map<string, Work>();
-    const add = (work: Work | null | undefined) => {
-      if (work) queue.set(work.id, work);
-    };
-
-    review.forEach(add);
-    pending.forEach(add);
-    add(currentWork);
-    const minimum = Math.min(20, Math.max(1, goal.target, review.length + pending.length));
-    for (const work of catalog) {
-      if (queue.size >= minimum) break;
-      if (!queue.has(work.id)) queue.set(work.id, work);
-    }
-    return [...queue.values()].slice(0, minimum);
-  }, [catalog, currentWork, goal.target, pending, review]);
-
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
   };
 
-  const openFocus = () => {
-    if (focusQueue.length) onOpenFocus(focusQueue, 0);
-  };
 
   const changeDiscovery = async () => {
     if (!discovery || discoveryLoading) return;
@@ -203,7 +174,6 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
           >
             <Text style={styles.moodSearchIcon}>⌕</Text>
             <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
-            <View style={styles.moodSearchAction}><Text style={styles.moodSearchActionText}>推荐</Text></View>
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -219,71 +189,6 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
               <Text style={styles.primaryText}>进入阅读</Text>
             </Pressable>
           </View>
-        </View>
-
-        <View style={styles.taskCard}>
-          <Text style={styles.taskValue}>今日背诵进度 {doneCount}/{goal.target}</Text>
-          <Text style={styles.taskHint}>按顺序完成，背对后自动进入下一首。</Text>
-
-          <View style={styles.goalProgressTrack}>
-            <View
-              style={[
-                styles.goalProgressFill,
-                { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` },
-              ]}
-            />
-          </View>
-
-          <View style={styles.taskList}>
-            {focusQueue.slice(0, Math.max(1, goal.target)).map((item, index) => {
-              const record = todayRecords.find((entry) => entry.workId === item.id);
-              const completed = record?.status === 'done';
-              return (
-                <Pressable
-                  key={`task-${item.id}`}
-                  onPress={() => onOpenWork(item, 0)}
-                  style={({ pressed }) => [styles.taskItem, pressed && styles.pressed]}
-                >
-                  <Text style={styles.taskIndex}>{index + 1}.</Text>
-                  <Text style={styles.taskTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={[styles.taskStatus, completed && styles.taskStatusDone]}>
-                    {completed ? '已背' : '待背'}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.goalTargets}>
-            {[1, 2, 3, 5].map((value) => (
-              <Pressable
-                key={value}
-                onPress={async () => setGoal(await saveDailyGoal(value))}
-                style={({ pressed }) => [
-                  styles.goalTarget,
-                  goal.target === value && styles.goalTargetActive,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={[styles.goalTargetText, goal.target === value && styles.goalTargetTextActive]}>
-                  {value} 首
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Pressable
-            disabled={focusQueue.length === 0}
-            onPress={openFocus}
-            style={({ pressed }) => [
-              styles.startButton,
-              focusQueue.length === 0 && styles.disabled,
-              pressed && styles.startButtonPressed,
-            ]}
-          >
-            <Text style={styles.startButtonText}>开始背诵</Text>
-            <Text style={styles.startButtonArrow}>→</Text>
-          </Pressable>
         </View>
 
         <View style={styles.sectionBlock}>
@@ -324,7 +229,7 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
               </Pressable>
             </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
-            {discovery.items.map((item, index) => {
+            {discovery.items.map((item) => {
               const work = catalog.find((candidate) => candidate.id === item.workId);
               if (!work) return null;
               return (
@@ -333,11 +238,6 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
                   onPress={() => onOpenWork(work, item.lineIndex)}
                   style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
                 >
-                  <View style={styles.highlightTop}>
-                    <Text style={styles.highlightNumber}>应景句 {index + 1}</Text>
-                    <Text style={styles.highlightTap}>点击卡片查看原诗</Text>
-                  </View>
-                  <View style={styles.highlightDivider} />
                   <Text style={styles.highlightQuote}>{item.quote}</Text>
                   <View style={styles.highlightFooter}>
                     <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>

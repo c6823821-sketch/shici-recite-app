@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius } from '../theme';
 
-export type MainTab = 'today' | 'library' | 'compose' | 'profile';
+export type MainTab = 'today' | 'library' | 'recite' | 'compose' | 'profile';
 
 interface Props {
   active: MainTab;
@@ -13,6 +13,7 @@ interface Props {
 const TABS: Array<{ key: MainTab; label: string; mark: string }> = [
   { key: 'today', label: '今日', mark: '今' },
   { key: 'library', label: '诗库', mark: '诗' },
+  { key: 'recite', label: '背诵', mark: '诵' },
   { key: 'compose', label: '创作', mark: '作' },
   { key: 'profile', label: '我的', mark: '我' },
 ];

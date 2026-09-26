@@ -1,3 +1,71 @@
+# v3.0.6 背诵 Tab 与卡片简化
+
+发布时间：2026-09-26
+
+## 底部导航
+
+- 底部增加第五个 Tab：背诵。
+- 顺序调整为：今日、诗库、背诵、创作、我的。
+- “背诵”位于中间。
+- 首页移除“今日背诵进度”大卡片。
+- 首页不再承担背诵任务入口。
+- 全屏 FOCUS_MODE 返回时回到背诵 Tab。
+- 新增独立背诵页面，继续展示：
+  - 今日背诵进度
+  - 具体篇目列表
+  - 待背 / 已背状态
+  - 1 / 2 / 3 / 5 首目标
+  - 开始背诵按钮
+
+## 秋日应景卡片
+
+- 删除不必要的“应景句 1 / 2 / 3”标签。
+- 删除多余顶部说明和分割标题。
+- 保留白色卡片背景、明显边框、左侧朱砂线、16px 卡片间距。
+- 每张卡片仍然可以点击进入原诗。
+
+## 心情推荐入口
+
+- 取消“输入框 + 推荐按钮”割裂结构。
+- 改为一个完整的可点击按钮：
+  “输入今天的心情，推荐一首诗词”
+- 搜索图标和文字在同一个按钮容器内。
+- 点击后打开原有心情推荐面板。
+
+## 修改文件
+
+- `src/components/MainTabBar.tsx`
+- `src/screens/ReciteScreen.tsx`
+- `src/screens/TodayScreen.tsx`
+- `App.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.5：
+
+```powershell
+git checkout main
+git reset --hard v3.0.5
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.5 每日推荐强制刷新
 
 发布时间：2026-09-26
