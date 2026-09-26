@@ -1,3 +1,83 @@
+# v3.0.1 像素级排版修复
+
+发布时间：2026-09-26
+
+## 首页重排
+
+- 首屏顺序严格调整为：问候语 → 今日荐诗 → 背诵任务卡 → 今日复习 → 秋日应景。
+- 今日荐诗重新成为首屏视觉重心，诗句字号保持 26px。
+- 作者与朝代降为 12px 浅灰色。
+- 荐诗标题右侧增加“换一换”随机推荐按钮，并保留“心情”入口。
+- 移除底部的重复“随机换一首”按钮，进入阅读按钮独占底部行动区。
+- 背诵卡从半屏巨无霸改为紧凑任务卡：
+  - 顶部显示“今日背诵进度 N/目标”。
+  - 直接列出具体篇目名称，例如“1. 琴歌（待背）”。
+  - 每首作品显示“待背 / 已背”状态。
+  - 保留 1、2、3、5 首目标切换。
+  - 底部提供明确的“开始背诵”按钮，继续进入原有 FOCUS_MODE。
+
+## 诗库排版抢救
+
+- 整个 FlatList 内容统一增加左右 20px 页面边距。
+- 搜索框独立成行，高度 44px，完全圆角，背景使用极浅纸张灰。
+- 朝代胶囊 Tabs 独占下一行，横向滚动，标签间距 8px。
+- 分类浏览、飞花令保留为独立入口。
+- 多维筛选按钮移动到结果标题右侧，不再和搜索框挤在同一行。
+- 作品列表改成真正的白色卡片：
+  - 卡片内边距 16px。
+  - 卡片间距 12px。
+  - 圆角 16px。
+  - 使用极浅阴影替代明显边框。
+- 作品标题改为 18px 加粗。
+- 作者改为 12px 浅灰色。
+- 主题、情绪、体裁改为独立药丸标签：
+  - 字号 11px。
+  - 内边距 4px 8px。
+  - flex-wrap 换行。
+  - 标签间距 8px。
+- 卡片右侧改为浅灰色 `>` 箭头。
+- 朝代标题上方留白 24px，下方留白 12px。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `CHANGELOG.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- `npm run typecheck`
+- `npm run test:core`
+- `npx expo-doctor`
+- `npx expo export --platform web`
+
+Expo Doctor 结果：21/21 checks passed。
+
+## 回滚本次微调
+
+回到 v3.0.0：
+
+```powershell
+git checkout main
+git reset --hard v3.0.0
+git clean -fd
+git push origin main --force-with-lease
+```
+
+如果需要回到本次修复分支：
+
+```powershell
+git checkout main
+git reset --hard v3.0.1
+```
+
+---
+
 # v3.0.0 重构日志
 
 ## 本次改动

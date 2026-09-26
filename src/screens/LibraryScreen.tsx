@@ -19,7 +19,7 @@ import { canonicalWorkContentKey, canonicalWorkKey } from '../data/corrections';
 import { splitClassicText } from '../services/classicText';
 import { getStoredValue, loadApiSettings, setStoredValue } from '../services/settings';
 import { ERA_ORDER, ERAS, FILTER_GROUPS, FilterKey, FilterState } from '../data/taxonomy';
-import { colors, fonts, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { ApiSettings, Classic, ClassicSection, Work } from '../types';
 
 interface Props {
@@ -240,7 +240,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           <Text style={styles.subtitle}>离线 {catalog.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
         </View>
 
-        <View style={styles.searchRow}>
+        <View style={styles.searchBlock}>
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -249,23 +249,18 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             placeholder="搜索篇名、作者或正文"
             placeholderTextColor={colors.muted}
             selectionColor={colors.vermilion}
+            returnKeyType="search"
             style={styles.searchInput}
           />
-          <Pressable onPress={() => setCategoryVisible(true)} style={styles.categoryButton}>
-            <Text style={styles.categoryButtonText}>{'分类'}</Text>
-          </Pressable>
-          <Pressable onPress={() => setFilterVisible(true)} style={styles.filterButton}>
-            <Text style={styles.filterButtonText}>筛选</Text>
-          </Pressable>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.eraTabs}>
-          {['??', ...ERAS].map((era) => {
+          {['全部', ...ERAS].map((era) => {
             const active = activeEra === era;
             return (
               <Pressable
                 key={era}
-                onPress={() => setFilters((current) => ({ ...current, eras: era === '??' ? [] : [era] }))}
+                onPress={() => setFilters((current) => ({ ...current, eras: era === '全部' ? [] : [era] }))}
                 style={[styles.eraTab, active && styles.eraTabActive]}
               >
                 <Text style={[styles.eraTabText, active && styles.eraTabTextActive]}>{era}</Text>
@@ -318,7 +313,12 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{resultTitle}</Text>
-          <Text style={styles.resultCount}>{resultCount.toLocaleString('zh-CN')} 项</Text>
+          <View style={styles.resultHeaderActions}>
+            <Text style={styles.resultCount}>{resultCount.toLocaleString('zh-CN')} 项</Text>
+            <Pressable onPress={() => setFilterVisible(true)} style={styles.filterPill}>
+              <Text style={styles.filterPillText}>筛选</Text>
+            </Pressable>
+          </View>
         </View>
 
         {selected.length > 0 ? (
@@ -373,6 +373,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             );
           }
           const previousItem = index > 0 ? listItems[index - 1] : null;
+          const cardTags = [...new Set([...item.work.themes, ...item.work.moods, item.work.genre].filter(Boolean))].slice(0, 4);
           const previous = previousItem?.kind === 'work' ? previousItem.work : null;
           const showEra = !previous || previous.dynasty !== item.work.dynasty;
           return (
@@ -382,10 +383,14 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 <View style={styles.workCopy}>
                   <Text style={styles.workTitle}>{item.work.title}</Text>
                   <Text style={styles.workAuthor}>{item.work.author}{item.work.imported ? ' · API补录待校对' : ''}</Text>
-                  <Text style={styles.workMeta}>{item.work.dynasty} · {item.work.genre} · {item.work.collections.slice(0, 2).join(' / ')}</Text>
-                  <Text style={styles.workTags}>{item.work.themes.slice(0, 4).join(' · ') || '原文篇目'}</Text>
+                  <Text style={styles.workMeta}>{item.work.dynasty} · {item.work.genre}</Text>
+                  <View style={styles.tagRow}>
+                    {(cardTags.length ? cardTags : ['原文篇目']).map((tag) => (
+                      <View key={tag} style={styles.tagPill}><Text style={styles.tagText}>{tag}</Text></View>
+                    ))}
+                  </View>
                 </View>
-                <Text style={styles.arrow}>›</Text>
+                <Text style={styles.arrow}>&gt;</Text>
               </Pressable>
             </View>
           );
@@ -419,91 +424,97 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
-  header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  header: { paddingHorizontal: 0, paddingBottom: spacing.md },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 34, fontWeight: '800', letterSpacing: 3 },
   subtitle: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.lg, marginTop: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  searchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
+  searchBlock: { marginTop: spacing.md },
+  searchRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
+  searchInput: { minHeight: 44, borderRadius: radius.pill, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 16, backgroundColor: colors.paperDeep },
   categoryButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 14 },
   categoryButtonText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15 },
   categoryOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 120, elevation: 35, backgroundColor: colors.paper },
   filterButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 18 },
   filterButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16 },
-  eraTabs: { paddingHorizontal: spacing.lg, paddingTop: 14, gap: 8 },
+  eraTabs: { paddingTop: 16, gap: 8 },
   eraTab: { minHeight: 36, borderRadius: 999, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
   eraTabActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },
   eraTabText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
   eraTabTextActive: { color: colors.vermilion, fontWeight: '800' },
-  heroActions: { flexDirection: 'row', gap: 10, marginHorizontal: spacing.lg, marginTop: 12 },
+  heroActions: { flexDirection: 'row', gap: 10, marginHorizontal: 0, marginTop: 12 },
   heroAction: { flex: 1, minHeight: 68, borderWidth: 1, borderColor: colors.line, borderRadius: 16, backgroundColor: colors.paperLight, paddingHorizontal: 14, justifyContent: 'center', shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   heroActionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   heroActionDetail: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
-  historyBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  historyBlock: { paddingHorizontal: 0, paddingTop: spacing.sm },
   historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   historyLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
   historyClear: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   historyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   historyChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: colors.paperLight },
   historyText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
-  dimensionTabs: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  dimensionTabs: { flexDirection: 'row', marginHorizontal: 0, marginTop: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   dimensionTab: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
   dimensionTabActive: { borderBottomWidth: 2, borderBottomColor: colors.vermilion },
   dimensionTabText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
   dimensionTabTextActive: { color: colors.vermilion, fontWeight: '700' },
-  dimensionGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 8 },
+  dimensionGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 0, paddingVertical: spacing.md, gap: 8 },
   dimensionChip: { minHeight: 34, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 11, justifyContent: 'center', backgroundColor: colors.paperLight },
   dimensionChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   dimensionChipText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
   dimensionChipTextActive: { color: colors.vermilion, fontWeight: '700' },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 8 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 0, paddingVertical: spacing.md, gap: 8 },
   quickChip: { minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 2, paddingHorizontal: 13, backgroundColor: colors.paperLight },
   quickChipActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   quickText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   quickTextActive: { color: colors.vermilion, fontWeight: '700' },
-  searchTabs: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.paperLight },
+  searchTabs: { flexDirection: 'row', marginHorizontal: 0, marginTop: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.paperLight },
   searchTab: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.line },
   searchTabActive: { backgroundColor: colors.paper },
   searchTabText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
   searchTabTextActive: { color: colors.vermilion, fontWeight: '700' },
   searchTabCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
-  resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginHorizontal: spacing.lg, marginTop: spacing.sm },
+  resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginHorizontal: 0, marginTop: spacing.sm },
   resultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
+  resultHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
-  remotePanel: { marginHorizontal: spacing.lg, marginTop: 10 },
+  filterPill: { minHeight: 32, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paperLight },
+  filterPillText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  remotePanel: { marginHorizontal: 0, marginTop: 10 },
   remoteButton: { minHeight: 46, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   remoteButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   remoteMessage: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
-  selectedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingTop: 10, gap: 8 },
+  selectedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 0, paddingTop: 10, gap: 8 },
   selectedChip: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderWidth: 1, borderColor: colors.vermilion, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 6 },
   clearChip: { minHeight: 32, justifyContent: 'center', paddingHorizontal: 6 },
   clearText: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   listView: { flex: 1 },
-  list: { paddingBottom: 190 },
-  classicStrip: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 190 },
+  classicStrip: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: 0, paddingTop: 4, paddingBottom: 8 },
   classicStripLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11 },
   classicChip: { minHeight: 32, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 10, justifyContent: 'center' },
   classicChipText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13 },
-  classicResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  classicResults: { marginHorizontal: 0, marginTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   classicResultsTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  classicResultRow: { marginHorizontal: spacing.lg, paddingVertical: 13, paddingHorizontal: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  classicResultRow: { marginBottom: 12, padding: spacing.md, borderRadius: 16, backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
   classicResultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
   classicResultSnippet: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 5 },
   classicResultAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
-  quoteResults: { marginHorizontal: spacing.lg, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  quoteResults: { marginHorizontal: 0, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  quoteRow: { marginHorizontal: spacing.lg, paddingVertical: 14, paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, backgroundColor: colors.paperLight },
+  quoteRow: { marginBottom: 12, padding: spacing.md, borderRadius: 16, backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
   quoteLine: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 25 },
   quoteTitle: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 7 },
   quoteAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 3 },
-  workAuthor: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 6 },
-  eraHeader: { marginHorizontal: spacing.lg, color: colors.vermilion, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 18, marginBottom: 4 },
-  workRow: { minHeight: 104, marginHorizontal: spacing.lg, marginBottom: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 16, backgroundColor: colors.paperLight, paddingHorizontal: 14, paddingVertical: 13, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  workAuthor: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
+  eraHeader: { color: colors.ink, fontFamily: fonts.title, fontSize: 21, fontWeight: '800', marginTop: 24, marginBottom: 12 },
+  workRow: { marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderRadius: 16, backgroundColor: colors.paperLight, padding: spacing.md, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
   pressed: { opacity: 0.55 },
   workCopy: { flex: 1, minWidth: 0 },
-  workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 23, fontWeight: '700' },
-  workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 6 },
-  workTags: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 11, marginTop: 6 },
-  arrow: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 28 },
+  workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
+  workMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  tagPill: { borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.paperDeep },
+  tagText: { color: colors.inkSoft, fontFamily: fonts.sans, fontSize: 11 },
+  arrow: { color: '#B8B3AA', fontFamily: fonts.body, fontSize: 20, marginLeft: 12 },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyText: { color: colors.muted, fontFamily: fonts.body, fontSize: 15 },
 });

@@ -165,15 +165,54 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
           {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
         </Text>
         <Text style={styles.title}>今日</Text>
-        <Text style={styles.subtitle}>先完成一首，再让推荐慢慢跟上你。</Text>
+        <Text style={styles.subtitle}>今日先读一句，再完成背诵。</Text>
 
-        <View style={styles.goalHero}>
-          <View style={styles.goalTopRow}>
-            <Text style={styles.goalEyebrow}>TODAY'S PRACTICE</Text>
-            <View style={styles.goalPill}><Text style={styles.goalPillText}>FSRS 复习</Text></View>
+        <View style={styles.recommendCard}>
+          <ImageBackground
+            source={require('../../assets/covers/cover-moon.png')}
+            style={styles.recommendArt}
+            imageStyle={styles.recommendArtImage}
+          >
+            <View style={styles.recommendArtShade} />
+          </ImageBackground>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>今日荐诗</Text>
+            <View style={styles.cardHeaderActions}>
+              <Pressable
+                onPress={() => { setError(''); setMoodVisible(true); }}
+                style={({ pressed }) => [styles.moodButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.moodButtonText}>心情</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="换一换"
+                onPress={() => void random()}
+                style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.changeIcon}>↻</Text>
+                <Text style={styles.changeText}>换一换</Text>
+              </Pressable>
+            </View>
           </View>
-          <Text style={styles.goalValue}>今日背诵 {doneCount}/{goal.target}</Text>
-          <Text style={styles.goalHint}>先回忆，再翻开。背对后自动安排下一次复习，不把清单堆在首页。</Text>
+          {daily && currentWork ? (
+            <Pressable onPress={openDaily}>
+              <Text style={styles.quote}>{daily.quote}</Text>
+              <Text style={styles.poemMeta}>《{currentWork.title}》· {currentWork.author} · {currentWork.dynasty}</Text>
+              <Text style={styles.reason}>{daily.reason}</Text>
+            </Pressable>
+          ) : (
+            <ActivityIndicator color={colors.vermilion} style={styles.loader} />
+          )}
+          <View style={styles.cardActions}>
+            <Pressable onPress={openDaily} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+              <Text style={styles.primaryText}>进入阅读</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.taskCard}>
+          <Text style={styles.taskValue}>今日背诵进度 {doneCount}/{goal.target}</Text>
+          <Text style={styles.taskHint}>按顺序完成，背对后自动进入下一首。</Text>
 
           <View style={styles.goalProgressTrack}>
             <View
@@ -182,6 +221,26 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
                 { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` },
               ]}
             />
+          </View>
+
+          <View style={styles.taskList}>
+            {focusQueue.slice(0, Math.max(1, goal.target)).map((item, index) => {
+              const record = todayRecords.find((entry) => entry.workId === item.id);
+              const completed = record?.status === 'done';
+              return (
+                <Pressable
+                  key={`task-${item.id}`}
+                  onPress={() => onOpenWork(item, 0)}
+                  style={({ pressed }) => [styles.taskItem, pressed && styles.pressed]}
+                >
+                  <Text style={styles.taskIndex}>{index + 1}.</Text>
+                  <Text style={styles.taskTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={[styles.taskStatus, completed && styles.taskStatusDone]}>
+                    {completed ? '已背' : '待背'}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           <View style={styles.goalTargets}>
@@ -211,45 +270,9 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
               pressed && styles.startButtonPressed,
             ]}
           >
-            <Text style={styles.startButtonText}>立即开始</Text>
+            <Text style={styles.startButtonText}>开始背诵</Text>
             <Text style={styles.startButtonArrow}>→</Text>
           </Pressable>
-        </View>
-
-        <View style={styles.recommendCard}>
-          <ImageBackground
-            source={require('../../assets/covers/cover-moon.png')}
-            style={styles.recommendArt}
-            imageStyle={styles.recommendArtImage}
-          >
-            <View style={styles.recommendArtShade} />
-          </ImageBackground>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardLabel}>今日荐诗</Text>
-            <Pressable
-              onPress={() => { setError(''); setMoodVisible(true); }}
-              style={({ pressed }) => [styles.moodButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.moodButtonText}>按心情推荐</Text>
-            </Pressable>
-          </View>
-          {daily && currentWork ? (
-            <Pressable onPress={openDaily}>
-              <Text style={styles.quote}>{daily.quote}</Text>
-              <Text style={styles.poemMeta}>《{currentWork.title}》· {currentWork.author} · {currentWork.dynasty}</Text>
-              <Text style={styles.reason}>{daily.reason}</Text>
-            </Pressable>
-          ) : (
-            <ActivityIndicator color={colors.vermilion} style={styles.loader} />
-          )}
-          <View style={styles.cardActions}>
-            <Pressable onPress={openDaily} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-              <Text style={styles.primaryText}>进入阅读</Text>
-            </Pressable>
-            <Pressable onPress={() => void random()} style={({ pressed }) => [styles.randomButton, pressed && styles.pressed]}>
-              <Text style={styles.randomButtonText}>随机换一首</Text>
-            </Pressable>
-          </View>
         </View>
 
         <View style={styles.sectionBlock}>
@@ -331,17 +354,19 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },
   subtitle: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 24, marginTop: 8 },
-  goalHero: { minHeight: 320, marginTop: spacing.lg, padding: spacing.lg, borderRadius: 24, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, ...shadow },
-  goalTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  goalEyebrow: { color: colors.jade, fontFamily: fonts.sans, fontSize: 10, letterSpacing: 2.2 },
-  goalPill: { minHeight: 28, borderRadius: radius.pill, paddingHorizontal: 11, justifyContent: 'center', backgroundColor: '#FBE9E7' },
-  goalPillText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700' },
-  goalValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 32, fontWeight: '800', marginTop: 24 },
-  goalHint: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 25, marginTop: 12 },
-  goalProgressTrack: { height: 7, borderRadius: radius.pill, overflow: 'hidden', backgroundColor: colors.paperDeep, marginTop: 24 },
-  goalProgressFill: { height: 7, borderRadius: radius.pill, backgroundColor: colors.vermilion },
-  goalTargets: { flexDirection: 'row', gap: 8, marginTop: 18 },
-  goalTarget: { flex: 1, minHeight: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  taskCard: { marginTop: spacing.lg, padding: spacing.md, borderRadius: 20, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, ...shadow },
+  taskValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 22, fontWeight: '800' },
+  taskHint: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 6 },
+  goalProgressTrack: { height: 6, borderRadius: radius.pill, overflow: 'hidden', backgroundColor: colors.paperDeep, marginTop: 14 },
+  goalProgressFill: { height: 6, borderRadius: radius.pill, backgroundColor: colors.vermilion },
+  taskList: { marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  taskItem: { minHeight: 48, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  taskIndex: { width: 24, color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
+  taskTitle: { flex: 1, color: colors.ink, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', paddingRight: 8 },
+  taskStatus: { color: colors.gold, fontFamily: fonts.sans, fontSize: 11 },
+  taskStatusDone: { color: colors.jade },
+  goalTargets: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  goalTarget: { flex: 1, minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
   goalTargetActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },
   goalTargetText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
   goalTargetTextActive: { color: colors.vermilion, fontWeight: '800' },
@@ -351,16 +376,20 @@ const styles = StyleSheet.create({
   startButtonArrow: { color: colors.white, fontFamily: fonts.sans, fontSize: 23 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
-  recommendCard: { marginTop: spacing.xl, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 20, overflow: 'hidden', ...shadow },
+  recommendCard: { marginTop: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 20, overflow: 'hidden', ...shadow },
   recommendArt: { width: '100%', height: 150, justifyContent: 'flex-end' },
   recommendArtImage: { resizeMode: 'cover' },
   recommendArtShade: { flex: 1, backgroundColor: 'rgba(249,247,242,0.12)' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  cardHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  changeButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.paperLight },
+  changeIcon: { color: colors.ink, fontFamily: fonts.sans, fontSize: 17 },
+  changeText: { color: colors.ink, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 40, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
-  poemMeta: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 13, marginHorizontal: spacing.lg },
+  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
+  poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
   loader: { marginVertical: 48 },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg, marginHorizontal: spacing.lg, marginBottom: spacing.lg },

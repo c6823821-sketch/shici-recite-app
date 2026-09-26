@@ -7,3 +7,15 @@
 - 备份标签：`pre-ui-refactor-v2.9.3`
 - 备份分支：`backup/pre-ui-refactor-v2.9.3`
 - 重构分支：`feat/ui-refactor`
+
+
+## v3.0.1 微调回滚
+
+回到 v3.0.0：
+
+```powershell
+git checkout main
+git reset --hard v3.0.0
+git clean -fd
+git push origin main --force-with-lease
+```
