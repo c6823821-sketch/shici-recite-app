@@ -1,18 +1,19 @@
-﻿import { Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 export const colors = {
-  paper: '#F3EDDF',
-  paperDeep: '#E8DEC9',
-  paperLight: '#FAF6EC',
-  ink: '#211E19',
-  inkSoft: '#5E574C',
-  muted: '#8D8373',
-  line: '#CFC3AE',
-  vermilion: '#A3342A',
-  vermilionDark: '#7E281F',
-  jade: '#40584C',
-  white: '#FFFDF7',
-  danger: '#9C342B',
+  paper: '#F9F7F2',
+  paperDeep: '#F0ECE3',
+  paperLight: '#FFFFFF',
+  ink: '#333333',
+  inkSoft: '#666666',
+  muted: '#999999',
+  line: '#E8E2D8',
+  vermilion: '#C62828',
+  vermilionDark: '#9E1F1F',
+  jade: '#4A675B',
+  gold: '#B08A4A',
+  white: '#FFFFFF',
+  danger: '#C62828',
 };
 
 export const fonts = {
@@ -22,17 +23,23 @@ export const fonts = {
 };
 
 export const spacing = {
-  xs: 6,
-  sm: 10,
+  xs: 4,
+  sm: 8,
   md: 16,
-  lg: 24,
-  xl: 36,
+  lg: 20,
+  xl: 32,
+};
+
+export const radius = {
+  card: 16,
+  button: 14,
+  pill: 999,
 };
 
 export const shadow = {
-  shadowColor: '#3A2E1F',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.12,
+  shadowColor: '#333333',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
   shadowRadius: 8,
-  elevation: 3,
+  elevation: 2,
 };

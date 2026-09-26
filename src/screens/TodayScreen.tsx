@@ -1,21 +1,39 @@
-﻿import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ImageBackground, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  ImageBackground,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
 import { DailyDiscovery, loadDailyDiscovery } from '../services/dailyDiscovery';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
-import { DailyGoal, loadDailyGoal, loadDueRecords, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
-import { colors, fonts, spacing } from '../theme';
+import {
+  DailyGoal,
+  loadDailyGoal,
+  loadDueRecords,
+  loadTodayRecords,
+  saveDailyGoal,
+  StudyRecord,
+} from '../services/studyQueue';
+import { colors, fonts, radius, shadow, spacing } from '../theme';
 import { ApiSettings, DailyRecommendation, Work } from '../types';
 
 interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
+  onOpenFocus: (works: Work[], initialIndex?: number) => void;
   onOpenSettings: () => void;
+  refreshToken?: number;
 }
 
-export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
+export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshToken = 0 }: Props) {
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [moodVisible, setMoodVisible] = useState(false);
@@ -29,43 +47,56 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   const [catalog, setCatalog] = useState<Work[]>([]);
 
   useEffect(() => {
-    loadWorksCatalog().then((catalogValue) => {
+    let alive = true;
+    void loadWorksCatalog().then(async (catalogValue) => {
+      if (!alive) return;
       setCatalog(catalogValue);
-      loadApiSettings().then(async (value) => {
-        setSettings(value);
-        const discoveryValue = await loadDailyDiscovery(value, catalogValue);
-        setDiscovery(discoveryValue);
-        const saved = await loadTodayRecommendation();
-        const seasonalItem = discoveryValue.items[0];
-        const savedMatchesSeason = saved && discoveryValue.items.some(
-          (item) => item.workId === saved.workId && item.lineIndex === saved.lineIndex,
-        );
-        const seasonal = seasonalItem
-          ? {
-              workId: seasonalItem.workId,
-              lineIndex: seasonalItem.lineIndex,
-              quote: seasonalItem.quote,
-              reason: discoveryValue.reason,
-              moodTags: discoveryValue.interests?.length ? discoveryValue.interests : [discoveryValue.title],
-              confidence: 'high' as const,
-              source: 'local' as const,
-            }
-          : null;
-        if (savedMatchesSeason && saved) {
-          setDaily(saved);
-          return;
-        }
-        const next = seasonal ?? randomRecommendation(catalogValue);
-        setDaily(next);
-        void saveTodayRecommendation(next);
-      });
+      const settingsValue = await loadApiSettings();
+      if (!alive) return;
+      setSettings(settingsValue);
+      const discoveryValue = await loadDailyDiscovery(settingsValue, catalogValue);
+      if (!alive) return;
+      setDiscovery(discoveryValue);
+
+      const saved = await loadTodayRecommendation();
+      const seasonalItem = discoveryValue.items[0];
+      const savedMatchesSeason = saved && discoveryValue.items.some(
+        (item) => item.workId === saved.workId && item.lineIndex === saved.lineIndex,
+      );
+      const seasonal = seasonalItem
+        ? {
+            workId: seasonalItem.workId,
+            lineIndex: seasonalItem.lineIndex,
+            quote: seasonalItem.quote,
+            reason: discoveryValue.reason,
+            moodTags: discoveryValue.interests?.length ? discoveryValue.interests : [discoveryValue.title],
+            confidence: 'high' as const,
+            source: 'local' as const,
+          }
+        : null;
+      const next = savedMatchesSeason && saved ? saved : seasonal ?? randomRecommendation(catalogValue);
+      setDaily(next);
+      if (!savedMatchesSeason && next) void saveTodayRecommendation(next);
     });
-    loadDailyGoal().then(setGoal);
-    loadDueRecords().then(setRecords);
-    loadTodayRecords().then(setTodayRecords);
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const currentWork = daily ? catalog.find((work) => work.id === daily.workId) : null;
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([loadDailyGoal(), loadDueRecords(), loadTodayRecords()]).then(([nextGoal, due, today]) => {
+      if (!alive) return;
+      setGoal(nextGoal);
+      setRecords(due);
+      setTodayRecords(today);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [refreshToken]);
+
+  const currentWork = daily ? catalog.find((work) => work.id === daily.workId) ?? null : null;
   const doneCount = todayRecords.filter((record) => record.status === 'done').length;
   const pending = records
     .filter((record) => record.status === 'pending')
@@ -76,8 +107,29 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
     .map((record) => catalog.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
 
+  const focusQueue = useMemo(() => {
+    const queue = new Map<string, Work>();
+    const add = (work: Work | null | undefined) => {
+      if (work) queue.set(work.id, work);
+    };
+
+    review.forEach(add);
+    pending.forEach(add);
+    add(currentWork);
+    const minimum = Math.min(20, Math.max(1, goal.target, review.length + pending.length));
+    for (const work of catalog) {
+      if (queue.size >= minimum) break;
+      if (!queue.has(work.id)) queue.set(work.id, work);
+    }
+    return [...queue.values()].slice(0, minimum);
+  }, [catalog, currentWork, goal.target, pending, review]);
+
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
+  };
+
+  const openFocus = () => {
+    if (focusQueue.length) onOpenFocus(focusQueue, 0);
   };
 
   const random = async () => {
@@ -109,22 +161,77 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.eyebrow}>{new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}</Text>
+        <Text style={styles.eyebrow}>
+          {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+        </Text>
         <Text style={styles.title}>今日</Text>
-        <Text style={styles.subtitle}>先读一句，再决定今天背什么。</Text>
+        <Text style={styles.subtitle}>先完成一首，再让推荐慢慢跟上你。</Text>
+
+        <View style={styles.goalHero}>
+          <View style={styles.goalTopRow}>
+            <Text style={styles.goalEyebrow}>TODAY'S PRACTICE</Text>
+            <View style={styles.goalPill}><Text style={styles.goalPillText}>FSRS 复习</Text></View>
+          </View>
+          <Text style={styles.goalValue}>今日背诵 {doneCount}/{goal.target}</Text>
+          <Text style={styles.goalHint}>先回忆，再翻开。背对后自动安排下一次复习，不把清单堆在首页。</Text>
+
+          <View style={styles.goalProgressTrack}>
+            <View
+              style={[
+                styles.goalProgressFill,
+                { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` },
+              ]}
+            />
+          </View>
+
+          <View style={styles.goalTargets}>
+            {[1, 2, 3, 5].map((value) => (
+              <Pressable
+                key={value}
+                onPress={async () => setGoal(await saveDailyGoal(value))}
+                style={({ pressed }) => [
+                  styles.goalTarget,
+                  goal.target === value && styles.goalTargetActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.goalTargetText, goal.target === value && styles.goalTargetTextActive]}>
+                  {value} 首
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable
+            disabled={focusQueue.length === 0}
+            onPress={openFocus}
+            style={({ pressed }) => [
+              styles.startButton,
+              focusQueue.length === 0 && styles.disabled,
+              pressed && styles.startButtonPressed,
+            ]}
+          >
+            <Text style={styles.startButtonText}>立即开始</Text>
+            <Text style={styles.startButtonArrow}>→</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.recommendCard}>
-          <ImageBackground source={require('../../assets/covers/cover-moon.png')} style={styles.recommendArt} imageStyle={styles.recommendArtImage}>
+          <ImageBackground
+            source={require('../../assets/covers/cover-moon.png')}
+            style={styles.recommendArt}
+            imageStyle={styles.recommendArtImage}
+          >
             <View style={styles.recommendArtShade} />
           </ImageBackground>
           <View style={styles.cardHeader}>
             <Text style={styles.cardLabel}>今日荐诗</Text>
-            <View style={styles.cardHeaderRight}>
-              <Text style={styles.cardSource}>按心情推荐</Text>
-              <Pressable onPress={() => { setError(''); setMoodVisible(true); }} style={styles.moodCircleSmall}>
-                <Text style={styles.moodCircleSmallText}>心情</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={() => { setError(''); setMoodVisible(true); }}
+              style={({ pressed }) => [styles.moodButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.moodButtonText}>按心情推荐</Text>
+            </Pressable>
           </View>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -136,45 +243,53 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
             <ActivityIndicator color={colors.vermilion} style={styles.loader} />
           )}
           <View style={styles.cardActions}>
-            <Pressable onPress={openDaily} style={styles.primaryButton}>
-              <Text style={styles.primaryText}>开始学习</Text>
+            <Pressable onPress={openDaily} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+              <Text style={styles.primaryText}>进入阅读</Text>
             </Pressable>
-            <Pressable onPress={random} style={styles.randomButton}>
+            <Pressable onPress={() => void random()} style={({ pressed }) => [styles.randomButton, pressed && styles.pressed]}>
               <Text style={styles.randomButtonText}>随机换一首</Text>
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.goalCard}>
-          <View style={styles.goalHeader}>
-            <View>
-              <Text style={styles.goalLabel}>今日目标</Text>
-              <Text style={styles.goalValue}>{doneCount} / {goal.target} 首</Text>
-            </View>
-            <View style={styles.goalButtons}>
-              {[1, 2, 3, 5].map((value) => (
-                <Pressable
-                  key={value}
-                  onPress={async () => setGoal(await saveDailyGoal(value))}
-                  style={[styles.goalButton, goal.target === value && styles.goalButtonActive]}
-                >
-                  <Text style={[styles.goalButtonText, goal.target === value && styles.goalButtonTextActive]}>{value} 首</Text>
-                </Pressable>
-              ))}
-            </View>
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>今日复习</Text>
+            <Text style={styles.sectionMeta}>{review.length ? `${review.length} 篇到期` : '暂无到期'}</Text>
           </View>
-          <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)}%` }]} /></View>
+          {review.length ? review.slice(0, 5).map((work) => (
+            <Pressable
+              key={`review-${work.id}`}
+              onPress={() => onOpenWork(work, 0)}
+              style={({ pressed }) => [styles.reviewRow, pressed && styles.pressed]}
+            >
+              <View style={styles.reviewCopy}>
+                <Text style={styles.reviewTitle}>{work.title}</Text>
+                <Text style={styles.reviewMeta}>到期复习 · {work.author}</Text>
+              </View>
+              <Text style={styles.reviewAction}>复习</Text>
+            </Pressable>
+          )) : (
+            <Text style={styles.emptyReview}>完成背诵后，系统会按记忆曲线把复习放回这里。</Text>
+          )}
         </View>
 
         {discovery ? (
-          <View style={styles.highlightSection}>
-            <Text style={styles.sectionTitle}>{discovery.title}</Text>
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{discovery.title}</Text>
+              <Text style={styles.sectionMeta}>时节与兴趣</Text>
+            </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
             {discovery.items.map((item) => {
               const work = catalog.find((candidate) => candidate.id === item.workId);
               if (!work) return null;
               return (
-                <Pressable key={`${item.workId}-${item.lineIndex}`} onPress={() => onOpenWork(work, item.lineIndex)} style={styles.highlightRow}>
+                <Pressable
+                  key={`${item.workId}-${item.lineIndex}`}
+                  onPress={() => onOpenWork(work, item.lineIndex)}
+                  style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
+                >
                   <Text style={styles.highlightQuote}>{item.quote}</Text>
                   <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
                 </Pressable>
@@ -182,35 +297,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
             })}
           </View>
         ) : null}
-
-        <View style={styles.pendingSection}>
-          <Text style={styles.sectionTitle}>今日复习</Text>
-          {review.length ? review.slice(0, 6).map((work) => (
-            <Pressable key={`review-${work.id}`} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
-              <View style={styles.pendingCopy}>
-                <Text style={styles.pendingTitle}>{work.title}</Text>
-                <Text style={styles.pendingMeta}>到期复习 · {work.author}</Text>
-              </View>
-              <Text style={styles.pendingAction}>复习</Text>
-            </Pressable>
-          )) : <Text style={styles.emptyReview}>暂无到期复习。完成背诵后，系统会在这里安排下一次复习。</Text>}
-        </View>
-
-        {pending.length > 0 ? (
-          <View style={styles.pendingSection}>
-            <Text style={styles.sectionTitle}>待背清单</Text>
-            {pending.slice(0, 6).map((work) => (
-              <Pressable key={work.id} onPress={() => onOpenWork(work, 0)} style={styles.pendingRow}>
-                <View style={styles.pendingCopy}>
-                  <Text style={styles.pendingTitle}>{work.title}</Text>
-                  <Text style={styles.pendingMeta}>{work.author} · {work.dynasty}</Text>
-                </View>
-                <Text style={styles.pendingAction}>继续</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
       </ScrollView>
 
       <MoodRecommendSheet
@@ -221,7 +307,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
         onChangeText={setMoodText}
         onClose={() => setMoodVisible(false)}
         onSubmit={recommend}
-        onRandom={random}
+        onRandom={() => void random()}
         onOpenSettings={onOpenSettings}
       />
     </View>
@@ -230,72 +316,70 @@ export function TodayScreen({ onOpenWork, onOpenSettings }: Props) {
 
 function readableError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes('JSON') || message.includes('Unexpected end')) return 'API 返回内容不完整，请换用支持长输出的模型，或稍后重试。';
-  if (message.includes('Failed to fetch') || message.includes('Network request failed')) return '网络请求失败，请检查手机网络和 API 地址。';
+  if (message.includes('JSON') || message.includes('Unexpected end')) {
+    return 'API 返回内容不完整，请换用支持长输出的模型，或稍后重试。';
+  }
+  if (message.includes('Failed to fetch') || message.includes('Network request failed')) {
+    return '网络请求失败，请检查手机网络和 API 地址。';
+  }
   return message;
-}
-
-function ActionButton({ label, detail, onPress }: { label: string; detail: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={styles.actionButton}>
-      <Text style={styles.actionLabel}>{label}</Text>
-      <Text style={styles.actionDetail}>{detail}</Text>
-    </Pressable>
-  );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
-  content: { padding: spacing.lg, paddingBottom: 120 },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: 128 },
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },
-  subtitle: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, marginTop: 8 },
-  recommendCard: { marginTop: spacing.xl, backgroundColor: colors.paperDeep, borderLeftWidth: 4, borderLeftColor: colors.vermilion, padding: 0, overflow: 'hidden' },
+  subtitle: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 24, marginTop: 8 },
+  goalHero: { minHeight: 320, marginTop: spacing.lg, padding: spacing.lg, borderRadius: 24, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, ...shadow },
+  goalTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalEyebrow: { color: colors.jade, fontFamily: fonts.sans, fontSize: 10, letterSpacing: 2.2 },
+  goalPill: { minHeight: 28, borderRadius: radius.pill, paddingHorizontal: 11, justifyContent: 'center', backgroundColor: '#FBE9E7' },
+  goalPillText: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700' },
+  goalValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 32, fontWeight: '800', marginTop: 24 },
+  goalHint: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 25, marginTop: 12 },
+  goalProgressTrack: { height: 7, borderRadius: radius.pill, overflow: 'hidden', backgroundColor: colors.paperDeep, marginTop: 24 },
+  goalProgressFill: { height: 7, borderRadius: radius.pill, backgroundColor: colors.vermilion },
+  goalTargets: { flexDirection: 'row', gap: 8, marginTop: 18 },
+  goalTarget: { flex: 1, minHeight: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  goalTargetActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },
+  goalTargetText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
+  goalTargetTextActive: { color: colors.vermilion, fontWeight: '800' },
+  startButton: { minHeight: 58, borderRadius: 16, backgroundColor: colors.vermilion, marginTop: 18, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  startButtonPressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
+  startButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, fontWeight: '800', letterSpacing: 1.2 },
+  startButtonArrow: { color: colors.white, fontFamily: fonts.sans, fontSize: 23 },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.72 },
+  recommendCard: { marginTop: spacing.xl, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 20, overflow: 'hidden', ...shadow },
   recommendArt: { width: '100%', height: 150, justifyContent: 'flex-end' },
   recommendArtImage: { resizeMode: 'cover' },
-  recommendArtShade: { flex: 1, backgroundColor: 'rgba(243,237,223,0.10)' },
+  recommendArtShade: { flex: 1, backgroundColor: 'rgba(249,247,242,0.12)' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
-  cardSource: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
-  cardHeaderRight: { alignItems: 'center', gap: 6 },
-  moodCircleSmall: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
-  moodCircleSmallText: { color: colors.white, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
-  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 38, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
-  poemMeta: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, marginTop: 13, marginHorizontal: spacing.lg },
-  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, marginTop: 12, marginHorizontal: spacing.lg },
-  loader: { marginVertical: 40 },
+  cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
+  moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
+  moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 40, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
+  poemMeta: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, marginTop: 13, marginHorizontal: spacing.lg },
+  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
+  loader: { marginVertical: 48 },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg, marginHorizontal: spacing.lg, marginBottom: spacing.lg },
-  primaryButton: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
-  randomButton: { minHeight: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
-  randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
-
-  primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, letterSpacing: 2 },
-  goalCard: { marginTop: spacing.xl, padding: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
-  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' },
-  goalLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
-  goalValue: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, fontWeight: '800', marginTop: 5 },
-  goalButtons: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6, flex: 1, minWidth: 210 },
-  goalButton: { minWidth: 48, minHeight: 36, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
-  goalButtonActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
-  goalButtonText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
-  goalButtonTextActive: { color: colors.vermilion, fontWeight: '700' },
-  progressTrack: { height: 6, backgroundColor: colors.paperDeep, marginTop: 16 },
-  progressFill: { height: 6, backgroundColor: colors.vermilion },
-  highlightSection: { marginTop: spacing.lg },
-  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 5 },
-  highlightRow: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
+  primaryButton: { flex: 1, minHeight: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
+  randomButton: { minHeight: 50, borderRadius: 14, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center' },
+  randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
+  sectionBlock: { marginTop: spacing.xl },
+  sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
+  sectionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 19, fontWeight: '800' },
+  sectionMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  emptyReview: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, paddingVertical: 8 },
+  reviewRow: { minHeight: 70, marginBottom: 8, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 16 },
+  reviewCopy: { flex: 1 },
+  reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
+  reviewMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
+  reviewAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
+  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 8 },
+  highlightRow: { marginBottom: 10, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 16 },
+  highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 27 },
   highlightSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
-  pendingSection: { marginTop: spacing.lg },
-  emptyReview: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, marginTop: 8 },
-  pendingRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  pendingCopy: { flex: 1 },
-  pendingTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
-  pendingMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
-  pendingAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
-  sectionTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 18, fontWeight: '700', marginTop: spacing.xl, marginBottom: spacing.md },
-  actionGrid: { gap: 10 },
-  actionButton: { minHeight: 72, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, paddingHorizontal: 16, justifyContent: 'center' },
-  actionLabel: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
-  actionDetail: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 5 },
 });

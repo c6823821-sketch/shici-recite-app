@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, ImageBackground, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FILTER_GROUPS, FilterKey } from '../data/taxonomy';
 import { Work } from '../types';
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   categoryCoverText: { color: colors.white, fontFamily: fonts.sans, fontSize: 12, marginTop: 6 },
   sectionLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 2, marginHorizontal: spacing.lg, marginTop: spacing.lg, marginBottom: 12 },
   dimensionTabs: { paddingHorizontal: spacing.lg, gap: 8 },
-  dimensionTab: { minHeight: 40, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: colors.paperLight },
+  dimensionTab: { minHeight: 40, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: colors.paperLight },
   dimensionTabActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   dimensionTabText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   dimensionTabTextActive: { color: colors.vermilion, fontWeight: '700' },
@@ -189,13 +189,13 @@ const styles = StyleSheet.create({
   homeSearchButton: { minWidth: 72, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   homeSearchButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   hint: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginHorizontal: spacing.lg, marginTop: 14, marginBottom: 10 },
-  categoryRow: { minHeight: 58, marginHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  categoryRow: { minHeight: 62, marginHorizontal: spacing.lg, marginBottom: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 16, backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   categoryLabel: { flex: 1, color: colors.ink, fontFamily: fonts.body, fontSize: 18 },
   arrow: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 26 },
   list: { paddingBottom: 100 },
   searchInput: { minHeight: 48, marginHorizontal: spacing.lg, marginTop: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 4 },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginHorizontal: spacing.lg, marginTop: 10 },
-  resultRow: { marginHorizontal: spacing.lg, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  resultRow: { marginHorizontal: spacing.lg, marginBottom: 10, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 16, backgroundColor: colors.paperLight },
   quote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 26 },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '700' },
   meta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 7 },

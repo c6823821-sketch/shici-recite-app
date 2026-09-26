@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,7 +16,7 @@ import { LocalPrecheck, precheckComposition } from '../services/prosody';
 import { loadApiSettings } from '../services/settings';
 import { lookupCompositionForm } from '../services/formLookup';
 import { createSavedComposition, loadSavedCompositions, removeSavedComposition, SavedComposition, saveSavedComposition } from '../services/compositions';
-import { colors, fonts, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { ApiSettings } from '../types';
 
 interface Props {
@@ -341,49 +341,96 @@ function readableScoreError(error: unknown): string {
 }
 
 function ScoreCard({ score }: { score: CompositionScore }) {
+  const [openIssue, setOpenIssue] = useState<number | null>(0);
+  const scoreTone = score.overallScore >= 80 ? colors.jade : score.overallScore >= 60 ? colors.gold : colors.vermilion;
+  const severityLabels: Record<string, string> = {
+    critical: '??',
+    major: '??',
+    minor: '??',
+    uncertain: '???',
+  };
+
   return (
     <View style={styles.result}>
-      <View style={styles.scoreTop}>
-        <View>
-          <Text style={styles.scoreLabel}>严格评分</Text>
-          <Text style={styles.verdict}>{score.verdict}</Text>
-          <Text style={styles.level}>{score.level} · API 自评把握：{score.confidence}</Text>
+      <View style={styles.scoreHero}>
+        <View style={[styles.scoreRing, { borderColor: scoreTone }]}>
+          <Text style={[styles.scoreNumber, { color: scoreTone }]}>{score.overallScore}</Text>
+          <Text style={styles.scoreDenominator}>/ 100</Text>
         </View>
-        <Text style={styles.scoreNumber}>{score.overallScore}</Text>
+        <View style={styles.scoreHeroCopy}>
+          <Text style={styles.scoreLabel}>???? ? ????</Text>
+          <Text style={styles.verdict}>{score.verdict}</Text>
+          <Text style={styles.level}>{score.level} ? API ?????{score.confidence}</Text>
+        </View>
+      </View>
+
+      <View style={styles.overallTrack}>
+        <View style={[styles.overallFill, { width: `${score.overallScore}%`, backgroundColor: scoreTone }]} />
       </View>
       <Text style={styles.summary}>{score.summary}</Text>
 
-      <Text style={styles.resultSectionTitle}>分项得分</Text>
-      {CATEGORY_ORDER.map((key) => (
-        <View key={key} style={styles.categoryRow}>
-          <Text style={styles.categoryName}>{CATEGORY_LABELS[key]}</Text>
-          <View style={styles.scoreTrack}>
-            <View style={[styles.scoreFill, { width: `${score.categoryScores[key]}%` }]} />
+      <Text style={styles.resultSectionTitle}>????</Text>
+      {CATEGORY_ORDER.map((key) => {
+        const value = score.categoryScores[key] ?? 0;
+        const tone = value >= 80 ? colors.jade : value >= 60 ? colors.gold : colors.vermilion;
+        return (
+          <View key={key} style={styles.categoryRow}>
+            <Text style={styles.categoryName}>{CATEGORY_LABELS[key]}</Text>
+            <View style={styles.scoreTrack}>
+              <View style={[styles.scoreFill, { width: `${value}%`, backgroundColor: tone }]} />
+            </View>
+            <Text style={styles.categoryScore}>{value}</Text>
           </View>
-          <Text style={styles.categoryScore}>{score.categoryScores[key]}</Text>
-        </View>
-      ))}
+        );
+      })}
 
-      <Text style={styles.resultSectionTitle}>问题清单</Text>
+      <Text style={styles.resultSectionTitle}>????</Text>
       {score.issues.length === 0 ? (
-        <Text style={styles.resultText}>没有列出具体问题。仍应人工复核词谱、韵书和典故。</Text>
+        <Text style={styles.resultText}>????????????????????????</Text>
       ) : (
-        score.issues.map((issue, index) => (
-          <View key={`${issue.problem}-${index}`} style={styles.issueBlock}>
-            <Text style={styles.issueTitle}>[{issue.severity}] {issue.category}{issue.line ? ` · 第 ${issue.line} 句` : ''}</Text>
-            {issue.quote ? <Text style={styles.quote}>“{issue.quote}”</Text> : null}
-            <Text style={styles.issueProblem}>{issue.problem}</Text>
-            <Text style={styles.issueSuggestion}>修改：{issue.suggestion}</Text>
-          </View>
-        ))
+        score.issues.map((issue, index) => {
+          const expanded = openIssue === index;
+          return (
+            <View key={`${issue.problem}-${index}`} style={styles.issueAccordion}>
+              <Pressable
+                onPress={() => setOpenIssue(expanded ? null : index)}
+                style={({ pressed }) => [styles.issueHeader, pressed && styles.pressed]}
+              >
+                <View style={styles.issueHeaderCopy}>
+                  <Text style={styles.issueTitle}>
+                    {severityLabels[issue.severity] ?? issue.severity} ? {issue.category}
+                    {issue.line ? ` ? ? ${issue.line} ?` : ''}
+                  </Text>
+                  <Text style={styles.issueSummary} numberOfLines={expanded ? undefined : 2}>{issue.problem}</Text>
+                </View>
+                <Text style={styles.accordionToggle}>{expanded ? '?' : '+'}</Text>
+              </Pressable>
+              {expanded ? (
+                <View style={styles.issueDetail}>
+                  {issue.quote ? (
+                    <View style={styles.quoteCompare}>
+                      <Text style={styles.compareLabel}>??</Text>
+                      <Text style={styles.issueQuoteStrike}>{issue.quote}</Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.issueProblem}>{issue.problem}</Text>
+                  <View style={styles.suggestionBox}>
+                    <Text style={styles.suggestionLabel}>????</Text>
+                    <Text style={styles.suggestionText}>{issue.suggestion}</Text>
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          );
+        })
       )}
 
-      <Text style={styles.resultSectionTitle}>有证据的优点</Text>
-      {score.strengths.length ? score.strengths.map((item) => <Text key={item} style={styles.resultText}>· {item}</Text>) : (
-        <Text style={styles.resultText}>未列出明确优点，先解决硬性问题。</Text>
+      <Text style={styles.resultSectionTitle}>??????</Text>
+      {score.strengths.length ? score.strengths.map((item) => <Text key={item} style={styles.resultText}>? {item}</Text>) : (
+        <Text style={styles.resultText}>????????????????</Text>
       )}
 
-      <Text style={styles.resultSectionTitle}>修改顺序</Text>
+      <Text style={styles.resultSectionTitle}>????</Text>
       {score.revisionPlan.map((item, index) => (
         <Text key={`${item}-${index}`} style={styles.resultText}>{index + 1}. {item}</Text>
       ))}
@@ -482,6 +529,25 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   error: { color: colors.danger, fontFamily: fonts.sans, fontSize: 13, lineHeight: 21, marginTop: 10 },
   result: { marginTop: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg },
+  scoreHero: { flexDirection: 'row', alignItems: 'center', gap: 18, padding: 18, borderRadius: 20, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line },
+  scoreRing: { width: 112, height: 112, borderRadius: 56, borderWidth: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  scoreDenominator: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, marginTop: -4 },
+  scoreHeroCopy: { flex: 1, minWidth: 0 },
+  overallTrack: { height: 7, borderRadius: radius.pill, overflow: 'hidden', backgroundColor: colors.paperDeep, marginTop: 16 },
+  overallFill: { height: 7, borderRadius: radius.pill },
+  issueAccordion: { borderWidth: 1, borderColor: colors.line, borderRadius: 16, backgroundColor: colors.paperLight, marginBottom: 10, overflow: 'hidden' },
+  issueHeader: { minHeight: 72, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  issueHeaderCopy: { flex: 1, minWidth: 0 },
+  issueSummary: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 22, marginTop: 6 },
+  accordionToggle: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 26, width: 30, textAlign: 'center' },
+  issueDetail: { paddingHorizontal: 14, paddingBottom: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  quoteCompare: { marginTop: 14 },
+  compareLabel: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10, letterSpacing: 1.5, marginBottom: 5 },
+  issueQuoteStrike: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, lineHeight: 26, textDecorationLine: 'line-through' },
+  suggestionBox: { marginTop: 14, padding: 12, borderRadius: 12, backgroundColor: 'rgba(74,103,91,0.09)', borderLeftWidth: 3, borderLeftColor: colors.jade },
+  suggestionLabel: { color: colors.jade, fontFamily: fonts.sans, fontSize: 10, letterSpacing: 1.5, marginBottom: 5 },
+  suggestionText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15, lineHeight: 25 },
+  pressed: { opacity: 0.7 },
   scoreTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.md },
   scoreLabel: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, letterSpacing: 2 },
   verdict: { color: colors.ink, fontFamily: fonts.title, fontSize: 22, fontWeight: '800', marginTop: 7 },

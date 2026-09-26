@@ -1,13 +1,13 @@
 {
-  "version": "2.9.3",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.3/shici-recite-app-v2.9.3.apk",
+  "version": "3.0.0",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.0/shici-recite-app-v3.0.0.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.3/shici-recite-app-v2.9.3.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.3/shici-recite-app-v2.9.3.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.3/shici-recite-app-v2.9.3.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v2.9.3/shici-recite-app-v2.9.3.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.0/shici-recite-app-v3.0.0.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.0/shici-recite-app-v3.0.0.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.0/shici-recite-app-v3.0.0.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.0/shici-recite-app-v3.0.0.apk"
   ],
-  "size": 81861245,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v2.9.3",
-  "notes": "词牌搜索修复版"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.0",
+  "notes": "跨界 UI 重构版：沉浸式背诵、首页今日目标、诗库多维筛选、创作严格评分可视化。"
 }
