@@ -19,3 +19,15 @@ git reset --hard v3.0.0
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.2 每日推荐修复回滚
+
+回到 v3.0.1：
+
+```powershell
+git checkout main
+git reset --hard v3.0.1
+git clean -fd
+git push origin main --force-with-lease
+```

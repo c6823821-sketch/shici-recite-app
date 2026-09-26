@@ -390,7 +390,6 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                     ))}
                   </View>
                 </View>
-                <Text style={styles.arrow}>&gt;</Text>
               </Pressable>
             </View>
           );
@@ -514,7 +513,6 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   tagPill: { borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.paperDeep },
   tagText: { color: colors.inkSoft, fontFamily: fonts.sans, fontSize: 11 },
-  arrow: { color: '#B8B3AA', fontFamily: fonts.body, fontSize: 20, marginLeft: 12 },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyText: { color: colors.muted, fontFamily: fonts.body, fontSize: 15 },
 });

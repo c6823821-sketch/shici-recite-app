@@ -12,7 +12,7 @@ import {
 import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
-import { DailyDiscovery, loadDailyDiscovery } from '../services/dailyDiscovery';
+import { DailyDiscovery, loadDailyDiscovery, rotateDailyDiscovery } from '../services/dailyDiscovery';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
 import {
@@ -41,6 +41,7 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [discovery, setDiscovery] = useState<DailyDiscovery | null>(null);
+  const [discoveryLoading, setDiscoveryLoading] = useState(false);
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [todayRecords, setTodayRecords] = useState<StudyRecord[]>([]);
   const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
@@ -132,6 +133,16 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
     if (focusQueue.length) onOpenFocus(focusQueue, 0);
   };
 
+  const changeDiscovery = async () => {
+    if (!discovery || discoveryLoading) return;
+    setDiscoveryLoading(true);
+    try {
+      setDiscovery(await rotateDailyDiscovery(discovery, catalog));
+    } finally {
+      setDiscoveryLoading(false);
+    }
+  };
+
   const random = async () => {
     const next = randomRecommendation(catalog);
     setDaily(next);
@@ -177,23 +188,21 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
           </ImageBackground>
           <View style={styles.cardHeader}>
             <Text style={styles.cardLabel}>今日荐诗</Text>
-            <View style={styles.cardHeaderActions}>
-              <Pressable
-                onPress={() => { setError(''); setMoodVisible(true); }}
-                style={({ pressed }) => [styles.moodButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.moodButtonText}>心情</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel="换一换"
-                onPress={() => void random()}
-                style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.changeIcon}>↻</Text>
-                <Text style={styles.changeText}>换一换</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              accessibilityLabel="换一换"
+              onPress={() => void random()}
+              style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.changeIcon}>↻</Text>
+              <Text style={styles.changeText}>换一换</Text>
+            </Pressable>
           </View>
+          <Pressable
+            onPress={() => { setError(''); setMoodVisible(true); }}
+            style={({ pressed }) => [styles.moodPrompt, pressed && styles.pressed]}
+          >
+            <Text style={styles.moodPromptText}>✎ 输入想法或心情，推荐一首诗词</Text>
+          </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
               <Text style={styles.quote}>{daily.quote}</Text>
@@ -300,8 +309,17 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
         {discovery ? (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{discovery.title}</Text>
-              <Text style={styles.sectionMeta}>时节与兴趣</Text>
+              <View>
+                <Text style={styles.sectionTitle}>{discovery.title}</Text>
+                <Text style={styles.sectionMeta}>时节与兴趣 · 每日轮换</Text>
+              </View>
+              <Pressable
+                disabled={discoveryLoading}
+                onPress={() => void changeDiscovery()}
+                style={({ pressed }) => [styles.discoveryRefresh, pressed && styles.pressed, discoveryLoading && styles.disabled]}
+              >
+                {discoveryLoading ? <ActivityIndicator size="small" color={colors.vermilion} /> : <Text style={styles.discoveryRefreshText}>换一组</Text>}
+              </Pressable>
             </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
             {discovery.items.map((item) => {
@@ -309,12 +327,15 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
               if (!work) return null;
               return (
                 <Pressable
-                  key={`${item.workId}-${item.lineIndex}`}
+                  key={item.workId + '-' + item.lineIndex}
                   onPress={() => onOpenWork(work, item.lineIndex)}
                   style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
                 >
                   <Text style={styles.highlightQuote}>{item.quote}</Text>
-                  <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
+                  <View style={styles.highlightFooter}>
+                    <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
+                    <Text style={styles.highlightAction}>查看原诗</Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -388,6 +409,8 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  moodPrompt: { minHeight: 44, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: '#E8CBC5', backgroundColor: '#FFF8F6', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
+  moodPromptText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
@@ -407,8 +430,12 @@ const styles = StyleSheet.create({
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
   reviewMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   reviewAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
-  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 8 },
-  highlightRow: { marginBottom: 10, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 16 },
-  highlightQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, lineHeight: 27 },
-  highlightSource: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 6 },
+  discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 12 },
+  discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
+  discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  highlightRow: { marginBottom: 12, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: '#DDD6CA', borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
+  highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30 },
+  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  highlightSource: { flex: 1, color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
 });

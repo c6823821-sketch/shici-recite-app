@@ -19,6 +19,11 @@ export interface DailyDiscovery {
   interests?: string[];
 }
 
+interface DiscoveryHistoryEntry {
+  dateKey: string;
+  workIds: string[];
+}
+
 interface DiscoveryContext {
   title: string;
   reason: string;
@@ -57,24 +62,62 @@ export function calendarContext(date = new Date()): DiscoveryContext {
   return { title: season.title, reason: `今天属于${season.title.replace('应景', '')}，给你挑几句相近的句子。`, themes: season.themes, keywords: season.keywords };
 }
 
-function pickItems(context: DiscoveryContext, profile: Awaited<ReturnType<typeof loadPreferenceProfile>>, catalog: Work[]): DailyDiscoveryItem[] {
+function hashSeed(value: string): number {
+  let seed = 2166136261;
+  for (const character of value) seed = Math.imul(seed ^ character.charCodeAt(0), 16777619);
+  return seed >>> 0;
+}
+
+async function loadDiscoveryHistory(): Promise<DiscoveryHistoryEntry[]> {
+  const raw = await getStoredValue('daily_discovery_history_v1');
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as DiscoveryHistoryEntry[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item.dateKey === 'string' && Array.isArray(item.workIds)) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function rememberDiscovery(date: string, items: DailyDiscoveryItem[]): Promise<void> {
+  const history = await loadDiscoveryHistory();
+  const previous = history.find((item) => item.dateKey === date);
+  const merged = [...new Set([...(previous?.workIds ?? []), ...items.map((item) => item.workId)])];
+  const next = [
+    { dateKey: date, workIds: merged },
+    ...history.filter((item) => item.dateKey !== date),
+  ].slice(0, 30);
+  await setStoredValue('daily_discovery_history_v1', JSON.stringify(next));
+}
+
+function pickItems(
+  context: DiscoveryContext,
+  profile: Awaited<ReturnType<typeof loadPreferenceProfile>>,
+  catalog: Work[],
+  excludeWorkIds: Set<string> = new Set(),
+  salt = '',
+): DailyDiscoveryItem[] {
   const ranked = catalog.map((work) => {
     const contextScore = work.themes.filter((theme) => context.themes.includes(theme)).length * 4;
     const lineIndex = work.lines.findIndex((line) => context.keywords.some((keyword) => line.includes(keyword)));
     const keywordScore = lineIndex >= 0 ? 3 : 0;
     const personalScore = preferenceScore(work, profile);
     return { work, lineIndex: lineIndex >= 0 ? lineIndex : 0, score: contextScore + keywordScore + personalScore };
-  }).sort((left, right) => right.score - left.score);
+  }).sort((left, right) => right.score - left.score || left.work.id.localeCompare(right.work.id));
 
-  const pool = ranked.slice(0, Math.min(60, ranked.length));
+  const withoutRecent = ranked.filter((item) => !excludeWorkIds.has(item.work.id));
+  const poolSource = withoutRecent.length >= 12 ? withoutRecent : ranked;
+  const pool = poolSource.slice(0, Math.min(480, poolSource.length));
   if (pool.length === 0) return [];
-  let seed = 0;
-  for (const character of dateKey()) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
-  const start = seed % pool.length;
+  const seedText = dateKey() + '-' + salt + '-' + (pool[0]?.work.id ?? '');
+  const start = hashSeed(seedText) % pool.length;
   const ordered = [...pool.slice(start), ...pool.slice(0, start)];
-  return ordered.slice(0, 3).map((item) => ({ workId: item.work.id, lineIndex: item.lineIndex, quote: item.work.lines[item.lineIndex] ?? item.work.lines[0] }));
+  return ordered.slice(0, 3).map((item) => ({
+    workId: item.work.id,
+    lineIndex: item.lineIndex,
+    quote: item.work.lines[item.lineIndex] ?? item.work.lines[0],
+  }));
 }
-
 function endpointUrl(endpoint: string): string {
   const value = endpoint.trim();
   if (!value) return '';
@@ -122,6 +165,8 @@ export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: 
   }
   const local = calendarContext();
   const profile = await loadPreferenceProfile();
+  const history = await loadDiscoveryHistory();
+  const recentWorkIds = new Set(history.flatMap((entry) => entry.workIds));
   let context = local;
   let source: DailyDiscovery['source'] = 'local';
   if (settings?.endpoint.trim() && settings.model.trim()) {
@@ -139,11 +184,37 @@ export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: 
     reason: interests.length
       ? `${context.reason} 也参考了你最近常看、收藏和背诵过的主题。`
       : context.reason,
-    items: pickItems(context, profile, catalog),
+    items: pickItems(context, profile, catalog, recentWorkIds),
     source,
     personalized: interests.length > 0,
     interests,
   };
   await setStoredValue(key, JSON.stringify(result));
+  await rememberDiscovery(result.dateKey, result.items);
   return result;
+}
+
+export async function rotateDailyDiscovery(current: DailyDiscovery, catalog: Work[]): Promise<DailyDiscovery> {
+  const local = calendarContext();
+  const profile = await loadPreferenceProfile();
+  const history = await loadDiscoveryHistory();
+  const exclude = new Set([
+    ...current.items.map((item) => item.workId),
+    ...history.flatMap((entry) => entry.workIds),
+  ]);
+  const context: DiscoveryContext = {
+    ...local,
+    title: current.title,
+    reason: current.reason,
+    themes: [...new Set([...local.themes, ...(current.interests ?? [])])],
+  };
+  const items = pickItems(context, profile, catalog, exclude, "rotate");
+  const next: DailyDiscovery = {
+    ...current,
+    dateKey: dateKey(),
+    items,
+  };
+  await setStoredValue("daily_discovery_v2_" + dateKey(), JSON.stringify(next));
+  await rememberDiscovery(next.dateKey, next.items);
+  return next;
 }
