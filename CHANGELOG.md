@@ -1,3 +1,51 @@
+# v3.0.7 应景卡片边界修复
+
+发布时间：2026-09-26
+
+## 修改
+
+- 删除“应景句 1 / 2 / 3”等多余编号。
+- 保留纯卡片结构，不增加额外标题。
+- 秋日应景卡片背景改为独立暖白色。
+- 边框颜色加深为可辨识的浅灰棕。
+- 左侧增加 4px 朱砂强调线。
+- 每张卡片间距增加到 20px。
+- 卡片内部增加横线，将诗句与出处明确分开。
+- 卡片底部保留“查看原诗”，整体仍然可点击。
+- 心情推荐入口保持单一完整按钮，不再拆成两个视觉元素。
+- 底部“背诵”Tab 保持在五个导航的中间位置。
+
+## 修改文件
+
+- `src/screens/TodayScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.6：
+
+```powershell
+git checkout main
+git reset --hard v3.0.6
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.6 背诵 Tab 与卡片简化
 
 发布时间：2026-09-26

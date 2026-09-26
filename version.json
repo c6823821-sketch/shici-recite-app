@@ -1,14 +1,13 @@
 {
-  "version": "3.0.6",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk",
+  "version": "3.0.7",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk"
   ],
-  "size": 92521748,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.6",
-  "notes": "新增中间背诵Tab，移除首页背诵卡；简化应景卡片并合并心情推荐入口。",
-  "sha256": "b9f48a5e29c33d2bdc27c3c97c645fa72366768499d9bcc6b684be4a0e39750b"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.7",
+  "notes": "应景卡片边界加强，删除多余编号，明确卡片间距和内部横线。"
 }

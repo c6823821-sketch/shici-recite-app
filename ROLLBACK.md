@@ -79,3 +79,15 @@ git reset --hard v3.0.5
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.7 应景卡片回滚
+
+回到 v3.0.6：
+
+```powershell
+git checkout main
+git reset --hard v3.0.6
+git clean -fd
+git push origin main --force-with-lease
+```
