@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.7/shici-recite-app-v3.0.7.apk"
   ],
-  "size": 0,
+  "size": 92521000,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.7",
-  "notes": "应景卡片边界加强，删除多余编号，明确卡片间距和内部横线。"
+  "notes": "应景卡片边界加强，删除多余编号，明确卡片间距和内部横线。",
+  "sha256": "20cd4f3c0e32691f3f40facfa8ca9faa3bb08921efc8fc0c4e787ca40216cf52"
 }
