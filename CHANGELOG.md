@@ -1,3 +1,72 @@
+# v3.0.11 全文补全与主页排版修正
+
+发布时间：2026-09-26
+
+## 陈情表与长文全文
+
+- 本地典籍库新增《陈情表》完整原文。
+- 来源标注为维基文库《陈情表（西晋）》。
+- 远程补录不再把“两行以上”误认为全文。
+- 标题包含表、序、赋、记、书、论、传、碑、铭、疏等长文体裁时，正文太短会拒绝保存。
+- 普通搜索结果仍只展示命中的句子；“查看全文”保留为可选入口，不强制跳转。
+
+## 主页荐诗排版
+
+- 篇名移到诗句上方。
+- 作者和朝代放在篇名下方。
+- 诗句继续作为视觉主体。
+- 推荐理由放在诗句之后。
+- 不改变随机切换、心情推荐和进入阅读功能。
+
+## 应景卡片
+
+- 保留独立卡片和可选“查看原诗”。
+- 将过分明显的分隔线减为浅色细线。
+- 卡片边框减淡到更柔和的颜色。
+- 去掉了多余的“应景句一/二/三”标签。
+
+## 搜索全文入口
+
+- 搜索命中句子后，卡片显示可选的“查看全文”。
+- 不点击时仍只查看命中句子。
+- 点击后进入完整篇目。
+- 典籍匹配结果同样提供“查看全文”。
+
+## 修改文件
+
+- `src/data/classics.json`
+- `src/services/remoteLookup.ts`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `scripts/self-test.ts`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过，并验证陈情表全文首尾。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.10：
+
+```powershell
+git checkout main
+git reset --hard v3.0.10
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.10 应景卡片与全文入口修复
 
 发布时间：2026-09-26

@@ -177,8 +177,9 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
+              <Text style={styles.recommendPoemTitle}>{currentWork.title}</Text>
+              <Text style={styles.recommendPoemMeta}>{currentWork.author} · {currentWork.dynasty}</Text>
               <Text style={styles.quote}>{daily.quote}</Text>
-              <Text style={styles.poemMeta}>《{currentWork.title}》· {currentWork.author} · {currentWork.dynasty}</Text>
               <Text style={styles.reason}>{daily.reason}</Text>
             </Pressable>
           ) : (
@@ -324,6 +325,8 @@ const styles = StyleSheet.create({
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
+  recommendPoemTitle: { color: '#6C5940', fontFamily: fonts.title, fontSize: 18, fontWeight: '800', marginTop: spacing.lg, marginHorizontal: spacing.lg },
+  recommendPoemMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4, marginHorizontal: spacing.lg },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
   loader: { marginVertical: 48 },
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
   discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 24 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#F7F0E5', borderWidth: 2, borderLeftWidth: 4, borderColor: '#AA9A82', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 },
+  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#FFFBF5', borderWidth: 1.5, borderLeftWidth: 4, borderColor: '#CFC2AE', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
@@ -355,5 +358,5 @@ const styles = StyleSheet.create({
   highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
   highlightSource: { flex: 1, color: '#887D6E', fontFamily: fonts.sans, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightSeparator: { height: 2, backgroundColor: '#B4A58E', marginBottom: 24, marginHorizontal: 4 },
+  highlightSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E2D9CC', marginBottom: 20, marginHorizontal: 4 },
 });

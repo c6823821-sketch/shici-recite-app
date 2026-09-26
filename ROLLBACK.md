@@ -127,3 +127,15 @@ git reset --hard v3.0.9
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.11 全文与主页排版回滚
+
+回到 v3.0.10：
+
+```powershell
+git checkout main
+git reset --hard v3.0.10
+git clean -fd
+git push origin main --force-with-lease
+```
