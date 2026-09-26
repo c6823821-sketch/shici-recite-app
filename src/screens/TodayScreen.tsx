@@ -201,7 +201,8 @@ export function TodayScreen({ onOpenWork, onOpenFocus, onOpenSettings, refreshTo
             onPress={() => { setError(''); setMoodVisible(true); }}
             style={({ pressed }) => [styles.moodPrompt, pressed && styles.pressed]}
           >
-            <Text style={styles.moodPromptText}>✎ 输入想法或心情，推荐一首诗词</Text>
+            <Text style={styles.moodSearchIcon}>⌕</Text>
+            <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -409,8 +410,9 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPrompt: { minHeight: 44, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: '#E8CBC5', backgroundColor: '#FFF8F6', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
-  moodPromptText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
+  moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: '#DED6C8', backgroundColor: '#F6F2EA', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  moodSearchIcon: { color: colors.muted, fontFamily: fonts.sans, fontSize: 20, marginRight: 8 },
+  moodPromptText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
@@ -433,9 +435,9 @@ const styles = StyleSheet.create({
   discoveryReason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 12 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 12, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: '#DDD6CA', borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
+  highlightRow: { marginBottom: 16, padding: spacing.md, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: '#CFC6B7', borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
   highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30 },
-  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
   highlightSource: { flex: 1, color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
 });

@@ -1,3 +1,69 @@
+# v3.0.3 卡片边界与每日推荐缓存修复
+
+发布时间：2026-09-26
+
+## 应景推荐
+
+- 每日发现缓存升级到 v3，旧版已经缓存的同一天推荐会被忽略并重新生成。
+- 继续保留最近 30 天推荐历史排除机制。
+- 首页“换一组”会立刻排除当天已出现的篇目。
+- 秋日应景卡片边框加深，卡片间距增加到 16px。
+- 卡片底部保留“查看原诗”，整张卡片仍是可点击区域。
+
+## 心情入口
+
+- 原来像普通文字的按钮改为搜索框样式。
+- 高度 46px，圆角 pill，浅灰纸张背景。
+- 增加搜索图标和弱化提示文字：
+  “输入想法或心情，推荐一首诗词”
+- 点击后仍然打开原有心情推荐面板。
+
+## 诗库卡片
+
+- 作品卡片增加明确边框。
+- 卡片背景保持纯白，圆角和 12px 间距保持不变。
+- 标签药丸增加浅边框，避免和正文糊在一起。
+- 上一版已经移除难看的 `>` 箭头。
+
+## Git Credential Manager 弹窗
+
+- 弹窗与 App、诗词账号、API 无关。
+- 原因是本机 Git 全局配置把 `ghproxy.net` / `gh-proxy.com` 识别为需要凭证的 Git 服务。
+- 已移除这两个代理的凭证 provider 配置，避免继续弹出账号密码框。
+- GitHub 主仓库仍使用原来的 HTTPS remote，不影响后续更新。
+
+## 修改文件
+
+- `src/services/dailyDiscovery.ts`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心与 API 自测通过。
+- Expo Web 导出通过。
+
+## 回滚本次修改
+
+回到 v3.0.2：
+
+```powershell
+git checkout main
+git reset --hard v3.0.2
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.2 每日推荐与卡片交互修复
 
 发布时间：2026-09-26
