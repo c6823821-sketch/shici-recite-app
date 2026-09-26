@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.6/shici-recite-app-v3.0.6.apk"
   ],
-  "size": 0,
+  "size": 92521748,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.6",
-  "notes": "新增中间背诵Tab，移除首页背诵卡；简化应景卡片并合并心情推荐入口。"
+  "notes": "新增中间背诵Tab，移除首页背诵卡；简化应景卡片并合并心情推荐入口。",
+  "sha256": "b9f48a5e29c33d2bdc27c3c97c645fa72366768499d9bcc6b684be4a0e39750b"
 }
