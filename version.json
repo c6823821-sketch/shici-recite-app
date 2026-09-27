@@ -7,8 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk"
   ],
-  "size": 0,
+  "size": 92546468,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.22",
   "notes": "电脑调参结果已固化到真机：今日荐诗卡片、输入框边框、间距与底部导航与 390px 预览保持一致。",
-  "sha256": ""
+  "sha256": "0e298f1f30eab08ed7c88a91332a3adc8b4dc51f71081faaa1690d8f53814611"
 }
