@@ -270,17 +270,20 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         </View>
 
         <View style={styles.searchBlock}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            onSubmitEditing={() => void rememberSearch(query)}
-            onBlur={() => void rememberSearch(query)}
-            placeholder="搜索篇名、作者或正文"
-            placeholderTextColor={colors.muted}
-            selectionColor={colors.vermilion}
-            returnKeyType="search"
-            style={styles.searchInput}
-          />
+          <View style={styles.searchField}>
+            <Text style={styles.searchIcon}>⌕</Text>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={() => void rememberSearch(query)}
+              onBlur={() => void rememberSearch(query)}
+              placeholder="搜索篇名、作者或正文"
+              placeholderTextColor={colors.muted}
+              selectionColor={colors.vermilion}
+              returnKeyType="search"
+              style={styles.searchInput}
+            />
+          </View>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.eraTabs}>
@@ -466,7 +469,9 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },
   searchBlock: { marginTop: spacing.md },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
-  searchInput: { minHeight: 48, borderRadius: 8, borderWidth: 1.5, borderColor: '#8A7760', color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingLeft: 20, paddingRight: 16, backgroundColor: '#FFF9F0' },
+  searchField: { minHeight: 48, flexDirection: 'row', alignItems: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: '#8A7760', backgroundColor: '#FFF9F0', paddingHorizontal: 16 },
+  searchIcon: { color: '#6F6559', fontFamily: fonts.sans, fontSize: 19, marginRight: 10 },
+  searchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingVertical: 0 },
   categoryButton: { alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: colors.line, paddingHorizontal: 14 },
   categoryButtonText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15 },
   categoryOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 120, elevation: 35, backgroundColor: colors.paper },

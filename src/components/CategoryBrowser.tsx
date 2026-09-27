@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   dimensionTabActive: { borderColor: colors.vermilion, backgroundColor: '#F4E2DC' },
   dimensionTabText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 },
   dimensionTabTextActive: { color: colors.vermilion, fontWeight: '700' },
-  homeSearchRow: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: spacing.lg, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  homeSearchRow: { flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: spacing.lg, borderWidth: 1.5, borderColor: '#8A7760', borderRadius: 8, overflow: 'hidden', backgroundColor: '#FFF9F0' },
   homeSearchInput: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, paddingHorizontal: 12 },
   homeSearchButton: { minWidth: 72, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   homeSearchButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },

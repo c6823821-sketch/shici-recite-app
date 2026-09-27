@@ -154,7 +154,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
         <Text style={styles.title}>今日</Text>
         <Text style={styles.subtitle}>今日先读一句，再完成背诵。</Text>
 
-        <View style={[styles.recommendCard, { backgroundColor: cardBackground || uiTuning.cardBg, width: recommendCardWidth }]}>
+        <View style={[styles.recommendSection, { width: recommendCardWidth }]}>
           <ImageBackground
             source={require('../../assets/covers/cover-moon.png')}
             style={styles.recommendArt}
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   startButtonArrow: { color: colors.white, fontFamily: fonts.sans, fontSize: 23 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
-  recommendCard: { alignSelf: 'flex-start', marginTop: uiTuning.pagePadding, backgroundColor: uiTuning.cardBg, borderLeftWidth: 4, borderLeftColor: uiTuning.accent, borderRadius: uiTuning.buttonRadius },
+  recommendSection: { alignSelf: 'flex-start', marginTop: uiTuning.pagePadding },
   recommendArt: { width: '100%', height: uiTuning.recommendArtHeight, borderTopLeftRadius: uiTuning.buttonRadius, borderTopRightRadius: uiTuning.buttonRadius, overflow: 'hidden', justifyContent: 'flex-end' },
   recommendArtImage: { resizeMode: 'cover' },
   recommendArtShade: { flex: 1, backgroundColor: 'rgba(249,247,242,0.10)' },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 * uiTuning.fontScale, lineHeight: 24 * uiTuning.fontScale, marginTop: 12, marginHorizontal: uiTuning.cardGap },
   loader: { marginVertical: 48 },
   cardActions: { alignItems: 'stretch', marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
-  primaryButtonShell: { width: '100%', height: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, backgroundColor: uiTuning.accent, overflow: 'hidden' },
+  primaryButtonShell: { width: '100%', height: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, backgroundColor: uiTuning.accent },
   primaryButton: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
   randomButton: { minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, paddingHorizontal: 16, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.accent, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
@@ -364,13 +364,13 @@ const styles = StyleSheet.create({
   discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 16 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 12, paddingTop: 16, paddingBottom: 20, paddingHorizontal: uiTuning.cardGap, backgroundColor: uiTuning.cardBg, borderWidth: 1, borderLeftWidth: 4, borderColor: '#D8CFC0', borderLeftColor: colors.jade, borderRadius: uiTuning.cardRadius, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
+  highlightRow: { marginBottom: 16, paddingTop: 16, paddingBottom: 22, paddingHorizontal: uiTuning.cardGap, backgroundColor: '#F7F0E5', borderLeftWidth: 4, borderLeftColor: colors.jade, borderRadius: 8 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
   highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
   highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30, fontWeight: '700' },
-  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 20 },
+  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 18 },
   highlightSource: { flex: 1, color: colors.jade, fontFamily: fonts.body, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   highlightSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E8E0D4', marginBottom: 16, marginHorizontal: 4 },

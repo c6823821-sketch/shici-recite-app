@@ -292,3 +292,13 @@ git checkout main
 git reset --hard v3.0.23
 git clean -fd
 ```
+
+## v3.0.25 推荐区去卡片与搜索框回滚
+
+回到 v3.0.24：
+
+```powershell
+git checkout main
+git reset --hard v3.0.24
+git clean -fd
+```

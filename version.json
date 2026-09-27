@@ -1,14 +1,14 @@
 {
-  "version": "3.0.24",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.24/shici-recite-app-v3.0.24.apk",
+  "version": "3.0.25",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.25/shici-recite-app-v3.0.25.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.24/shici-recite-app-v3.0.24.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.24/shici-recite-app-v3.0.24.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.24/shici-recite-app-v3.0.24.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.24/shici-recite-app-v3.0.24.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.25/shici-recite-app-v3.0.25.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.25/shici-recite-app-v3.0.25.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.25/shici-recite-app-v3.0.25.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.25/shici-recite-app-v3.0.25.apk"
   ],
-  "size": 92540704,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.24",
-  "notes": "真机布局继续修复：移除推荐卡会裁切子按钮背景的 overflow/elevation，“进入阅读”独立背景壳；秋日应景卡片增加底部留白并去掉挤的分隔线。",
-  "sha256": "9dd01a86cb9e100c83c35613c2b7be3892c42665984b63cf845872f6389ef676"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.25",
+  "notes": "新版主页去掉推荐内容外层卡片和左侧红线，“进入阅读”改为页面内独立整行按钮；诗库搜索框增加外框；秋日应景卡片取消硬分隔线并增加底部留白。",
+  "sha256": ""
 }
