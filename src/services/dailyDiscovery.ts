@@ -2,6 +2,7 @@
 import { ApiSettings, Work } from '../types';
 import { getStoredValue, setStoredValue } from './settings';
 import { loadPreferenceProfile, preferenceScore, topInterests } from './preference';
+import { completeSentenceAroundLine } from './text';
 
 export interface DailyDiscoveryItem {
   workId: string;
@@ -112,11 +113,14 @@ function pickItems(
   const seedText = dateKey() + '-' + salt + '-' + (pool[0]?.work.id ?? '');
   const start = hashSeed(seedText) % pool.length;
   const ordered = [...pool.slice(start), ...pool.slice(0, start)];
-  return ordered.slice(0, 3).map((item) => ({
-    workId: item.work.id,
-    lineIndex: item.lineIndex,
-    quote: item.work.lines[item.lineIndex] ?? item.work.lines[0],
-  }));
+  return ordered.slice(0, 3).map((item) => {
+    const sentence = completeSentenceAroundLine(item.work.lines, item.lineIndex);
+    return {
+      workId: item.work.id,
+      lineIndex: sentence.start,
+      quote: sentence.text || item.work.lines[item.lineIndex] || item.work.lines[0],
+    };
+  });
 }
 function endpointUrl(endpoint: string): string {
   const value = endpoint.trim();
@@ -158,7 +162,7 @@ async function enrichWithApi(settings: ApiSettings, context: DiscoveryContext): 
 }
 
 export async function loadDailyDiscovery(settings: ApiSettings | null, catalog: Work[]): Promise<DailyDiscovery> {
-  const key = `daily_discovery_v4_${dateKey()}`;
+  const key = `daily_discovery_v5_${dateKey()}`;
   const cached = await getStoredValue(key);
   if (cached) {
     try { return JSON.parse(cached) as DailyDiscovery; } catch { /* regenerate */ }
@@ -214,7 +218,7 @@ export async function rotateDailyDiscovery(current: DailyDiscovery, catalog: Wor
     dateKey: dateKey(),
     items,
   };
-  await setStoredValue("daily_discovery_v4_" + dateKey(), JSON.stringify(next));
+  await setStoredValue("daily_discovery_v5_" + dateKey(), JSON.stringify(next));
   await rememberDiscovery(next.dateKey, next.items);
   return next;
 }

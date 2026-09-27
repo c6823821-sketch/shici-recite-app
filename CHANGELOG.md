@@ -1,3 +1,74 @@
+# v3.0.19 完整句推荐与暖米色主题
+
+发布时间：2026-09-27
+
+## 完整句
+
+- 今日推荐和秋日应景不再只显示分行后的半句。
+- 遇到逗号会继续向后合并，直到句号、问号或叹号。
+- 会向前查找当前句子的起点。
+- 例如完整显示“眼色暗相钩，秋波横欲流。”
+- 推荐缓存升级，旧版半句缓存不会被继续读取。
+
+## 暖米色背景
+
+- 新增并精确校准暖米色：`#F2EDE3`。
+- 设置为默认背景主题。
+- 推荐卡和秋日卡片使用对应的暖米色卡片色。
+- 背景主题仍可在“我的 → 背景主题”中搜索和切换。
+
+## 主页排版
+
+- 恢复诗句在上。
+- 题目、作者、朝代横向排在下。
+- 题目和作者使用朱砂红。
+- 心情输入框保留输入框结构，不改成圆形按钮。
+- 输入框增加明显边框和左侧缩进，放大镜与文字不再贴左。
+
+## 秋日应景
+
+- 恢复浅青绿色强调线。
+- 恢复暖米色卡片。
+- 恢复 16px 卡片间距。
+- 去掉应景句编号。
+- 保留“查看原诗”和“换一组”。
+
+## 修改文件
+
+- `src/services/text.ts`
+- `src/services/dailyDiscovery.ts`
+- `src/services/recommendation.ts`
+- `src/services/recommendationStore.ts`
+- `src/services/appearance.tsx`
+- `src/screens/TodayScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.18：
+
+```powershell
+git checkout main
+git reset --hard v3.0.18
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.18 阅读穿模与旧版排版恢复
 
 发布时间：2026-09-27

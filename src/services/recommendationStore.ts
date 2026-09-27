@@ -7,7 +7,7 @@ function todayKey(): string {
 }
 
 export async function loadTodayRecommendation(): Promise<DailyRecommendation | null> {
-  const raw = await getStoredValue(`daily_recommendation_${todayKey()}`);
+  const raw = await getStoredValue(`daily_recommendation_v2_${todayKey()}`);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as DailyRecommendation;
@@ -17,5 +17,5 @@ export async function loadTodayRecommendation(): Promise<DailyRecommendation | n
 }
 
 export async function saveTodayRecommendation(recommendation: DailyRecommendation): Promise<void> {
-  await setStoredValue(`daily_recommendation_${todayKey()}`, JSON.stringify(recommendation));
+  await setStoredValue(`daily_recommendation_v2_${todayKey()}`, JSON.stringify(recommendation));
 }

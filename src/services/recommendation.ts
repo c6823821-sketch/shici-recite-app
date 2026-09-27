@@ -1,4 +1,5 @@
 ﻿import { ApiSettings, DailyRecommendation, Work } from '../types';
+import { completeSentenceAroundLine } from './text';
 
 interface RecommendationResponse {
   work_id?: string;
