@@ -112,6 +112,25 @@ export function correctKnownImportedWork(work: Work): Work {
     };
   }
 
+  const content = chineseOnly(next.lines.join(''));
+  if (content.includes('槛菊愁烟兰泣露') && content.includes('欲寄彩笺兼尺素')) {
+    const canonicalLines = next.lines.map((line) => line
+      .replace('燕子双来去', '燕子双飞去')
+      .replace('雕碧树', '凋碧树'));
+    return {
+      ...next,
+      title: '蝶恋花·槛菊愁烟兰泣露',
+      author: '晏殊',
+      dynasty: '宋',
+      genre: '词',
+      collections: Array.from(new Set([...next.collections, '宋词', '宋词三百首'])),
+      themes: Array.from(new Set([...next.themes, '离别', '相思', '秋'])),
+      moods: next.moods.length ? next.moods : ['婉约', '哀婉'],
+      lines: canonicalLines,
+      source: '校订版 · 晏殊《蝶恋花·槛菊愁烟兰泣露》',
+    };
+  }
+
   const titleParts = next.title.split(/[\u00b7\u30fb]/).map((part) => part.trim()).filter(Boolean);
   if (titleParts.length === 2 && normalizeWorkTitle(titleParts[0]) === normalizeWorkTitle(titleParts[1])) {
     next = { ...next, title: titleParts[1] };

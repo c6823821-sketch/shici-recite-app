@@ -57,6 +57,12 @@ const correctedJiangChengZi = correctKnownImportedWork({
 });
 assert.equal(correctedJiangChengZi.title, '江城子·乙卯正月二十日夜记梦', '江神子名称应校订为江城子题名');
 assert.deepEqual(correctedJiangChengZi.lines, JIANGCHENGZI_LINES, '江城子正文应使用校订文本');
+const correctedDieLianHua = WORKS.filter((work) => work.lines.join('').includes('槛菊愁烟兰泣露') && work.lines.join('').includes('欲寄彩笺兼尺素'));
+assert.equal(correctedDieLianHua.length, 1, '蝶恋花重复记录应合并为一条');
+assert.equal(correctedDieLianHua[0]?.author, '晏殊', '蝶恋花作者应为晏殊');
+assert.equal(normalizeWorkTitle(correctedDieLianHua[0]?.title ?? '').includes('蝶恋花'), true, '蝶恋花题目应保留词牌名');
+assert.equal(correctedDieLianHua[0]?.lines.some((line) => line.includes('燕子双飞去')), true, '蝶恋花正文应校订为燕子双飞去');
+assert.equal(correctedDieLianHua[0]?.lines.some((line) => line.includes('凋碧树')), true, '蝶恋花正文应校订为凋碧树');
 
 
 

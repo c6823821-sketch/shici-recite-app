@@ -1,14 +1,13 @@
 {
-  "version": "3.0.11",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk",
+  "version": "3.0.12",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.11/shici-recite-app-v3.0.11.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk"
   ],
-  "size": 92531036,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.11",
-  "notes": "补充陈情表全文，严格校验长文全文，恢复主页荐诗排版并减淡应景分隔线。",
-  "sha256": "e0d61ce4177ec4eec3d1c371f9c2c948678ebfbf6d82d894a40d89f1984aea50"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.12",
+  "notes": "校订蝶恋花作者题目正文，合并重复搜索结果，并加入作者题目正文 API 校对入口。"
 }

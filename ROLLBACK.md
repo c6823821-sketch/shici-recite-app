@@ -139,3 +139,15 @@ git reset --hard v3.0.10
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.12 蝶恋花与搜索去重回滚
+
+回到 v3.0.11：
+
+```powershell
+git checkout main
+git reset --hard v3.0.11
+git clean -fd
+git push origin main --force-with-lease
+```

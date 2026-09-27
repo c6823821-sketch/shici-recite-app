@@ -1,3 +1,76 @@
+# v3.0.12 蝶恋花校订与搜索去重
+
+发布时间：2026-09-27
+
+## 蝶恋花校订
+
+- 将错误的“张先《蝶恋花》”统一校订为晏殊《蝶恋花·槛菊愁烟兰泣露》。
+- 将“鹊踏枝·蝶恋花”统一为同一权威篇名。
+- 正文校订为“燕子双飞去”“凋碧树”等通行文本。
+- 两条内容重复的记录合并为一条。
+- 增加核心自测，确保题名、作者和正文校订不会被后续数据覆盖。
+
+## 搜索去重
+
+- 搜索命中结果中，完全相同的整句只保留一条。
+- 不同作品内容不同、但共同引用同一句的情况仍然可以保留。
+- 不再出现同一句一模一样重复两三次的结果列表。
+- “查看全文”仍是可选入口；不点击时只显示命中句。
+
+## API 校对入口
+
+- 阅读页新增“校对作者、题目、正文”按钮。
+- 使用当前配置的 API 检查：
+  - 题目
+  - 作者
+  - 朝代
+  - 正文
+- API 只返回问题和建议，不自动篡改本地数据。
+- 校对结果按题目、作者、正文分别展示。
+
+## 主页排版
+
+- 今日荐诗的题目和作者恢复为横向一行。
+- 诗句保持单独大字号正文。
+- 不改变随机切换、心情推荐、查看原文功能。
+
+## 修改文件
+
+- `src/data/corrections.ts`
+- `src/services/workAudit.ts`
+- `src/screens/ReaderScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `src/screens/TodayScreen.tsx`
+- `scripts/self-test.ts`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- 蝶恋花只保留一条校订记录。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.11：
+
+```powershell
+git checkout main
+git reset --hard v3.0.11
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.11 全文补全与主页排版修正
 
 发布时间：2026-09-26

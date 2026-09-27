@@ -233,6 +233,35 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     }
   };
 
+  const openFullWork = async (work: Work, lineIndex = 0) => {
+    const joined = work.lines.join('');
+    const longForm = work.genre === '文' || /表|序|赋|记|书|论|传|碑|铭|疏|策|诏|檄/.test(work.title);
+    const likelyIncomplete = (longForm && joined.length < 240) || (work.imported && work.lines.length < 4 && joined.length < 160);
+    if (!likelyIncomplete) {
+      onOpenWork(work, lineIndex);
+      return;
+    }
+    if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      setRemoteMessage('当前是摘录内容。请先在“我的 → API 设置”配置接口，才能补全全文。');
+      onOpenWork(work, lineIndex);
+      return;
+    }
+    setRemoteLoading(true);
+    setRemoteMessage('正在补全全文…');
+    try {
+      const full = await lookupRemoteWork(work.title, settings);
+      await saveImportedWork(full);
+      setImportedWorks(await loadImportedWorks());
+      setRemoteMessage('已补全《' + full.title + '》全文。');
+      onOpenWork(full, Math.max(0, Math.min(lineIndex, full.lines.length - 1)));
+    } catch (error) {
+      setRemoteMessage(error instanceof Error ? error.message : '全文补全失败，先打开当前摘录。');
+      onOpenWork(work, lineIndex);
+    } finally {
+      setRemoteLoading(false);
+    }
+  };
+
   const listHeader = (
     <View>
         <View style={styles.header}>
@@ -360,7 +389,14 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
                 <Text style={styles.quoteLine}>{item.line}</Text>
                 <Text style={styles.quoteTitle}>《{item.work.title}》</Text>
                 <Text style={styles.quoteAuthor}>{item.work.author}</Text>
-                <View style={styles.resultActionRow}><Text style={styles.resultAction}>查看全文</Text></View>
+                <View style={styles.resultActionRow}>
+                  <Pressable
+                    onPress={(event) => { event.stopPropagation(); void openFullWork(item.work, item.lineIndex); }}
+                    style={styles.resultActionButton}
+                  >
+                    <Text style={styles.resultAction}>查看全文</Text>
+                  </Pressable>
+                </View>
               </Pressable>
             );
           }
@@ -500,7 +536,8 @@ const styles = StyleSheet.create({
   classicResultSnippet: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 5 },
   classicResultAuthor: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
   resultActionRow: { marginTop: 10, alignItems: 'flex-end' },
-  resultAction: { minHeight: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: '#E0B9B2', paddingHorizontal: 12, color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
+  resultActionButton: { minHeight: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: '#E0B9B2', paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  resultAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quoteResults: { marginHorizontal: 0, marginTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   quoteResultsTitle: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   quoteRow: { marginBottom: 12, padding: spacing.md, borderRadius: 16, backgroundColor: colors.paperLight, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },

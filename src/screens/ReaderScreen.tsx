@@ -19,6 +19,7 @@ import { findLocalExplanation } from '../services/localGlossary';
 import { findDictionaryExplanation } from '../services/localDictionary';
 import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
 import { loadOrCreateContext, WorkContext } from '../services/context';
+import { auditWork, WorkAudit } from '../services/workAudit';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { AuthorInfo, loadAuthorInfo } from '../services/authorInfo';
@@ -71,6 +72,10 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [contextVisible, setContextVisible] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
   const [contextError, setContextError] = useState('');
+  const [auditVisible, setAuditVisible] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState('');
+  const [auditResult, setAuditResult] = useState<WorkAudit | null>(null);
   const [wholeTranslations, setWholeTranslations] = useState<string[]>([]);
   const [wholeVisible, setWholeVisible] = useState(false);
   const [wholeLoading, setWholeLoading] = useState(false);
@@ -283,6 +288,28 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
+  const runAudit = async () => {
+    if (auditVisible) {
+      setAuditVisible(false);
+      return;
+    }
+    setAuditVisible(true);
+    setAuditError('');
+    if (auditResult || auditLoading) return;
+    if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      setAuditError('请先在“我的 → API 设置”配置接口。');
+      return;
+    }
+    setAuditLoading(true);
+    try {
+      setAuditResult(await auditWork(settings, work));
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : '校对失败。');
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
   const toggleWholeTranslation = async () => {
     if (wholeVisible) {
       setWholeVisible(false);
@@ -363,6 +390,30 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             <Text style={styles.workMeta}> · {work.genre}</Text>
           </View>
         </View>
+
+        <Pressable onPress={() => void runAudit()} style={styles.auditToggle}>
+          <Text style={styles.auditToggleText}>{auditVisible ? '收起校对结果' : '校对作者、题目、正文'}</Text>
+        </Pressable>
+        {auditVisible ? (
+          <View style={styles.auditBox}>
+            {auditLoading ? <ActivityIndicator color={colors.vermilion} /> : null}
+            {auditError ? <Text style={styles.auditError}>{auditError}</Text> : null}
+            {auditResult ? (
+              <>
+                <Text style={styles.auditSummary}>{auditResult.correct ? '未发现确定错误' : '发现以下可疑问题'}</Text>
+                {auditResult.issues.map((issue, index) => (
+                  <View key={issue.field + '-' + index} style={styles.auditIssue}>
+                    <Text style={styles.auditIssueField}>{issue.field === 'title' ? '题目' : issue.field === 'author' ? '作者' : '正文'}{issue.line ? ' · 第 ' + issue.line + ' 句' : ''}</Text>
+                    <Text style={styles.auditIssueText}>{issue.problem}</Text>
+                    {issue.suggestion ? <Text style={styles.auditSuggestion}>建议：{issue.suggestion}</Text> : null}
+                  </View>
+                ))}
+                {auditResult.issues.length === 0 ? <Text style={styles.auditIssueText}>{auditResult.summary}</Text> : null}
+                <Text style={styles.auditConfidence}>把握度：{auditResult.confidence}</Text>
+              </>
+            ) : null}
+          </View>
+        ) : null}
 
         <Pressable onPress={toggleContext} style={styles.contextToggle}>
           <Text style={styles.contextToggleText}>{contextVisible ? '收起背景与赏析' : '背景 · 主旨 · 赏析'}</Text>
@@ -632,6 +683,16 @@ const styles = StyleSheet.create({
   workMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3 },
   authorLink: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 1 },
+  auditToggle: { alignSelf: 'center', minHeight: 38, borderRadius: 999, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, justifyContent: 'center', marginTop: 4, backgroundColor: colors.paperLight },
+  auditToggleText: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
+  auditBox: { marginHorizontal: spacing.lg, marginTop: 12, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
+  auditSummary: { color: colors.ink, fontFamily: fonts.body, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  auditError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20 },
+  auditIssue: { marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
+  auditIssueField: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700' },
+  auditIssueText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 4 },
+  auditSuggestion: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 4 },
+  auditConfidence: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 10 },
   contextToggle: { alignSelf: 'center', marginTop: 6, paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line },
   contextToggleText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
   contextBox: { marginTop: 10, padding: 14, backgroundColor: colors.paperDeep },
