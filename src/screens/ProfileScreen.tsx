@@ -17,10 +17,11 @@ import { loadStudyRecords, StudyRecord } from '../services/studyQueue';
 import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorite } from '../services/favorites';
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { checkForUpdate, downloadAndInstallUpdate, formatBytes, UpdateInfo } from '../services/updater';
+import { APP_BACKGROUNDS, useAppearance } from '../services/appearance';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Work } from '../types';
 
-type Section = 'menu' | 'api' | 'favorites' | 'history';
+type Section = 'menu' | 'api' | 'favorites' | 'history' | 'appearance';
 
 interface Props {
   active?: boolean;
@@ -32,6 +33,7 @@ interface Props {
 const EMPTY: ApiSettings = { endpoint: '', apiKey: '', model: '' };
 
 export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite, onOpenWork }: Props) {
+  const { backgroundKey, setBackground } = useAppearance();
   const [section, setSection] = useState<Section>('menu');
   const [settings, setSettings] = useState<ApiSettings>(EMPTY);
   const [favorites, setFavorites] = useState<FavoriteLine[]>([]);
@@ -146,6 +148,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
         <ScrollView contentContainerStyle={styles.content}>
           <MenuRow title="API 设置" detail="地址、Key、模型" onPress={() => { setMessage(''); setSection('api'); }} />
           <MenuRow title="背诵记录" detail={`${learnedRecords.length} 首已背 · ${upcomingRecords.length} 首后续复习`} onPress={() => { void refreshHistory(); setSection('history'); }} />
+          <MenuRow title="背景主题" detail={APP_BACKGROUNDS.find((item) => item.key === backgroundKey)?.label ?? '宣纸白'} onPress={() => setSection('appearance')} />
           <MenuRow title="我的收藏" detail={`${favorites.length} 条句子 · ${folders.length} 个收藏夹`} onPress={() => setSection('favorites')} />
           <MenuRow title="检查更新" detail={checking ? '正在检查…' : '应用内下载并安装新版'} onPress={checkUpdate} />
           {updateInfo ? (
@@ -192,6 +195,23 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
           })}
           {favorites.some((item) => !item.folderId) ? <Text style={styles.folderTitle}>未分类</Text> : null}
           {favorites.filter((item) => !item.folderId).map((item) => <FavoriteItem key={item.id} item={item} onDeleted={refreshFavorites} onOpen={() => onOpenFavorite(item)} />)}
+        </ScrollView>
+      ) : section === 'appearance' ? (
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.help}>选择背景主题。切换后主要页面会立即使用新的底色。</Text>
+          {APP_BACKGROUNDS.map((item) => {
+            const active = backgroundKey === item.key;
+            return (
+              <Pressable key={item.key} onPress={() => void setBackground(item.key)} style={[styles.appearanceOption, active && styles.appearanceOptionActive]}>
+                <View style={[styles.appearanceSwatch, { backgroundColor: item.color }]} />
+                <View style={styles.appearanceCopy}>
+                  <Text style={styles.appearanceTitle}>{item.label}</Text>
+                  <Text style={styles.appearanceNote}>{item.note}</Text>
+                </View>
+                <Text style={styles.appearanceCheck}>{active ? '✓' : ''}</Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       ) : (
         <ScrollView
@@ -285,7 +305,7 @@ function HistoryRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 46 : 52 },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 46 : 52 },
   flex: { flex: 1 },
   header: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   headerSide: { width: 72 },
@@ -321,6 +341,13 @@ const styles = StyleSheet.create({
   favoriteQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, lineHeight: 26 },
   deleteButton: { minWidth: 48, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   delete: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12 },
+  appearanceOption: { minHeight: 76, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 16, padding: 14, marginBottom: 12, backgroundColor: colors.paperLight },
+  appearanceOptionActive: { borderColor: colors.vermilion },
+  appearanceSwatch: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: colors.line },
+  appearanceCopy: { flex: 1, marginLeft: 14 },
+  appearanceTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
+  appearanceNote: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 4 },
+  appearanceCheck: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 20, width: 24, textAlign: 'center' },
   historySectionTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 20, fontWeight: '800', marginTop: 24, marginBottom: 12 },
   historyEmpty: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, paddingVertical: 8 },
   historyRow: { minHeight: 76, marginBottom: 12, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: '#DED6C8', backgroundColor: colors.paperLight, flexDirection: 'row', alignItems: 'center', shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },

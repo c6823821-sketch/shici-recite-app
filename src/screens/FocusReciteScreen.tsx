@@ -288,7 +288,7 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 42 : 54 },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 42 : 54 },
   header: { height: 52, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center' },
   headerButton: { width: 76, minHeight: 44, justifyContent: 'center' },
   headerRight: { alignItems: 'flex-end' },

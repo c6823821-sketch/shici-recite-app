@@ -22,11 +22,23 @@ import { colors } from './src/theme';
 import { Work } from './src/types';
 import { FavoriteLine } from './src/services/favorites';
 import { loadImportedWorks } from './src/services/importedWorks';
+import { AppearanceProvider, useAppearance } from './src/services/appearance';
 
 type Screen = 'tabs' | 'reader' | 'classic' | 'focus';
 
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppearanceProvider>
+        <AppShell />
+      </AppearanceProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function AppShell() {
+  const { background } = useAppearance();
   const [screen, setScreen] = useState<Screen>('tabs');
   const [tab, setTab] = useState<MainTab>('today');
   const [work, setWork] = useState<Work>(SAMPLE_WORK);
@@ -167,8 +179,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider>
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: background }]}>
       <StatusBar style="dark" />
       <View style={styles.tabs}>
         <View style={styles.content}>
@@ -237,7 +248,6 @@ export default function App() {
         </View>
       ) : null}
     </View>
-    </SafeAreaProvider>
   );
 }
 
@@ -247,6 +257,6 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   tabPane: { flex: 1 },
   hidden: { display: 'none' },
-  focusOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 400, elevation: 80, backgroundColor: colors.paper },
-  readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40, backgroundColor: colors.paper },
+  focusOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 400, elevation: 80 },
+  readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40 },
 });

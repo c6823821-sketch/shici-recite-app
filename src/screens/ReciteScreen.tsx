@@ -131,7 +131,7 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 28 : 50 },
   content: { paddingHorizontal: spacing.lg, paddingBottom: 128 },
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },

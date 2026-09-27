@@ -460,7 +460,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 28 : 50 },
   header: { paddingHorizontal: 0, paddingBottom: spacing.md },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 34, fontWeight: '800', letterSpacing: 3 },
   subtitle: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 8 },

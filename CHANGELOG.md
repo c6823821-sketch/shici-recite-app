@@ -1,3 +1,76 @@
+# v3.0.16 师说全文与背景主题
+
+发布时间：2026-09-27
+
+## 师说全文
+
+- 本地典籍库新增韩愈《师说》完整原文。
+- 搜索“师说”时可直接进入全文。
+- 增加自测，校验开头“古之学者必有师”和结尾“作《师说》以贻之”。
+
+## 背景主题设置
+
+- “我的”新增“背景主题”入口。
+- 提供三种全局背景：
+  - 宣纸白
+  - 米棕色
+  - 淡紫色
+- 切换后主要页面立即使用新背景。
+- 设置保存在本机。
+
+## 心情搜索入口
+
+- 心情搜索框增加更明显的浅棕边框。
+- 增加左侧内边距，文字不再紧贴边框。
+- 保留原来的点击推荐功能，不改变行为。
+
+## 搜索排版
+
+- 页面整体增加左侧留白。
+- 搜索框、分类胶囊和列表卡片向右回收，减少贴屏感。
+- 保留搜索结果先显示命中句，点击“查看全文”再进入完整篇目的逻辑。
+
+## 修改文件
+
+- `src/data/classics.json`
+- `src/services/appearance.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `App.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `src/screens/ReaderScreen.tsx`
+- `src/screens/ClassicScreen.tsx`
+- `src/screens/ReciteScreen.tsx`
+- `src/screens/FocusReciteScreen.tsx`
+- `scripts/self-test.ts`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.15：
+
+```powershell
+git checkout main
+git reset --hard v3.0.15
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.15 长文完整性与全文补全
 
 发布时间：2026-09-27

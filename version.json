@@ -1,14 +1,13 @@
 {
-  "version": "3.0.15",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.15/shici-recite-app-v3.0.15.apk",
+  "version": "3.0.16",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.15/shici-recite-app-v3.0.15.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.15/shici-recite-app-v3.0.15.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.15/shici-recite-app-v3.0.15.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.15/shici-recite-app-v3.0.15.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk"
   ],
-  "size": 92543172,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.15",
-  "notes": "增加长文完整性判断与补全全文按钮，修复校对误报，并合并同正文的本地/API重复篇目。",
-  "sha256": "734ce7ca4acf05e3b369199db31204327ccce93193d901ff117c664c030f4eae"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.16",
+  "notes": "补充师说全文，增加背景主题设置，并强化心情搜索按钮边框和页面留白。"
 }

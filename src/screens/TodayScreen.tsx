@@ -282,7 +282,7 @@ function readableError(error: unknown): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper, paddingTop: Platform.OS === 'android' ? 28 : 50 },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 28 : 50 },
   content: { paddingHorizontal: spacing.lg, paddingBottom: 128 },
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: '#DED6C8', backgroundColor: '#F6F2EA', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 1.5, borderColor: '#B9A98F', backgroundColor: '#F4EEE4', flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 16 },
   moodSearchIcon: { color: colors.muted, fontFamily: fonts.sans, fontSize: 20, marginRight: 8 },
   moodPromptText: { flex: 1, color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
