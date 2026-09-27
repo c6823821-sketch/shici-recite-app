@@ -7,8 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk"
   ],
-  "size": 0,
+  "size": 92546540,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.23",
   "notes": "真机布局修复：进入阅读按钮改为固定宽高，修复 OnePlus 等安卓机型上按钮背景不显示、换一换文字被挤成两行的问题。",
-  "sha256": ""
+  "sha256": "f5e26642e2c1684bb07bbb832ba5284e8dcc3e79ed896d4e63a01ec7461a589c"
 }
