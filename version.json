@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.16/shici-recite-app-v3.0.16.apk"
   ],
-  "size": 0,
+  "size": 92549320,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.16",
-  "notes": "补充师说全文，增加背景主题设置，并强化心情搜索按钮边框和页面留白。"
+  "notes": "补充师说全文，增加背景主题设置，并强化心情搜索按钮边框和页面留白。",
+  "sha256": "372a7e75a3e715f8818495dd1b2a9acab62eb594f7d8b836f2104efb52019327"
 }
