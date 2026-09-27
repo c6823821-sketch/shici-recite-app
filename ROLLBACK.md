@@ -175,3 +175,15 @@ git reset --hard v3.0.13
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.15 长文补全回滚
+
+回到 v3.0.14：
+
+```powershell
+git checkout main
+git reset --hard v3.0.14
+git clean -fd
+git push origin main --force-with-lease
+```

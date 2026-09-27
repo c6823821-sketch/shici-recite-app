@@ -210,6 +210,7 @@ export default function App() {
             initialLineIndex={readerLineIndex}
             onBack={closeReader}
             onOpenSettings={openSettings}
+            onWorkUpdated={setWork}
           />
         </View>
       ) : null}

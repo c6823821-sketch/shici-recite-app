@@ -15,6 +15,7 @@ export interface WorkAudit {
   issues: WorkAuditIssue[];
   summary: string;
   confidence: 'high' | 'medium' | 'low';
+  incomplete?: boolean;
 }
 
 function endpointUrl(endpoint: string): string {
@@ -33,6 +34,24 @@ function parse(text: string): Record<string, unknown> {
 }
 
 export async function auditWork(settings: ApiSettings, work: Work): Promise<WorkAudit> {
+  const plainText = work.lines.join('').replace(/\s/g, '');
+  const longForm = work.genre === '文' || /表|序|赋|记|书|论|传|碑|铭|疏|策|诏|檄/.test(work.title);
+  if (longForm && plainText.length < 240) {
+    return {
+      title: work.title,
+      author: work.author,
+      dynasty: work.dynasty,
+      correct: false,
+      incomplete: true,
+      issues: [{
+        field: 'text',
+        problem: '当前正文只有 ' + plainText.length + ' 字，疑似摘录，不是完整长文。',
+        suggestion: '点击“补全全文”，从已配置 API 重新取得完整篇目。',
+      }],
+      summary: '当前内容疑似不完整，不能判定为全文无错误。',
+      confidence: 'high',
+    };
+  }
   if (!settings.endpoint.trim() || !settings.model.trim()) {
     throw new Error('请先在“我的 → API 设置”配置接口。');
   }

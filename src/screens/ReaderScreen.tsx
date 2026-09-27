@@ -19,6 +19,8 @@ import { findLocalExplanation } from '../services/localGlossary';
 import { findDictionaryExplanation } from '../services/localDictionary';
 import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
 import { loadOrCreateContext, WorkContext } from '../services/context';
+import { lookupRemoteWork } from '../services/remoteLookup';
+import { saveImportedWork } from '../services/importedWorks';
 import { auditWork, WorkAudit } from '../services/workAudit';
 import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
@@ -37,6 +39,7 @@ interface Props {
   initialLineIndex?: number;
   onBack: () => void;
   onOpenSettings: () => void;
+  onWorkUpdated?: (work: Work) => void;
 }
 
 const MODES: Array<{ key: Mode; label: string }> = [
@@ -45,7 +48,7 @@ const MODES: Array<{ key: Mode; label: string }> = [
   { key: 'recite', label: '默背' },
 ];
 
-export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSettings }: Props) {
+export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSettings, onWorkUpdated }: Props) {
   const [mode, setMode] = useState<Mode>('read');
   const [lineIndex, setLineIndex] = useState(initialLineIndex);
   const [revealedLines, setRevealedLines] = useState<Set<number>>(new Set());
@@ -76,6 +79,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditResult, setAuditResult] = useState<WorkAudit | null>(null);
+  const [completing, setCompleting] = useState(false);
   const [wholeTranslations, setWholeTranslations] = useState<string[]>([]);
   const [wholeVisible, setWholeVisible] = useState(false);
   const [wholeLoading, setWholeLoading] = useState(false);
@@ -310,6 +314,26 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
+  const completeFullText = async () => {
+    if (!settings?.endpoint.trim() || !settings.model.trim()) {
+      setAuditError('请先在“我的 → API 设置”配置接口。');
+      return;
+    }
+    setCompleting(true);
+    setAuditError('');
+    try {
+      const full = await lookupRemoteWork(work.title, settings);
+      await saveImportedWork(full);
+      onWorkUpdated?.(full);
+      setAuditResult(null);
+      setAuditVisible(false);
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : '全文补全失败。');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const toggleWholeTranslation = async () => {
     if (wholeVisible) {
       setWholeVisible(false);
@@ -408,6 +432,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
                   </View>
                 ))}
                 {auditResult.issues.length === 0 ? <Text style={styles.auditIssueText}>{auditResult.summary}</Text> : null}
+                {auditResult.incomplete ? (
+                  <Pressable onPress={() => void completeFullText()} disabled={completing} style={styles.auditCompleteButton}>
+                    <Text style={styles.auditCompleteText}>{completing ? '正在补全…' : '补全全文'}</Text>
+                  </Pressable>
+                ) : null}
                 <Text style={styles.auditConfidence}>把握度：{auditResult.confidence}</Text>
               </>
             ) : null}
@@ -691,6 +720,8 @@ const styles = StyleSheet.create({
   auditIssueField: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700' },
   auditIssueText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 4 },
   auditSuggestion: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginTop: 4 },
+  auditCompleteButton: { minHeight: 40, borderRadius: 12, backgroundColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
+  auditCompleteText: { color: colors.white, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
   auditConfidence: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 10 },
   contextToggle: { alignSelf: 'center', marginTop: 6, paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line },
   contextToggleText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14 },
