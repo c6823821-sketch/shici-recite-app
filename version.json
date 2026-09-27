@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.21/shici-recite-app-v3.0.21.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.21/shici-recite-app-v3.0.21.apk"
   ],
-  "size": 0,
+  "size": 92543232,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.21",
-  "notes": "手机端推荐卡重排：山水图融合标题，完整句放大，血红题目，修复右侧裁切和底部导航宽度。"
+  "notes": "手机端推荐卡重排：山水图融合标题，完整句放大，血红题目，修复右侧裁切和底部导航宽度。",
+  "sha256": "b529bef5572dea87ca7880efa87a9e63e447d2d2b64365cfe770c8fda6b125e0"
 }
