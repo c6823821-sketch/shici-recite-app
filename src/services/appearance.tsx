@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getStoredValue, setStoredValue } from './settings';
 
-export type AppBackgroundKey = 'paper' | 'warm' | 'mist';
+export type AppBackgroundKey = 'paper' | 'warm' | 'brown' | 'mist' | 'sage' | 'rose';
 
-export const APP_BACKGROUNDS: Array<{ key: AppBackgroundKey; label: string; color: string; note: string }> = [
-  { key: 'paper', label: '宣纸白', color: '#F9F7F2', note: '清透、安静，适合长时间阅读' },
-  { key: 'warm', label: '米棕色', color: '#F3EDE2', note: '温暖、古雅，接近旧纸质感' },
-  { key: 'mist', label: '淡紫色', color: '#F1EEF5', note: '柔和、低饱和，略带现代感' },
+export const APP_BACKGROUNDS: Array<{ key: AppBackgroundKey; label: string; color: string; card: string; note: string }> = [
+  { key: 'paper', label: '宣纸白', color: '#F9F7F2', card: '#FFFFFF', note: '清透、安静，适合长时间阅读' },
+  { key: 'warm', label: '米棕色', color: '#F3EDE2', card: '#FBF6EE', note: '温暖、古雅，接近旧纸质感' },
+  { key: 'brown', label: '旧纸棕', color: '#E9DCCB', card: '#F7EDE0', note: '更暖的旧纸棕色，接近古籍纸色' },
+  { key: 'mist', label: '淡紫色', color: '#F1EEF5', card: '#FAF8FC', note: '柔和、低饱和，略带现代感' },
+  { key: 'sage', label: '青绿色', color: '#E6EDE6', card: '#F7FAF7', note: '清雅的浅青绿色，接近山水留白' },
+  { key: 'rose', label: '藕粉色', color: '#F3E8E4', card: '#FCF7F5', note: '温和的藕粉底色，适合阅读和收藏' },
 ];
 
 const STORAGE_KEY = 'app_background_theme_v1';
@@ -15,17 +18,19 @@ const DEFAULT_BACKGROUND: AppBackgroundKey = 'paper';
 interface AppearanceValue {
   backgroundKey: AppBackgroundKey;
   background: string;
+  cardBackground: string;
   setBackground: (key: AppBackgroundKey) => Promise<void>;
 }
 
 const AppearanceContext = createContext<AppearanceValue>({
   backgroundKey: DEFAULT_BACKGROUND,
   background: APP_BACKGROUNDS[0].color,
+  cardBackground: APP_BACKGROUNDS[0].card,
   setBackground: async () => undefined,
 });
 
 function isBackgroundKey(value: string | null): value is AppBackgroundKey {
-  return value === 'paper' || value === 'warm' || value === 'mist';
+  return APP_BACKGROUNDS.some((item) => item.key === value);
 }
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
@@ -44,7 +49,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <AppearanceContext.Provider value={{ backgroundKey, background: theme.color, setBackground }}>
+    <AppearanceContext.Provider value={{ backgroundKey, background: theme.color, cardBackground: theme.card, setBackground }}>
       {children}
     </AppearanceContext.Provider>
   );

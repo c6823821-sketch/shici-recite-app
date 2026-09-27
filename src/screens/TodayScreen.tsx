@@ -13,6 +13,7 @@ import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
 import { DailyDiscovery, loadDailyDiscovery, rotateDailyDiscovery } from '../services/dailyDiscovery';
+import { useAppearance } from '../services/appearance';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
 import {
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Props) {
+  const { cardBackground } = useAppearance();
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [moodVisible, setMoodVisible] = useState(false);
@@ -149,7 +151,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
         <Text style={styles.title}>今日</Text>
         <Text style={styles.subtitle}>今日先读一句，再完成背诵。</Text>
 
-        <View style={styles.recommendCard}>
+        <View style={[styles.recommendCard, { backgroundColor: cardBackground }]}>
           <ImageBackground
             source={require('../../assets/covers/cover-moon.png')}
             style={styles.recommendArt}
@@ -239,7 +241,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
                 <View key={item.workId + '-' + item.lineIndex}>
                   <Pressable
                     onPress={() => onOpenWork(work, item.lineIndex)}
-                    style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.highlightRow, { backgroundColor: cardBackground }, pressed && styles.pressed]}
                   >
                     <Text style={styles.highlightQuote}>{item.quote}</Text>
                     <View style={styles.highlightFooter}>
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   startButtonArrow: { color: colors.white, fontFamily: fonts.sans, fontSize: 23 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
-  recommendCard: { marginTop: spacing.lg, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, borderRadius: 20, overflow: 'hidden', ...shadow },
+  recommendCard: { marginTop: spacing.lg, backgroundColor: '#F7F0E5', borderWidth: 1, borderColor: '#D8CFC0', borderRadius: 20, overflow: 'hidden', ...shadow },
   recommendArt: { width: '100%', height: 150, justifyContent: 'flex-end' },
   recommendArtImage: { resizeMode: 'cover' },
   recommendArtShade: { flex: 1, backgroundColor: 'rgba(249,247,242,0.12)' },
@@ -321,15 +323,15 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 1.5, borderColor: '#B9A98F', backgroundColor: '#F4EEE4', flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 16 },
+  moodPrompt: { minHeight: 46, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: radius.pill, borderWidth: 2, borderColor: '#A99B86', backgroundColor: '#F4EEE4', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingLeft: 16, paddingRight: 16 },
   moodSearchIcon: { color: colors.muted, fontFamily: fonts.sans, fontSize: 20, marginRight: 8 },
-  moodPromptText: { flex: 1, color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  moodPromptText: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
   recommendMetaLine: { marginTop: 10, marginHorizontal: spacing.lg },
-  recommendPoemTitle: { color: '#6C5940', fontFamily: fonts.title, fontSize: 18, fontWeight: '800' },
-  recommendPoemMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  recommendPoemTitle: { color: colors.vermilion, fontFamily: fonts.title, fontSize: 18, fontWeight: '800' },
+  recommendPoemMeta: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11 },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
   loader: { marginVertical: 48 },
@@ -349,17 +351,17 @@ const styles = StyleSheet.create({
   reviewTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '700' },
   reviewMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   reviewAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
-  discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 24 },
+  discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 16 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 24, padding: spacing.md, backgroundColor: '#FFFBF5', borderWidth: 1.5, borderLeftWidth: 4, borderColor: '#CFC2AE', borderLeftColor: colors.vermilion, borderRadius: 18, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
+  highlightRow: { marginBottom: 16, padding: spacing.md, backgroundColor: '#F7F0E5', borderWidth: 1, borderLeftWidth: 4, borderColor: '#D8CFC0', borderLeftColor: colors.jade, borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
   highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
-  highlightQuote: { color: '#25211C', fontFamily: fonts.title, fontSize: 21, lineHeight: 35, fontWeight: '800' },
+  highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30, fontWeight: '700' },
   highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 },
-  highlightSource: { flex: 1, color: '#887D6E', fontFamily: fonts.sans, fontSize: 12 },
+  highlightSource: { flex: 1, color: colors.jade, fontFamily: fonts.body, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E2D9CC', marginBottom: 20, marginHorizontal: 4 },
+  highlightSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E8E0D4', marginBottom: 16, marginHorizontal: 4 },
 });

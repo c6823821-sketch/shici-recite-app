@@ -47,6 +47,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const [historyRecords, setHistoryRecords] = useState<StudyRecord[]>([]);
   const [historyCatalog, setHistoryCatalog] = useState<Work[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [colorQuery, setColorQuery] = useState('');
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));
@@ -199,7 +200,18 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
       ) : section === 'appearance' ? (
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.help}>选择背景主题。切换后主要页面会立即使用新的底色。</Text>
-          {APP_BACKGROUNDS.map((item) => {
+          <TextInput
+            value={colorQuery}
+            onChangeText={setColorQuery}
+            placeholder="搜索颜色或主题，如：棕色、绿色、紫色"
+            placeholderTextColor={colors.muted}
+            selectionColor={colors.vermilion}
+            style={styles.appearanceSearch}
+          />
+          {APP_BACKGROUNDS.filter((item) => {
+            const needle = colorQuery.trim().toLowerCase();
+            return !needle || (item.label + item.note + item.color).toLowerCase().includes(needle);
+          }).map((item) => {
             const active = backgroundKey === item.key;
             return (
               <Pressable key={item.key} onPress={() => void setBackground(item.key)} style={[styles.appearanceOption, active && styles.appearanceOptionActive]}>
@@ -341,6 +353,7 @@ const styles = StyleSheet.create({
   favoriteQuote: { color: colors.ink, fontFamily: fonts.body, fontSize: 16, lineHeight: 26 },
   deleteButton: { minWidth: 48, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   delete: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12 },
+  appearanceSearch: { minHeight: 44, borderRadius: 16, borderWidth: 1, borderColor: '#D8CFC0', backgroundColor: colors.paperLight, paddingHorizontal: 16, color: colors.ink, fontFamily: fonts.sans, fontSize: 14, marginBottom: 16 },
   appearanceOption: { minHeight: 76, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.line, borderRadius: 16, padding: 14, marginBottom: 12, backgroundColor: colors.paperLight },
   appearanceOptionActive: { borderColor: colors.vermilion },
   appearanceSwatch: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: colors.line },

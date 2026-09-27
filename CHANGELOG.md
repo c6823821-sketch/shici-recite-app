@@ -1,3 +1,75 @@
+# v3.0.17 旧版视觉恢复与主题色扩展
+
+发布时间：2026-09-27
+
+## 推荐卡旧版层级
+
+- 恢复诗句在上。
+- 题目、作者、朝代横向排列在诗句下方。
+- 题目和作者恢复朱砂红层级。
+- 主推荐卡改用暖米色，不再使用刺眼纯白。
+- 随机换诗、心情推荐和进入阅读功能不变。
+
+## 秋日应景
+
+- 恢复浅青绿色强调线。
+- 恢复暖米色卡片和较小字体。
+- 卡片间距恢复为 16px。
+- 分隔线改成非常浅的细线。
+- 保留“查看原诗”和“换一组”。
+
+## 背景主题扩展
+
+- 背景主题增加到六套：
+  - 宣纸白
+  - 米棕色
+  - 旧纸棕
+  - 淡紫色
+  - 青绿色
+  - 藕粉色
+- 背景设置页增加颜色搜索框。
+- 可搜索棕色、绿色、紫色、米色等关键词。
+- 与背景对应的推荐卡颜色会一起变化，不再永远固定白色或米色。
+
+## 心情搜索入口
+
+- 搜索图标和提示文字从左侧改为整组居中。
+- 边框加深为 2px 浅棕边框。
+- 保留原来的心情推荐功能，不改变行为。
+
+## 修改文件
+
+- `src/services/appearance.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `src/screens/TodayScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.16：
+
+```powershell
+git checkout main
+git reset --hard v3.0.16
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.16 师说全文与背景主题
 
 发布时间：2026-09-27
