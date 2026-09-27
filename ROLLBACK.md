@@ -271,3 +271,14 @@ git reset --hard v3.0.21
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+## v3.0.23 真机按钮与换一换修复回滚
+
+回到 v3.0.22：
+
+```powershell
+git checkout main
+git reset --hard v3.0.22
+git clean -fd
+git push origin main --force-with-lease
+```

@@ -169,7 +169,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
                 style={({ pressed }) => [styles.changeButtonOnImage, pressed && styles.pressed]}
               >
                 <Text style={styles.changeIcon}>↻</Text>
-                <Text style={styles.changeText}>换一换</Text>
+                <Text style={styles.changeText} numberOfLines={1}>换一换</Text>
               </Pressable>
             </View>
           </ImageBackground>
@@ -325,9 +325,9 @@ const styles = StyleSheet.create({
   moodHint: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12, marginBottom: 8 },
   moodCircle: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', backgroundColor: '#B51F26' },
   moodCircleText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
-  changeButtonOnImage: { flexShrink: 0, minHeight: 34, borderRadius: uiTuning.buttonRadius, borderWidth: 1, borderColor: uiTuning.accent, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.82)' },
-  changeIcon: { color: colors.ink, fontFamily: fonts.sans, fontSize: 17 },
-  changeText: { color: colors.ink, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  changeButtonOnImage: { flexShrink: 0, minWidth: 88, minHeight: 34, borderRadius: uiTuning.buttonRadius, borderWidth: 1, borderColor: uiTuning.accent, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.82)' },
+  changeIcon: { flexShrink: 0, color: colors.ink, fontFamily: fonts.sans, fontSize: 17 },
+  changeText: { flexShrink: 0, color: colors.ink, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
@@ -343,8 +343,8 @@ const styles = StyleSheet.create({
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
   reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 * uiTuning.fontScale, lineHeight: 24 * uiTuning.fontScale, marginTop: 12, marginHorizontal: uiTuning.cardGap },
   loader: { marginVertical: 48 },
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
-  primaryButton: { flex: 1, minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: uiTuning.accent },
+  cardActions: { alignItems: 'stretch', marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
+  primaryButton: { width: '100%', height: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: uiTuning.accent },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
   randomButton: { minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, paddingHorizontal: 16, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.accent, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },

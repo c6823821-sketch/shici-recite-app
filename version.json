@@ -1,14 +1,14 @@
 {
-  "version": "3.0.22",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk",
+  "version": "3.0.23",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.22/shici-recite-app-v3.0.22.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.23/shici-recite-app-v3.0.23.apk"
   ],
-  "size": 92546468,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.22",
-  "notes": "电脑调参结果已固化到真机：今日荐诗卡片、输入框边框、间距与底部导航与 390px 预览保持一致。",
-  "sha256": "0e298f1f30eab08ed7c88a91332a3adc8b4dc51f71081faaa1690d8f53814611"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.23",
+  "notes": "真机布局修复：进入阅读按钮改为固定宽高，修复 OnePlus 等安卓机型上按钮背景不显示、换一换文字被挤成两行的问题。",
+  "sha256": ""
 }

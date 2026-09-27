@@ -50,28 +50,28 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.22.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.23.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.22
-          path: shici-recite-app-v3.0.22.apk
+          name: shici-recite-app-v3.0.23
+          path: shici-recite-app-v3.0.23.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.22
-          name: 诗词背诵 v3.0.22
+          tag_name: v3.0.23
+          name: 诗词背诵 v3.0.23
           body: |
             诗词背诵 Android 测试版。
 
-            本次修复：电脑端 UI 调参结果现已真正写入 App；今日荐诗卡片不再被右侧裁切，输入框边框、间距和 390px 手机预览保持一致。
+            本次针对真机布局修复：《进入阅读》按钮改为固定宽高，不再在 OnePlus 等 Android 机型上被父容器裁切；“换一换”强制单行显示。
 
-            安装后可在“我的 → 检查更新”看到当前版本号，并直接应用内下载安装。
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.23。
 
             此版本是自包含 release APK，安装后无需连接电脑。
-          files: shici-recite-app-v3.0.22.apk
+          files: shici-recite-app-v3.0.23.apk
           make_latest: true
