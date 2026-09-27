@@ -47,6 +47,9 @@ assert.equal(WORKS.some((work) => work.lines.some((line) => line.includes('柳�
 const correctedLiuGuo = WORKS.find((work) => normalizeWorkTitle(work.title) === '唐多令' && work.author === '刘过' && work.lines[0]?.includes('芦叶满汀洲'));
 assert.ok(correctedLiuGuo, '内置库应包含刘过的唐多令');
 assert.deepEqual(correctedLiuGuo.lines, TANGDUOLING_LINES, '刘过唐多令应使用校订文本');
+const importedLongCi = correctKnownImportedWork({ ...CORRECTED_WORKS[0], id: 'section-break-test', title: '长调测试', author: '测试作者', genre: '词', sectionBreaks: undefined });
+assert.deepEqual(importedLongCi.sectionBreaks, [Math.ceil(importedLongCi.lines.length / 2)], '导入长调应自动补上下阕分隔');
+
 const correctedJiangChengZi = correctKnownImportedWork({
   ...CORRECTED_WORKS[0],
   id: 'legacy-jiang-cheng-zi',

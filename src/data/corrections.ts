@@ -126,6 +126,7 @@ export function correctKnownImportedWork(work: Work): Work {
       themes: Array.from(new Set([...next.themes, '离别', '相思', '秋'])),
       moods: next.moods.length ? next.moods : ['婉约', '哀婉'],
       lines: canonicalLines,
+      sectionBreaks: canonicalLines.length >= 8 ? [Math.ceil(canonicalLines.length / 2)] : undefined,
       source: '校订版 · 晏殊《蝶恋花·槛菊愁烟兰泣露》',
     };
   }
@@ -143,11 +144,18 @@ export function correctKnownImportedWork(work: Work): Work {
     ['\u67f3\u4e0b\u7cfb\u821f\u72b9\u672a\u7a33', '\u67f3\u4e0b\u7cfb\u8239\u72b9\u672a\u7a33'],
   ];
 
+  const repairedLines = next.lines.map((line) => replacements.reduce(
+    (current, [from, to]) => current.replace(from, to),
+    line,
+  ));
+  const repairedBreaks = next.sectionBreaks?.length
+    ? next.sectionBreaks
+    : next.genre === '词' && repairedLines.length >= 8
+      ? [Math.ceil(repairedLines.length / 2)]
+      : undefined;
   return {
     ...next,
-    lines: next.lines.map((line) => replacements.reduce(
-      (current, [from, to]) => current.replace(from, to),
-      line,
-    )),
+    lines: repairedLines,
+    sectionBreaks: repairedBreaks,
   };
 }

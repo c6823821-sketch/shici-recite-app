@@ -1,3 +1,59 @@
+# v3.0.14 API 导入上下阕补齐
+
+发布时间：2026-09-27
+
+## 补齐 API 导入词作
+
+- 远程 API 导入的长调词作会自动补上上下阕分隔。
+- 本地和导入作品统一使用同一套词作分段规则。
+- 增加自测，防止后续导入逻辑丢失上下阕。
+
+## 同时包含的修复
+
+- 校对按钮移动到题目右下角的圆形“校”按钮。
+- 本地与 API 搜索结果按正文内容跨来源合并。
+- 相同整句不再重复显示。
+- 《蝶恋花·槛菊愁烟兰泣露》统一为晏殊作品。
+- 题目保持“蝶恋花·槛菊愁烟兰泣露”，正文校订为通行版本。
+- 主页荐诗恢复诗句在上、题目和作者横排在下的布局。
+- 搜索框增加边框和左侧缩进。
+
+## 修改文件
+
+- `src/data/corrections.ts`
+- `scripts/self-test.ts`
+- `src/screens/ReaderScreen.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- API 导入长调上下阕测试通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.13：
+
+```powershell
+git checkout main
+git reset --hard v3.0.13
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.13 校对入口与跨来源合并
 
 发布时间：2026-09-27
