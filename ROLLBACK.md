@@ -211,3 +211,15 @@ git reset --hard v3.0.16
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.18 阅读穿模与主题回滚
+
+回到 v3.0.17：
+
+```powershell
+git checkout main
+git reset --hard v3.0.17
+git clean -fd
+git push origin main --force-with-lease
+```

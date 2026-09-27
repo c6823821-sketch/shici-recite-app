@@ -215,7 +215,7 @@ function AppShell() {
         {screen === 'tabs' ? <MainTabBar active={tab} onChange={setTab} /> : null}
       </View>
       {screen === 'reader' ? (
-        <View style={styles.readerOverlay}>
+        <View style={[styles.readerOverlay, { backgroundColor: background }]}>
           <ReaderScreen
             work={work}
             initialLineIndex={readerLineIndex}
@@ -226,7 +226,7 @@ function AppShell() {
         </View>
       ) : null}
       {screen === 'focus' ? (
-        <View style={styles.focusOverlay}>
+        <View style={[styles.focusOverlay, { backgroundColor: background }]}>
           <FocusReciteScreen
             works={focusWorks}
             initialIndex={focusIndex}

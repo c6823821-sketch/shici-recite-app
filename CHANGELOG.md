@@ -1,3 +1,76 @@
+# v3.0.18 阅读穿模与旧版排版恢复
+
+发布时间：2026-09-27
+
+## 进入阅读穿模
+
+- 阅读页、背诵页、典籍页覆盖层改为当前背景主题的不透明底色。
+- 阅读时不会再透出底层页面和底部导航。
+- 背景主题仍然可以在“我的 → 背景主题”中切换。
+
+## 主页推荐卡
+
+- 诗句保持在上。
+- 题目、作者、朝代横排在下。
+- 题目字号缩小到 15px。
+- 作者和朝代字号缩小到 10px。
+- 恢复朱砂红层级，不再使用过大的标题。
+- 推荐卡颜色跟随背景主题。
+
+## 秋日应景恢复旧版风格
+
+- 恢复浅青绿色强调线。
+- 恢复暖米色卡片。
+- 恢复 16px 卡片间距和较小诗句字号。
+- 分隔线改成更淡的细线。
+- 去掉应景句编号。
+
+## 心情搜索入口
+
+- 放大镜和提示文字整组居中。
+- 边框改为明确可见的 2px 浅棕边框。
+- 保留原有点击推荐功能。
+
+## 背景主题
+
+- 提供宣纸白、米棕色、旧纸棕、淡紫色、青绿色、藕粉色。
+- 背景设置页支持搜索颜色关键词。
+- 推荐卡和应景卡会随主题换色。
+
+## 修改文件
+
+- `App.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/services/appearance.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.17：
+
+```powershell
+git checkout main
+git reset --hard v3.0.17
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.17 旧版视觉恢复与主题色扩展
 
 发布时间：2026-09-27

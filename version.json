@@ -1,14 +1,13 @@
 {
-  "version": "3.0.17",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.17/shici-recite-app-v3.0.17.apk",
+  "version": "3.0.18",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.18/shici-recite-app-v3.0.18.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.17/shici-recite-app-v3.0.17.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.17/shici-recite-app-v3.0.17.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.17/shici-recite-app-v3.0.17.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.17/shici-recite-app-v3.0.17.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.18/shici-recite-app-v3.0.18.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.18/shici-recite-app-v3.0.18.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.18/shici-recite-app-v3.0.18.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.18/shici-recite-app-v3.0.18.apk"
   ],
-  "size": 92552668,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.17",
-  "notes": "恢复推荐卡旧版层级和绿色应景强调，扩展可搜索背景色，并让推荐卡片跟随主题换色。",
-  "sha256": "29ff4d74ad34db1683ed1d1addb3f236b8da31a8ceeed1f2de17839550d0d2ba"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.18",
+  "notes": "修复进入阅读穿模，缩小荐诗题目作者，恢复旧版秋日卡片和可搜索背景主题。"
 }
