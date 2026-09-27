@@ -1,3 +1,68 @@
+# v3.0.13 校对入口与跨来源合并
+
+发布时间：2026-09-27
+
+## 校对入口
+
+- 将“校对作者、题目、正文”从正文上方的长按钮中移出。
+- 改成题目区域右下角的小圆形“校”按钮。
+- 点击后展开校对结果。
+- 不再和背景赏析、全篇译文并排挤在一起。
+
+## 跨来源合并
+
+- 搜索去重键不再包含作者名和题目名。
+- 本地库和 API 补录结果只要正文内容相同，就会合并。
+- 不再因为来源不同或作者字段差异而重复显示同一篇。
+- 不同正文内容仍然可以同时保留。
+
+## 主页荐诗
+
+- 恢复为诗句在上。
+- 题目、作者和朝代横向显示在诗句下方。
+- 题目用深色宋体，作者和朝代用浅灰小字。
+- 保持随机切换、心情推荐和进入阅读功能不变。
+
+## 搜索排版
+
+- 搜索框增加可见边框。
+- 左侧文字增加缩进，不再紧贴框边。
+- 页面整体增加左侧留白，减少贴屏感。
+
+## 修改文件
+
+- `src/screens/ReaderScreen.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `src/data/corrections.ts`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.12：
+
+```powershell
+git checkout main
+git reset --hard v3.0.12
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.12 蝶恋花校订与搜索去重
 
 发布时间：2026-09-27

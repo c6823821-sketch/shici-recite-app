@@ -1,14 +1,13 @@
 {
-  "version": "3.0.12",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
+  "version": "3.0.13",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.13/shici-recite-app-v3.0.13.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.13/shici-recite-app-v3.0.13.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.13/shici-recite-app-v3.0.13.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.13/shici-recite-app-v3.0.13.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.13/shici-recite-app-v3.0.13.apk"
   ],
-  "size": 92546452,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.12",
-  "notes": "校订蝶恋花作者题目正文，合并重复搜索结果，并加入作者题目正文 API 校对入口。",
-  "sha256": "ae6d3f21f1a2e0b73388b5cd87f56ad1986de55441d65a0dce8957fbcfe1ceea"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.13",
+  "notes": "校对改为题目右下角圆形按钮，合并跨来源同文，修正主页诗句与题目顺序和搜索框间距。"
 }

@@ -60,8 +60,7 @@ export function normalizeWorkTitle(value: string): string {
 }
 
 export function canonicalWorkContentKey(work: Work): string {
-  const opening = chineseOnly(work.lines.slice(0, 2).join('')).slice(0, 16);
-  return `${work.author.trim()}|${opening}`;
+  return chineseOnly(work.lines.slice(0, 4).join('')).slice(0, 64);
 }
 
 export function canonicalWorkKey(work: Work): string {

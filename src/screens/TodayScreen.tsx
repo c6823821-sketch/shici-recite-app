@@ -177,11 +177,11 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
+              <Text style={styles.quote}>{daily.quote}</Text>
               <Text style={styles.recommendMetaLine}>
                 <Text style={styles.recommendPoemTitle}>{currentWork.title}</Text>
                 <Text style={styles.recommendPoemMeta}>  ·  {currentWork.author} · {currentWork.dynasty}</Text>
               </Text>
-              <Text style={styles.quote}>{daily.quote}</Text>
               <Text style={styles.reason}>{daily.reason}</Text>
             </Pressable>
           ) : (
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 26, lineHeight: 42, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
-  recommendMetaLine: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
+  recommendMetaLine: { marginTop: 10, marginHorizontal: spacing.lg },
   recommendPoemTitle: { color: '#6C5940', fontFamily: fonts.title, fontSize: 18, fontWeight: '800' },
   recommendPoemMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },

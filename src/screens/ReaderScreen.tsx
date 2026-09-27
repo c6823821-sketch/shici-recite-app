@@ -389,11 +389,10 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             <Pressable onPress={() => void openAuthor()}><Text style={styles.authorLink}>{work.author}</Text></Pressable>
             <Text style={styles.workMeta}> · {work.genre}</Text>
           </View>
+          <Pressable onPress={() => void runAudit()} style={styles.auditFloatingButton}>
+            <Text style={styles.auditFloatingText}>校</Text>
+          </Pressable>
         </View>
-
-        <Pressable onPress={() => void runAudit()} style={styles.auditToggle}>
-          <Text style={styles.auditToggleText}>{auditVisible ? '收起校对结果' : '校对作者、题目、正文'}</Text>
-        </Pressable>
         {auditVisible ? (
           <View style={styles.auditBox}>
             {auditLoading ? <ActivityIndicator color={colors.vermilion} /> : null}
@@ -678,13 +677,13 @@ const styles = StyleSheet.create({
   headerAction: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 16 },
   headerTitle: { flex: 1, textAlign: 'center', color: colors.ink, fontFamily: fonts.title, fontSize: 19, fontWeight: '700' },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: 70 },
-  hero: { paddingTop: spacing.xl, paddingBottom: spacing.md },
+  hero: { position: 'relative', paddingTop: spacing.xl, paddingBottom: spacing.md },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 31, fontWeight: '800', letterSpacing: 2, textAlign: 'center' },
   workMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   workMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.3 },
   authorLink: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, borderBottomWidth: 1, borderBottomColor: colors.vermilion, paddingBottom: 1 },
-  auditToggle: { alignSelf: 'center', minHeight: 38, borderRadius: 999, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, justifyContent: 'center', marginTop: 4, backgroundColor: colors.paperLight },
-  auditToggleText: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
+  auditFloatingButton: { position: 'absolute', right: spacing.lg, bottom: 0, width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight, alignItems: 'center', justifyContent: 'center' },
+  auditFloatingText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   auditBox: { marginHorizontal: spacing.lg, marginTop: 12, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
   auditSummary: { color: colors.ink, fontFamily: fonts.body, fontSize: 15, fontWeight: '700', marginBottom: 8 },
   auditError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20 },
