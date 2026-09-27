@@ -129,7 +129,7 @@ export async function downloadAndInstallUpdate(
     try {
       let file = await FileSystem.getInfoAsync(target);
       const currentSize = 'size' in file ? (file.size ?? 0) : 0;
-      const existingComplete = file.exists && (update.size === 0 || currentSize === update.size);
+      const existingComplete = file.exists && update.size > 0 && currentSize === update.size;
       if (!existingComplete) {
         if (file.exists) await FileSystem.deleteAsync(target, { idempotent: true });
         const task = FileSystem.createDownloadResumable(

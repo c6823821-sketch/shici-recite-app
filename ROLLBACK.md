@@ -235,3 +235,15 @@ git reset --hard v3.0.18
 git clean -fd
 git push origin main --force-with-lease
 ```
+
+
+## v3.0.20 更新与排版回滚
+
+回到 v3.0.19：
+
+```powershell
+git checkout main
+git reset --hard v3.0.19
+git clean -fd
+git push origin main --force-with-lease
+```

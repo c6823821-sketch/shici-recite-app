@@ -1,3 +1,73 @@
+# v3.0.20 更新缓存与最终排版修复
+
+发布时间：2026-09-27
+
+## 更新器修复
+
+- 当更新清单没有提供 APK 大小时，不再复用手机缓存里的旧 APK。
+- 每次更新都会重新验证并下载完整安装包。
+- 解决手机上显示旧界面或安装包异常的问题。
+
+## 心情输入框
+
+- 边框改为更明确的深浅棕 2px。
+- 背景改为浅暖白。
+- 输入框左右间距增加。
+- 放大镜和输入文字整体向右收。
+- 保持输入框功能，不改成圆形按钮。
+
+## 诗库搜索框
+
+- 搜索框边框加深。
+- 圆角改为较小圆角，不再是模糊药丸。
+- 左侧留白增加。
+- 搜索页整体内容右移。
+
+## 推荐与应景
+
+- 今日推荐和秋日应景显示完整句。
+- 推荐使用暖米色 #F2EDE3。
+- 秋日应景保留绿色强调线。
+- 卡片间距和字体保持旧版层级。
+
+## 修改文件
+
+- `src/services/updater.ts`
+- `src/services/text.ts`
+- `src/services/dailyDiscovery.ts`
+- `src/services/recommendation.ts`
+- `src/services/recommendationStore.ts`
+- `src/services/appearance.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/LibraryScreen.tsx`
+- `package.json`
+- `package-lock.json`
+- `app.json`
+- `version.json`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+- `.github/workflows/android-build.yml`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- Expo Web 导出通过。
+- Android GitHub Actions 构建成功后发布 APK。
+
+## 回滚本次修改
+
+回到 v3.0.19：
+
+```powershell
+git checkout main
+git reset --hard v3.0.19
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.19 完整句推荐与暖米色主题
 
 发布时间：2026-09-27

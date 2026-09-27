@@ -1,13 +1,13 @@
 {
-  "version": "3.0.19",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.19/shici-recite-app-v3.0.19.apk",
+  "version": "3.0.20",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.20/shici-recite-app-v3.0.20.apk",
   "downloadUrls": [
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.19/shici-recite-app-v3.0.19.apk",
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.19/shici-recite-app-v3.0.19.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.19/shici-recite-app-v3.0.19.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.19/shici-recite-app-v3.0.19.apk"
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.20/shici-recite-app-v3.0.20.apk",
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.20/shici-recite-app-v3.0.20.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.20/shici-recite-app-v3.0.20.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.20/shici-recite-app-v3.0.20.apk"
   ],
   "size": 0,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.19",
-  "notes": "推荐与秋日应景改为完整句，新增暖米色 #F2EDE3，修复心情输入框边框和主页排版。"
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.20",
+  "notes": "修复更新器复用旧APK缓存，增强心情/诗库搜索框边框，并完成完整句与暖米色发布。"
 }
