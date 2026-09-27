@@ -7,7 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.12/shici-recite-app-v3.0.12.apk"
   ],
-  "size": 0,
+  "size": 92546452,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.12",
-  "notes": "校订蝶恋花作者题目正文，合并重复搜索结果，并加入作者题目正文 API 校对入口。"
+  "notes": "校订蝶恋花作者题目正文，合并重复搜索结果，并加入作者题目正文 API 校对入口。",
+  "sha256": "ae6d3f21f1a2e0b73388b5cd87f56ad1986de55441d65a0dce8957fbcfe1ceea"
 }
