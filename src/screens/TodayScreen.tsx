@@ -25,7 +25,7 @@ import {
   saveDailyGoal,
   StudyRecord,
 } from '../services/studyQueue';
-import { colors, fonts, radius, shadow, spacing } from '../theme';
+import { colors, fonts, radius, shadow, spacing, uiTuning } from '../theme';
 import { ApiSettings, DailyRecommendation, Work } from '../types';
 
 interface Props {
@@ -37,7 +37,7 @@ interface Props {
 export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Props) {
   const { cardBackground } = useAppearance();
   const { width: windowWidth } = useWindowDimensions();
-  const recommendCardWidth = Math.max(280, windowWidth - 40);
+  const recommendCardWidth = Math.max(280, windowWidth - uiTuning.pagePadding * 2);
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
   const [settings, setSettings] = useState<ApiSettings | null>(null);
   const [moodVisible, setMoodVisible] = useState(false);
@@ -154,7 +154,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
         <Text style={styles.title}>今日</Text>
         <Text style={styles.subtitle}>今日先读一句，再完成背诵。</Text>
 
-        <View style={[styles.recommendCard, { backgroundColor: cardBackground, width: recommendCardWidth }]}>
+        <View style={[styles.recommendCard, { backgroundColor: cardBackground || uiTuning.cardBg, width: recommendCardWidth }]}>
           <ImageBackground
             source={require('../../assets/covers/cover-moon.png')}
             style={styles.recommendArt}
@@ -182,7 +182,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
           </Pressable>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
-              <Text style={[styles.quote, { fontSize: 29, lineHeight: 46 }]}>{daily.quote}</Text>
+              <Text style={[styles.quote, { fontSize: 29 * uiTuning.fontScale, lineHeight: 46 * uiTuning.fontScale }]}>{daily.quote}</Text>
               <Text style={styles.recommendMetaLine}>
                 <Text style={styles.recommendPoemTitle}>《{currentWork.title}》</Text>
                 <Text style={styles.recommendPoemMeta}>  ·  {currentWork.author} · {currentWork.dynasty}</Text>
@@ -288,7 +288,7 @@ function readableError(error: unknown): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent', paddingTop: Platform.OS === 'android' ? 28 : 50 },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: 128 },
+  content: { paddingHorizontal: uiTuning.pagePadding, paddingBottom: 140 },
   eyebrow: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1.5 },
   title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, fontWeight: '800', letterSpacing: 4, marginTop: 6 },
   subtitle: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 24, marginTop: 8 },
@@ -314,39 +314,39 @@ const styles = StyleSheet.create({
   startButtonArrow: { color: colors.white, fontFamily: fonts.sans, fontSize: 23 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
-  recommendCard: { alignSelf: 'flex-start', marginTop: spacing.lg, backgroundColor: '#F3EDE3', borderLeftWidth: 3, borderLeftColor: '#8E1B1F', borderRadius: 4, overflow: 'hidden', ...shadow },
-  recommendArt: { width: '100%', height: 245, justifyContent: 'flex-end' },
+  recommendCard: { alignSelf: 'flex-start', marginTop: uiTuning.pagePadding, backgroundColor: uiTuning.cardBg, borderLeftWidth: 4, borderLeftColor: uiTuning.accent, borderRadius: uiTuning.buttonRadius, overflow: 'hidden', ...shadow },
+  recommendArt: { width: '100%', height: uiTuning.recommendArtHeight, justifyContent: 'flex-end' },
   recommendArtImage: { resizeMode: 'cover' },
   recommendArtShade: { flex: 1, backgroundColor: 'rgba(249,247,242,0.10)' },
-  cardHeaderOnImage: { position: 'absolute', left: 0, right: 0, bottom: 0, minHeight: 54, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(243,237,227,0.88)' },
+  cardHeaderOnImage: { position: 'absolute', left: 0, right: 0, bottom: 0, minHeight: 54, paddingHorizontal: uiTuning.cardGap, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: 'rgba(243,237,227,0.88)' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   cardHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moodArea: { alignItems: 'flex-end' },
   moodHint: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12, marginBottom: 8 },
   moodCircle: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', backgroundColor: '#B51F26' },
   moodCircleText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '700' },
-  changeButtonOnImage: { minHeight: 34, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(142,27,31,0.55)', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.78)' },
+  changeButtonOnImage: { flexShrink: 0, minHeight: 34, borderRadius: uiTuning.buttonRadius, borderWidth: 1, borderColor: uiTuning.accent, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.82)' },
   changeIcon: { color: colors.ink, fontFamily: fonts.sans, fontSize: 17 },
   changeText: { color: colors.ink, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPrompt: { minHeight: 50, marginLeft: 24, marginRight: 24, marginTop: spacing.md, borderRadius: 8, borderWidth: 2, borderColor: '#7A6A56', backgroundColor: '#FFF9F0', flexDirection: 'row', alignItems: 'center', paddingLeft: 26, paddingRight: 18 },
+  moodPrompt: { minHeight: 50, marginHorizontal: uiTuning.cardGap, marginTop: uiTuning.cardGap, borderRadius: uiTuning.buttonRadius, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.inputBorderColor, backgroundColor: '#FFF9F0', flexDirection: 'row', alignItems: 'center', paddingLeft: 24, paddingRight: 16 },
   moodSearchIcon: { color: '#6F6559', fontFamily: fonts.sans, fontSize: 20, marginRight: 10 },
   moodPromptText: { color: '#5F574D', fontFamily: fonts.body, fontSize: 14 },
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25, lineHeight: 40, marginTop: spacing.lg, marginHorizontal: spacing.lg, fontWeight: '700' },
-  recommendMetaLine: { marginTop: 10, marginHorizontal: spacing.lg },
-  recommendPoemTitle: { color: '#8E1B1F', fontFamily: fonts.title, fontSize: 16, fontWeight: '700' },
-  recommendPoemMeta: { color: '#8E1B1F', fontFamily: fonts.sans, fontSize: 11 },
+  quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25 * uiTuning.fontScale, lineHeight: 40 * uiTuning.fontScale, marginTop: uiTuning.pagePadding, marginHorizontal: uiTuning.cardGap, fontWeight: '700' },
+  recommendMetaLine: { marginTop: 10, marginHorizontal: uiTuning.cardGap },
+  recommendPoemTitle: { color: uiTuning.accent, fontFamily: fonts.title, fontSize: uiTuning.titleSize * uiTuning.fontScale, fontWeight: '700' },
+  recommendPoemMeta: { color: uiTuning.accent, fontFamily: fonts.sans, fontSize: uiTuning.sourceSize * uiTuning.fontScale },
   poemMeta: { color: colors.muted, fontFamily: fonts.body, fontSize: 12, marginTop: 13, marginHorizontal: spacing.lg },
-  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14, lineHeight: 24, marginTop: 12, marginHorizontal: spacing.lg },
+  reason: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 14 * uiTuning.fontScale, lineHeight: 24 * uiTuning.fontScale, marginTop: 12, marginHorizontal: uiTuning.cardGap },
   loader: { marginVertical: 48 },
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: spacing.lg, marginHorizontal: spacing.lg, marginBottom: spacing.lg },
-  primaryButton: { flex: 1, minHeight: 62, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#B51F26' },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
+  primaryButton: { flex: 1, minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: uiTuning.accent },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
-  randomButton: { minHeight: 62, borderRadius: 4, paddingHorizontal: 16, borderWidth: 2, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  randomButton: { minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, paddingHorizontal: 16, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.accent, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
   sectionBlock: { marginTop: spacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 16 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 16, padding: spacing.md, backgroundColor: '#F7F0E5', borderWidth: 1, borderLeftWidth: 4, borderColor: '#D8CFC0', borderLeftColor: colors.jade, borderRadius: 16, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
+  highlightRow: { marginBottom: uiTuning.cardGap, padding: uiTuning.cardGap, backgroundColor: uiTuning.cardBg, borderWidth: 1, borderLeftWidth: 4, borderColor: '#D8CFC0', borderLeftColor: colors.jade, borderRadius: uiTuning.cardRadius, shadowColor: '#333333', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },

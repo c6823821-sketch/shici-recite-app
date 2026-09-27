@@ -1,6 +1,6 @@
 {
   "name": "shici-recite-app",
-  "version": "3.0.21",
+  "version": "3.0.22",
   "main": "index.ts",
   "dependencies": {
     "expo": "~57.0.25",
@@ -37,7 +37,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run test:core && npx expo-doctor",
     "export:web": "expo export --platform web",
-    "test:core": "tsx scripts/self-test.ts"
+    "test:core": "tsx scripts/self-test.ts",
+    "ui:tuner": "node scripts/ui-tuner.mjs"
   },
   "private": true,
   "description": "离线优先的古诗文阅读与 FSRS 背诵 App"

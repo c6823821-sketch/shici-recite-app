@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
+import * as Application from 'expo-application';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -48,6 +49,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const [historyCatalog, setHistoryCatalog] = useState<Work[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [colorQuery, setColorQuery] = useState('');
+  const appVersion = Application.nativeApplicationVersion ?? '3.0.22';
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));
@@ -151,7 +153,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
           <MenuRow title="背诵记录" detail={`${learnedRecords.length} 首已背 · ${upcomingRecords.length} 首后续复习`} onPress={() => { void refreshHistory(); setSection('history'); }} />
           <MenuRow title="背景主题" detail={APP_BACKGROUNDS.find((item) => item.key === backgroundKey)?.label ?? '宣纸白'} onPress={() => setSection('appearance')} />
           <MenuRow title="我的收藏" detail={`${favorites.length} 条句子 · ${folders.length} 个收藏夹`} onPress={() => setSection('favorites')} />
-          <MenuRow title="检查更新" detail={checking ? '正在检查…' : '应用内下载并安装新版'} onPress={checkUpdate} />
+          <MenuRow title="检查更新" detail={checking ? '正在检查…' : `当前 v${appVersion} · 应用内下载并安装新版`} onPress={checkUpdate} />
           {updateInfo ? (
             <View style={styles.updateBox}>
               <Text style={styles.updateTitle}>发现新版 v{updateInfo.version}</Text>

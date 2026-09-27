@@ -1,0 +1,16 @@
+{
+  "pagePadding": 20,
+  "cardGap": 16,
+  "fontScale": 1,
+  "titleSize": 16,
+  "sourceSize": 12,
+  "cardRadius": 16,
+  "buttonHeight": 56,
+  "buttonRadius": 6,
+  "inputBorder": 2,
+  "pageBg": "#F2EDE3",
+  "cardBg": "#FAF6EE",
+  "accent": "#8E1B1F",
+  "inputBorderColor": "#8A7760",
+  "recommendArtHeight": 220
+}

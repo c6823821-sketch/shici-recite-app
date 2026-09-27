@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>诗词 App UI 调节器</title>
+<style>
+:root{--page-padding:20px;--card-gap:16px;--font-scale:1;--accent:#8E1B1F;--page-bg:#F2EDE3;--card-bg:#FAF6EE;--card-radius:16px;--button-height:56px;--button-radius:6px;--input-border:2px;--title-size:16px;--source-size:12px;--recommend-art-height:220px}
+*{box-sizing:border-box}body{margin:0;background:#ece7de;color:#2e2b27;font-family:"Microsoft YaHei",sans-serif}.app{display:grid;grid-template-columns:420px 1fr;min-height:100vh}.panel{padding:24px;background:#fffdf8;border-right:1px solid #ddd4c5;overflow:auto}.phone-wrap{padding:28px;display:flex;justify-content:center;align-items:flex-start}.phone{width:390px;min-height:844px;background:var(--page-bg);overflow:hidden;box-shadow:0 20px 60px rgba(43,35,25,.18);border-radius:28px;padding:24px var(--page-padding) 24px}.eyebrow{font-size:12px;color:#888}.phone h1{font-size:34px;margin:6px 0;font-family:serif}.phone .sub{font-size:14px;color:#666}.card{margin-top:18px;background:var(--card-bg);border-left:4px solid var(--accent);border-radius:var(--button-radius);overflow:hidden;box-shadow:0 8px 24px rgba(45,35,24,.08)}.art{height:var(--recommend-art-height);background:linear-gradient(145deg,#f2eee5,#d8d2c7 58%,#777a72);position:relative}.sun{position:absolute;right:50px;top:28px;width:86px;height:86px;border-radius:50%;border:18px solid #c5aa63}.waves{position:absolute;left:0;right:0;bottom:0;height:100px;background:repeating-linear-gradient(165deg,transparent 0 24px,rgba(80,82,78,.28) 25px 52px)}.art-head{position:absolute;left:0;right:0;bottom:0;padding:12px 18px;background:rgba(243,237,227,.86);display:flex;justify-content:space-between;align-items:center}.art-head b{color:var(--accent)}.change{font-size:12px;border:1px solid var(--accent);padding:6px 8px;border-radius:var(--button-radius);background:#fff}.content{padding:16px}.mood{height:46px;border:var(--input-border) solid #8A7760;border-radius:var(--button-radius);display:flex;align-items:center;gap:10px;padding-left:24px;color:#5f574d;background:#fff9f0}.quote{font-family:serif;font-size:calc(29px * var(--font-scale));line-height:calc(46px * var(--font-scale));margin:20px 0 10px;font-weight:700}.meta{color:var(--accent);font-size:calc(var(--title-size) * var(--font-scale))}.meta small{font-size:calc(var(--source-size) * var(--font-scale))}.reason{margin-top:12px;color:#665f56;line-height:1.8}.primary{width:100%;height:var(--button-height);border:0;border-radius:var(--button-radius);background:var(--accent);color:white;font-size:17px;margin-top:18px}.section{margin-top:24px}.section h2{font-family:serif;color:#687a61}.item{background:var(--card-bg);border:1.5px solid #b7aa96;border-left:4px solid #687a61;border-radius:var(--card-radius);padding:16px;margin-top:var(--card-gap)}.item p{font-family:serif;font-size:calc(18px * var(--font-scale));margin:0}.item footer{margin-top:12px;color:#687a61;display:flex;justify-content:space-between}.controls{display:grid;gap:16px}.group{background:#f7f2e9;border:1px solid #ddd4c5;border-radius:14px;padding:14px}.group h2{font-size:16px;margin:0 0 12px}.row{margin-top:12px}.row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}.row input[type=range]{width:100%}.colors{display:grid;grid-template-columns:1fr 1fr;gap:10px}.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.swatches button{border:1px solid #bbb;border-radius:8px;padding:7px 9px;background:white;cursor:pointer}.actions{display:flex;gap:10px;margin-top:18px}.actions button{border:0;border-radius:10px;padding:13px 16px;background:#8E1B1F;color:white;cursor:pointer}.actions button.secondary{background:#fff;color:#333;border:1px solid #cfc4b4}.status{min-height:22px;margin-top:12px;color:#4a675b}.value{color:#8E1B1F;font-weight:700}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <h1>诗词 App UI 调节器</h1>
+    <p>拖动滑杆，右侧手机预览实时变化。调好后点击“保存到项目”。</p>
+    <div class="controls">
+      <div class="group"><h2>间距与字号</h2>
+        <div class="row"><label>页面左右边距 <span class="value" id="v-page"></span></label><input id="pagePadding" type="range" min="12" max="36" step="2" value="20"></div>
+        <div class="row"><label>卡片间距 <span class="value" id="v-gap"></span></label><input id="cardGap" type="range" min="8" max="32" step="2" value="16"></div>
+        <div class="row"><label>整体字号 <span class="value" id="v-font"></span></label><input id="fontScale" type="range" min=".9" max="1.2" step=".02" value="1"></div>
+        <div class="row"><label>推荐图高度 <span class="value" id="v-art-height"></span></label><input id="recommendArtHeight" type="range" min="160" max="280" step="10" value="220"></div>
+        <div class="row"><label>题目字号 <span class="value" id="v-title"></span></label><input id="titleSize" type="range" min="12" max="22" step="1" value="16"></div>
+        <div class="row"><label>出处字号 <span class="value" id="v-source"></span></label><input id="sourceSize" type="range" min="10" max="16" step="1" value="12"></div>
+      </div>
+      <div class="group"><h2>颜色</h2>
+        <div class="colors">
+          <div><label>页面背景</label><input id="pageBg" type="color" value="#F2EDE3"></div>
+          <div><label>卡片背景</label><input id="cardBg" type="color" value="#FAF6EE"></div>
+          <div><label>强调色</label><input id="accent" type="color" value="#8E1B1F"></div>
+          <div><label>输入框边框</label><input id="inputBorderColor" type="color" value="#8A7760"></div>
+        </div>
+        <div class="swatches">
+          <button data-page="#F9F7F2" data-card="#FFFFFF">宣纸白</button>
+          <button data-page="#F2EDE3" data-card="#FAF6EE">暖米色</button>
+          <button data-page="#E9DCCB" data-card="#F7EDE0">旧纸棕</button>
+          <button data-page="#F1EEF5" data-card="#FAF8FC">淡紫</button>
+          <button data-page="#E6EDE6" data-card="#F7FAF7">青绿</button>
+          <button data-page="#F3E8E4" data-card="#FCF7F5">藕粉</button>
+        </div>
+      </div>
+      <div class="group"><h2>圆角与按钮</h2>
+        <div class="row"><label>卡片圆角 <span class="value" id="v-card-radius"></span></label><input id="cardRadius" type="range" min="0" max="24" step="2" value="16"></div>
+        <div class="row"><label>按钮高度 <span class="value" id="v-button-height"></span></label><input id="buttonHeight" type="range" min="44" max="72" step="2" value="56"></div>
+        <div class="row"><label>按钮圆角 <span class="value" id="v-button-radius"></span></label><input id="buttonRadius" type="range" min="0" max="24" step="2" value="6"></div>
+        <div class="row"><label>输入框边框 <span class="value" id="v-input-border"></span></label><input id="inputBorder" type="range" min="1" max="4" step="1" value="2"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="save">保存到项目</button>
+      <button id="copy" class="secondary">复制 JSON</button>
+      <button id="download" class="secondary">下载 JSON</button>
+      <button id="reset" class="secondary">恢复默认</button>
+    </div>
+    <div class="status" id="status"></div>
+  </aside>
+  <main class="phone-wrap">
+    <div class="phone" id="phone">
+      <div class="eyebrow">9月27日 星期日</div><h1>今日</h1><div class="sub">今日先读一句，再完成背诵。</div>
+      <div class="card"><div class="art"><div class="sun"></div><div class="waves"></div><div class="art-head"><b>今日荐诗</b><span class="change">↻ 换一换</span></div></div>
+        <div class="content"><div class="mood">⌕　输入想法或心情，推荐一首诗词</div><div class="quote">眼色暗相钩，秋波横欲流。</div><div class="meta">《菩萨蛮》 <small>· 李煜 · 五代十国</small></div><div class="reason">今天属于秋日，给你挑几句相近的句子。</div><button class="primary">进入阅读</button></div>
+      </div>
+      <div class="section"><h2>秋日应景</h2><div class="item"><p>空教映溪带月，供游客无情，折满雕鞍。</p><footer><span>《凤皇台上忆吹箫》· 侯置</span><span>查看原诗</span></footer></div><div class="item"><p>夜色催更，清尘收露，小曲幽坊月暗。</p><footer><span>《拜星月·拜星月慢》· 周邦彦</span><span>查看原诗</span></footer></div></div>
+    </div>
+  </main>
+</div>
+<script>
+const ids=['pagePadding','cardGap','fontScale','recommendArtHeight','titleSize','sourceSize','cardRadius','buttonHeight','buttonRadius','inputBorder'];const defaults={pagePadding:20,cardGap:16,fontScale:1,titleSize:16,sourceSize:12,cardRadius:16,buttonHeight:56,buttonRadius:6,inputBorder:2,recommendArtHeight:220,pageBg:'#F2EDE3',cardBg:'#FAF6EE',accent:'#8E1B1F',inputBorderColor:'#8A7760'};let state={...defaults};
+function apply(){const r=document.documentElement.style;r.setProperty('--page-padding',state.pagePadding+'px');r.setProperty('--card-gap',state.cardGap+'px');r.setProperty('--font-scale',state.fontScale);r.setProperty('--title-size',state.titleSize+'px');r.setProperty('--source-size',state.sourceSize+'px');r.setProperty('--recommend-art-height',state.recommendArtHeight+'px');r.setProperty('--card-radius',state.cardRadius+'px');r.setProperty('--button-height',state.buttonHeight+'px');r.setProperty('--button-radius',state.buttonRadius+'px');r.setProperty('--input-border',state.inputBorder+'px');r.setProperty('--page-bg',state.pageBg);r.setProperty('--card-bg',state.cardBg);r.setProperty('--accent',state.accent);document.querySelectorAll('.mood').forEach(e=>e.style.borderColor=state.inputBorderColor);v('page','v-page',state.pagePadding+'px');v('gap','v-gap',state.cardGap+'px');v('font','v-font',Math.round(state.fontScale*100)+'%');v('art-height','v-art-height',state.recommendArtHeight+'px');v('title','v-title',state.titleSize+'px');v('source','v-source',state.sourceSize+'px');v('card-radius','v-card-radius',state.cardRadius+'px');v('button-height','v-button-height',state.buttonHeight+'px');v('button-radius','v-button-radius',state.buttonRadius+'px');v('input-border','v-input-border',state.inputBorder+'px')}
+function v(id,out,text){document.getElementById(id).textContent=text;document.getElementById(out).textContent=text;}
+ids.forEach(id=>document.getElementById(id).addEventListener('input',e=>{state[id]=Number(e.target.value);apply()}));['pageBg','cardBg','accent','inputBorderColor'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{state[id]=e.target.value;apply()}));document.querySelectorAll('.swatches button').forEach(b=>b.onclick=()=>{state.pageBg=b.dataset.page;state.cardBg=b.dataset.card;document.getElementById('pageBg').value=state.pageBg;document.getElementById('cardBg').value=state.cardBg;apply()});document.getElementById('reset').onclick=()=>{state={...defaults};ids.forEach(id=>document.getElementById(id).value=state[id]);['pageBg','cardBg','accent','inputBorderColor'].forEach(id=>document.getElementById(id).value=state[id]);apply()};document.getElementById('copy').onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(state,null,2));document.getElementById('status').textContent='JSON 已复制';};document.getElementById('download').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.download='ui-tuning.json';a.click()};document.getElementById('save').onclick=async()=>{const r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});document.getElementById('status').textContent=r.ok?'已保存到项目：ui-tuning.json':'保存失败'};function syncInputs(){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value=state[id];});['pageBg','cardBg','accent','inputBorderColor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=state[id];});apply();}
+async function loadSaved(){try{const response=await fetch('/api/config');if(!response.ok)return;const saved=await response.json();state={...defaults,...saved};syncInputs();}catch{}}
+apply();loadSaved();
+</script>
+</body></html>

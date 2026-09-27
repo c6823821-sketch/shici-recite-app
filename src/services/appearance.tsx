@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getStoredValue, setStoredValue } from './settings';
+import { uiTuning } from '../theme';
 
 export type AppBackgroundKey = 'paper' | 'warm' | 'brown' | 'mist' | 'sage' | 'rose';
 
 export const APP_BACKGROUNDS: Array<{ key: AppBackgroundKey; label: string; color: string; card: string; note: string }> = [
   { key: 'paper', label: '宣纸白', color: '#F9F7F2', card: '#FFFFFF', note: '清透、安静，适合长时间阅读' },
-  { key: 'warm', label: '暖米色', color: '#F2EDE3', card: '#FAF6EE', note: '你截图中偏爱的暖米色，温柔、低对比' },
+  { key: 'warm', label: '暖米色', color: uiTuning.pageBg, card: uiTuning.cardBg, note: '你截图中偏爱的暖米色，温柔、低对比' },
   { key: 'brown', label: '旧纸棕', color: '#E9DCCB', card: '#F7EDE0', note: '更暖的旧纸棕色，接近古籍纸色' },
   { key: 'mist', label: '淡紫色', color: '#F1EEF5', card: '#FAF8FC', note: '柔和、低饱和，略带现代感' },
   { key: 'sage', label: '青绿色', color: '#E6EDE6', card: '#F7FAF7', note: '清雅的浅青绿色，接近山水留白' },

@@ -1,3 +1,52 @@
+# v3.0.22 调参结果固化与真机一致性
+
+发布时间：2026-09-27
+
+## 本次修复
+
+- 电脑端 `ui-tuning.json` 已改为 App 的真实主题数据源，不再只是浏览器预览。
+- 主页推荐卡按手机宽度重新计算，390px 预览下卡片右侧保留 20px，不再裁切“换一换”。
+- 推荐图高度、输入框边框、卡片间距、按钮高度和强调色统一由调参文件控制。
+- “我的 → 检查更新”显示当前安装的 App 版本，避免手机上装的是旧包却以为是新 UI。
+- GitHub Actions 构建触发器增加 `ui-tuning.json`，调参后重新构建会打包新参数。
+
+## 修改文件
+
+- `ui-tuning.json`
+- `src/theme.ts`
+- `src/services/appearance.tsx`
+- `src/screens/TodayScreen.tsx`
+- `src/screens/ProfileScreen.tsx`
+- `tools/ui-tuner.html`
+- `scripts/ui-tuner.mjs`
+- `.github/workflows/android-build.yml`
+- `app.json`
+- `package.json`
+- `package-lock.json`
+- `version.json`
+- `CHANGELOG.md`
+- `ROLLBACK.md`
+
+## 验证
+
+- TypeScript 检查通过。
+- 核心自测通过。
+- 390×844 手机视口截图通过，推荐卡与底部导航不会出界。
+- 360×800 窄屏视口无横向滚动。
+
+## 回滚本次修改
+
+回到 v3.0.21：
+
+```powershell
+git checkout main
+git reset --hard v3.0.21
+git clean -fd
+git push origin main --force-with-lease
+```
+
+---
+
 # v3.0.21 手机端推荐卡重排
 
 发布时间：2026-09-27
