@@ -1,3 +1,25 @@
+# v3.0.26 Android 按钮与搜索框布局修正
+
+发布时间：2026-09-28
+
+## 修复内容
+
+- 搜索框外层改用 View 负责边框和背景，Pressable 改为绝对铺满的点击层。
+- “进入阅读”外层保留红色背景壳，内层 Pressable 绝对铺满并居中，解决文字跑到左上角。
+- 不再依赖 Pressable 的 flex 尺寸。
+
+## 回滚本次修改
+
+回到 v3.0.25：
+
+```powershell
+git checkout main
+git reset --hard v3.0.25
+git clean -fd
+```
+
+---
+
 # v3.0.25 推荐区去卡片与搜索框修复
 
 发布时间：2026-09-28

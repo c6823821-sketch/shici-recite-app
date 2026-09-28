@@ -302,3 +302,13 @@ git checkout main
 git reset --hard v3.0.24
 git clean -fd
 ```
+
+## v3.0.26 Android 按钮与搜索框回滚
+
+回到 v3.0.25：
+
+```powershell
+git checkout main
+git reset --hard v3.0.25
+git clean -fd
+```

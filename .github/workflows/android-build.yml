@@ -50,28 +50,28 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.25.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.26.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.25
-          path: shici-recite-app-v3.0.25.apk
+          name: shici-recite-app-v3.0.26
+          path: shici-recite-app-v3.0.26.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.25
-          name: 诗词背诵 v3.0.25
+          tag_name: v3.0.26
+          name: 诗词背诵 v3.0.26
           body: |
             诗词背诵 Android 测试版。
 
-            主页推荐内容不再包在卡片里，去掉左侧红线和容易出问题的裁切层；“进入阅读”改为整行红色按钮。
+            搜索框和“进入阅读”改为 View 负责边框/背景，Pressable 作为绝对铺满的点击层。
 
-            诗库搜索框增加独立边框；秋日应景卡片增加底部留白并取消硬分隔线。
+            修复 Android 上输入框看不到边框、按钮文字跑到左上角的问题。
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.25。
-          files: shici-recite-app-v3.0.25.apk
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.26。
+          files: shici-recite-app-v3.0.26.apk
           make_latest: true

@@ -173,13 +173,15 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
               </Pressable>
             </View>
           </ImageBackground>
-          <Pressable
-            onPress={() => { setError(''); setMoodVisible(true); }}
-            style={({ pressed }) => [styles.moodPrompt, pressed && styles.pressed]}
-          >
-            <Text style={styles.moodSearchIcon}>⌕</Text>
-            <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
-          </Pressable>
+          <View style={styles.moodPromptFrame}>
+            <Pressable
+              onPress={() => { setError(''); setMoodVisible(true); }}
+              style={({ pressed }) => [styles.moodPrompt, pressed && styles.pressed]}
+            >
+              <Text style={styles.moodSearchIcon}>⌕</Text>
+              <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
+            </Pressable>
+          </View>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
               <Text style={[styles.quote, { fontSize: 29 * uiTuning.fontScale, lineHeight: 46 * uiTuning.fontScale }]}>{daily.quote}</Text>
@@ -332,7 +334,8 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPrompt: { minHeight: 50, marginHorizontal: uiTuning.cardGap, marginTop: uiTuning.cardGap, borderRadius: uiTuning.buttonRadius, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.inputBorderColor, backgroundColor: '#FFF9F0', flexDirection: 'row', alignItems: 'center', paddingLeft: 24, paddingRight: 16 },
+  moodPromptFrame: { height: 52, marginHorizontal: uiTuning.cardGap, marginTop: uiTuning.cardGap, borderRadius: uiTuning.buttonRadius, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.inputBorderColor, backgroundColor: '#FFF9F0' },
+  moodPrompt: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingLeft: 24, paddingRight: 16 },
   moodSearchIcon: { color: '#6F6559', fontFamily: fonts.sans, fontSize: 20, marginRight: 10 },
   moodPromptText: { color: '#5F574D', fontFamily: fonts.body, fontSize: 14 },
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
   loader: { marginVertical: 48 },
   cardActions: { alignItems: 'stretch', marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
   primaryButtonShell: { width: '100%', height: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, backgroundColor: uiTuning.accent },
-  primaryButton: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  primaryButton: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
   randomButton: { minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, paddingHorizontal: 16, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.accent, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
