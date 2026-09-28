@@ -248,7 +248,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
                 <View key={item.workId + '-' + item.lineIndex}>
                   <Pressable
                     onPress={() => onOpenWork(work, item.lineIndex)}
-                    style={({ pressed }) => [styles.highlightRow, { backgroundColor: cardBackground }, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
                   >
                     <Text style={styles.highlightQuote}>{item.quote}</Text>
                     <View style={styles.highlightFooter}>
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   cardActions: { alignItems: 'stretch', marginTop: uiTuning.cardGap, marginHorizontal: uiTuning.cardGap, marginBottom: uiTuning.cardGap },
   primaryButtonShell: { width: '100%', height: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, backgroundColor: uiTuning.accent },
   primaryButton: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  primaryText: { color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2 },
+  primaryText: { width: '100%', color: colors.white, fontFamily: fonts.body, fontSize: 16, fontWeight: '800', letterSpacing: 1.2, textAlign: 'center' },
   randomButton: { minHeight: uiTuning.buttonHeight, borderRadius: uiTuning.buttonRadius, paddingHorizontal: 16, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.accent, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   randomButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
   sectionBlock: { marginTop: spacing.xl },
@@ -367,13 +367,13 @@ const styles = StyleSheet.create({
   discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 16 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 16, paddingTop: 16, paddingBottom: 22, paddingHorizontal: uiTuning.cardGap, backgroundColor: '#F7F0E5', borderLeftWidth: 4, borderLeftColor: colors.jade, borderRadius: 8 },
+  highlightRow: { marginBottom: 12, paddingTop: 16, paddingBottom: 22, paddingHorizontal: uiTuning.cardGap, backgroundColor: '#F7F0E5', borderWidth: 1, borderColor: '#D8CFC0', borderLeftWidth: 4, borderLeftColor: colors.jade, borderRadius: 10 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },
   highlightDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginTop: 10, marginBottom: 12 },
   highlightQuote: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, lineHeight: 30, fontWeight: '700' },
-  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 18 },
+  highlightFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 16 },
   highlightSource: { flex: 1, color: colors.jade, fontFamily: fonts.body, fontSize: 12 },
   highlightAction: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   highlightSeparator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E8E0D4', marginBottom: 16, marginHorizontal: 4 },

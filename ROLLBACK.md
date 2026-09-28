@@ -312,3 +312,13 @@ git checkout main
 git reset --hard v3.0.25
 git clean -fd
 ```
+
+## v3.0.27 按钮居中与应景卡片边框回滚
+
+回到 v3.0.26：
+
+```powershell
+git checkout main
+git reset --hard v3.0.26
+git clean -fd
+```
