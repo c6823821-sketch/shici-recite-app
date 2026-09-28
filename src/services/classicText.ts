@@ -1,4 +1,6 @@
-﻿export interface ClassicTextSegment {
+﻿import { splitSemanticText } from './longText';
+
+export interface ClassicTextSegment {
   text: string;
   highlights: string[];
 }
@@ -63,6 +65,7 @@ function tidySegment(value: string): string {
     .replace(/\s+/g, '')
     .replace(/^["'“”‘’]+/, '')
     .replace(/["'“”‘’]+$/, '')
+    .replace(/；$/, '')
     .trim();
 }
 
@@ -70,42 +73,8 @@ function isNoiseSegment(value: string): boolean {
   return !value || /^[，。！？；：、,.!?;:"“”‘’（）()《》〈〉·—\-]+$/.test(value);
 }
 
-function splitLongParagraph(value: string, targetLength = 170, hardLimit = 280): string[] {
-  const chars = Array.from(value);
-  const result: string[] = [];
-  let current = '';
-
-  const flush = (cutAt?: number) => {
-    const end = cutAt === undefined ? current.length : cutAt + 1;
-    const part = current.slice(0, end).trim();
-    if (part) result.push(part);
-    current = current.slice(end);
-  };
-
-  chars.forEach((char, index) => {
-    current += char;
-    const next = chars[index + 1];
-    const sentenceEnd = /[。！？]/.test(char);
-    const closingQuoteFollows = next === '”' || next === '’';
-
-    if (sentenceEnd && !closingQuoteFollows && current.length >= targetLength) {
-      flush();
-      return;
-    }
-    if (current.length < hardLimit) return;
-
-    let cutAt = -1;
-    for (let cursor = current.length - 1; cursor >= Math.floor(targetLength * 0.55); cursor -= 1) {
-      if (/[，、；：]/.test(current[cursor])) {
-        cutAt = cursor;
-        break;
-      }
-    }
-    flush(cutAt >= 0 ? cutAt : current.length - 1);
-  });
-
-  if (current.trim()) result.push(current.trim());
-  return result;
+function splitLongParagraph(value: string): string[] {
+  return splitSemanticText(value, 96, 160);
 }
 
 export function highlightPhrasesIn(text: string): string[] {

@@ -7,6 +7,7 @@ import { findDictionaryExplanation } from '../services/localDictionary';
 import { explainWithApi } from '../services/api';
 import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
 import { loadApiSettings } from '../services/settings';
+import { loadReadingProgress, markReadingUnitComplete, saveReadingProgress } from '../services/readingProgress';
 import { ExplanationSheet } from '../components/ExplanationSheet';
 import { FavoriteSheet } from '../components/FavoriteSheet';
 import { Classic, Explanation, Work } from '../types';
@@ -61,10 +62,13 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
   const [favoriteMessage, setFavoriteMessage] = useState('');
   const selectionRef = useRef<CharacterSelection | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const [resumeUnit, setResumeUnit] = useState(0);
+  const [completedUnits, setCompletedUnits] = useState<Set<number>>(new Set());
+  const [progressReady, setProgressReady] = useState(false);
 
   const section = classic && sectionIndex !== undefined ? classic.sections[sectionIndex] : null;
   const segments = useMemo(() => (section ? splitClassicText(section.text) : []), [section]);
-  const pages = useMemo(() => paginateClassicSegments(segments), [segments]);
+  const pages = useMemo(() => paginateClassicSegments(segments, 170, 1), [segments]);
   const pageCount = Math.max(1, pages.length);
   const safePage = Math.min(page, pageCount - 1);
   const visibleSegments = pages[safePage] ?? [];
@@ -96,6 +100,37 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
     loadApiSettings().then(setSettings);
     loadFolders().then(setFavoriteFolders);
   }, [classic?.id, sectionIndex]);
+
+  useEffect(() => {
+    let alive = true;
+    const progressKey = classic && sectionIndex !== undefined ? `classic:${classic.id}:${sectionIndex}` : '';
+    setProgressReady(false);
+    if (!progressKey) {
+      setResumeUnit(0);
+      setCompletedUnits(new Set());
+      setProgressReady(true);
+      return () => { alive = false; };
+    }
+    void loadReadingProgress(progressKey).then((progress) => {
+      if (!alive) return;
+      setResumeUnit(progress?.unitIndex ?? 0);
+      setCompletedUnits(new Set(progress?.completedUnits ?? []));
+      setProgressReady(true);
+    });
+    return () => { alive = false; };
+  }, [classic?.id, sectionIndex]);
+
+  useEffect(() => {
+    if (!progressReady || initialSegmentIndex !== undefined || pages.length === 0) return;
+    const nextPage = Math.max(0, Math.min(resumeUnit, pages.length - 1));
+    setPage((current) => (current === nextPage ? current : nextPage));
+  }, [initialSegmentIndex, pages.length, progressReady, resumeUnit]);
+
+  useEffect(() => {
+    if (!progressReady || !classic || sectionIndex === undefined) return;
+    const progressKey = `classic:${classic.id}:${sectionIndex}`;
+    void saveReadingProgress(progressKey, { unitIndex: safePage, lineIndex: visibleIndexes[0] ?? 0, charIndex: 0 });
+  }, [classic, progressReady, safePage, sectionIndex, visibleIndexes]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -299,6 +334,14 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
     setSelection(null);
   };
 
+  const markCurrentUnitDone = async () => {
+    if (!classic || sectionIndex === undefined) return;
+    const progressKey = `classic:${classic.id}:${sectionIndex}`;
+    await markReadingUnitComplete(progressKey, safePage);
+    setCompletedUnits((current) => new Set([...current, safePage]));
+    setPageMessage(`第 ${safePage + 1} 节已标记为已背。`);
+  };
+
   const favoriteQuote = favoriteSegment === null ? '' : segments[favoriteSegment]?.text ?? '';
 
   const saveFavoriteForSegment = async (selectedFolderId: string | null, newFolderName: string) => {
@@ -326,7 +369,7 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
   return (
     <View style={styles.container}>
       <Header title={classic.title} onBack={onBack} />
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.reader} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.reader, selection && styles.readerWithSelection]} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.readerTitle}>{section.title}</Text>
           <Text style={styles.readerMeta}>{classic.author} · {classic.kind === '名句' ? '名句补充' : `${classic.category}典籍`}</Text>
@@ -346,7 +389,13 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
                 </Text>
               )}
             </Pressable>
-            <Text style={styles.pageMeta}>{visibleSegments.length} 段 · 本页 {visibleChars} 字</Text>
+            <Text style={styles.pageMeta}>第 {safePage + 1}/{pageCount} 节 · {visibleChars} 字</Text>
+          </View>
+          <View style={styles.unitStatusRow}>
+            <Text style={styles.unitStatusText}>{completedUnits.has(safePage) ? '本节已背' : '本节待背'}</Text>
+            <Pressable onPress={() => void markCurrentUnitDone()} style={styles.unitRememberButton}>
+              <Text style={styles.unitRememberText}>{completedUnits.has(safePage) ? '已完成' : '标记本节已背'}</Text>
+            </Pressable>
           </View>
           {pageMessage ? <Text style={styles.pageMessage}>{pageMessage}</Text> : null}
           {favoriteMessage ? <Text style={styles.favoriteMessage}>{favoriteMessage}</Text> : null}
@@ -388,32 +437,6 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
                   );
                 })}
               </View>
-
-              {selectionHere ? (
-                <View style={styles.selectionBar}>
-                  <Text style={styles.selectionText} numberOfLines={1}>已选：{selectedTextFor(segment.text, selectionHere)}</Text>
-                  <View style={styles.selectionActions}>
-                    <Pressable onPress={() => void lookupRange(segmentIndex, selectionHere.start, selectionHere.end)} style={styles.selectionAction}>
-                      <Text style={styles.selectionActionText}>根据上下文解释</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        const end = Math.max(0, Array.from(segment.text).length - 1);
-                        const whole = { segmentIndex, start: 0, end };
-                        selectionRef.current = whole;
-                        setSelection(whole);
-                        void lookupRange(segmentIndex, 0, end);
-                      }}
-                      style={styles.selectionAction}
-                    >
-                      <Text style={styles.selectionActionMuted}>整句</Text>
-                    </Pressable>
-                    <Pressable onPress={clearSelection} style={styles.selectionAction}>
-                      <Text style={styles.selectionActionMuted}>取消</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : null}
 
               <View style={styles.segmentFooter}>
                 <View style={styles.segmentActions}>
@@ -462,6 +485,25 @@ export function ClassicScreen({ classic, sectionIndex, initialSegmentIndex, onCl
         </View>
         <Text style={styles.source}>来源：{classic.source}</Text>
       </ScrollView>
+      {selection ? (
+        <View style={styles.fixedSelectionBar}>
+          <Text style={styles.fixedSelectionText} numberOfLines={1}>已选：{selectedTextFor(segments[selection.segmentIndex]?.text ?? '', selection)}</Text>
+          <View style={styles.fixedSelectionActions}>
+            <Pressable onPress={() => void lookupRange(selection.segmentIndex, selection.start, selection.end)} style={styles.fixedSelectionAction}>
+              <Text style={styles.fixedSelectionActionText}>解释所选</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { const end = Math.max(0, Array.from(segments[selection.segmentIndex]?.text ?? '').length - 1); const whole = { segmentIndex: selection.segmentIndex, start: 0, end }; selectionRef.current = whole; setSelection(whole); void lookupRange(selection.segmentIndex, 0, end); }}
+              style={styles.fixedSelectionAction}
+            >
+              <Text style={styles.fixedSelectionActionText}>整句</Text>
+            </Pressable>
+            <Pressable onPress={clearSelection} style={styles.fixedSelectionAction}>
+              <Text style={styles.fixedSelectionActionMuted}>取消</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
       <ExplanationSheet
         visible={sheetVisible}
         loading={lookingUp}
@@ -504,6 +546,13 @@ const styles = StyleSheet.create({
   chapterRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   chapterTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 18 },
   reader: { paddingHorizontal: spacing.lg, paddingBottom: 110 },
+  readerWithSelection: { paddingBottom: 190 },
+  fixedSelectionBar: { position: 'absolute', left: 14, right: 14, bottom: 14, borderRadius: 14, padding: 12, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.vermilion, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
+  fixedSelectionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
+  fixedSelectionActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  fixedSelectionAction: { flex: 1, minHeight: 42, borderRadius: 9, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  fixedSelectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
+  fixedSelectionActionMuted: { color: colors.muted, fontFamily: fonts.body, fontSize: 13 },
   hero: { paddingTop: spacing.lg, paddingBottom: 4 },
   readerTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 30, fontWeight: '800' },
   readerMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12, marginTop: 9 },
@@ -513,6 +562,10 @@ const styles = StyleSheet.create({
   pageTranslateButton: { minHeight: 42, minWidth: 126, borderWidth: 1, borderColor: colors.vermilion, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, backgroundColor: colors.paperLight },
   pageTranslateText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   pageMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11 },
+  unitStatusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  unitStatusText: { color: colors.jade, fontFamily: fonts.sans, fontSize: 12 },
+  unitRememberButton: { minHeight: 34, borderRadius: 8, borderWidth: 1, borderColor: colors.jade, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paperLight },
+  unitRememberText: { color: colors.jade, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   pageMessage: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, marginTop: 8 },
   segmentBlock: { marginTop: 24, paddingLeft: 14, paddingRight: 4, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   segmentHighlight: { borderLeftColor: colors.vermilion, backgroundColor: '#F8F0E3', paddingTop: 13, paddingBottom: 13, paddingRight: 12 },

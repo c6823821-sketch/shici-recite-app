@@ -1,5 +1,5 @@
 ﻿import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -29,6 +29,8 @@ import { loadCachedTranslation, saveCachedTranslation } from '../services/transl
 import { loadWholeTranslationCached } from '../services/wholeTranslationStore';
 import { recordInteraction } from '../services/preference';
 import { sentenceAroundLine, toChars } from '../services/text';
+import { buildLineUnits, isLongText, unitContainingLine } from '../services/longText';
+import { loadReadingProgress, markReadingUnitComplete, saveReadingProgress } from '../services/readingProgress';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Explanation, Work } from '../types';
 
@@ -67,6 +69,9 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [error, setError] = useState('');
   const [lastLookup, setLastLookup] = useState<{ line: number; start: number; end: number } | null>(null);
   const [selection, setSelection] = useState<{ line: number; start: number; end: number } | null>(null);
+  const [unitIndex, setUnitIndex] = useState(0);
+  const [completedUnits, setCompletedUnits] = useState<Set<number>>(new Set());
+  const [progressReady, setProgressReady] = useState(false);
   const [card, setCard] = useState<Card | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
   const [favoriteLine, setFavoriteLine] = useState<number | null>(null);
@@ -87,6 +92,11 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [wholeError, setWholeError] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
+  const units = useMemo(() => buildLineUnits(work.lines), [work.lines]);
+  const longText = useMemo(() => isLongText(work.lines), [work.lines]);
+  const activeUnit = units[unitIndex] ?? units[0];
+  const progressKey = `work:${work.id}`;
+
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadCard(work.id).then(setCard);
@@ -106,13 +116,25 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   }, [lineIndex, work.id]);
 
   useEffect(() => {
-    setLineIndex(initialLineIndex);
+    let alive = true;
     setMode('read');
-    const timer = setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: 235 + initialLineIndex * 82, animated: false });
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [initialLineIndex, work.id]);
+    setProgressReady(false);
+    void loadReadingProgress(progressKey).then((progress) => {
+      if (!alive) return;
+      const requested = initialLineIndex > 0 ? initialLineIndex : progress?.lineIndex ?? 0;
+      const nextLine = Math.max(0, Math.min(work.lines.length - 1, requested));
+      setLineIndex(nextLine);
+      setUnitIndex(unitContainingLine(units, nextLine));
+      setCompletedUnits(new Set(progress?.completedUnits ?? []));
+      setProgressReady(true);
+    });
+    return () => { alive = false; };
+  }, [initialLineIndex, progressKey, units, work.id, work.lines.length]);
+
+  useEffect(() => {
+    if (!progressReady) return;
+    void saveReadingProgress(progressKey, { unitIndex, lineIndex, charIndex: 0 });
+  }, [lineIndex, progressKey, progressReady, unitIndex]);
 
   const lookup = async (targetLine: number, start: number, end: number) => {
     setLastLookup({ line: targetLine, start, end });
@@ -163,7 +185,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   };
 
   const scrollToLine = (index: number) => {
-    scrollRef.current?.scrollTo({ y: 215 + index * 82, animated: true });
+    const localIndex = Math.max(0, index - (activeUnit?.lineStart ?? 0));
+    scrollRef.current?.scrollTo({ y: 235 + localIndex * 82, animated: true });
   };
 
   const selectCharacter = (targetLine: number, index: number) => {
@@ -181,9 +204,26 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
   const goToLine = (index: number) => {
     const next = Math.max(0, Math.min(work.lines.length - 1, index));
+    setUnitIndex(unitContainingLine(units, next));
     setLineIndex(next);
     setSelection(null);
     scrollToLine(next);
+  };
+
+  const goToUnit = (nextIndex: number) => {
+    const safeIndex = Math.max(0, Math.min(units.length - 1, nextIndex));
+    const unit = units[safeIndex];
+    if (!unit) return;
+    setUnitIndex(safeIndex);
+    setLineIndex(unit.lineStart);
+    setSelection(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const markCurrentUnitDone = async () => {
+    await markReadingUnitComplete(progressKey, unitIndex);
+    setCompletedUnits((current) => new Set([...current, unitIndex]));
+    setReviewMessage(`第 ${unitIndex + 1} 节已标记为已背。`);
   };
 
   const translationFor = (index: number): string => {
@@ -405,7 +445,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         </Pressable>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.scroll, selection && styles.scrollWithSelection]} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.workTitle}>{work.title}</Text>
           <View style={styles.workMetaRow}>
@@ -485,8 +525,30 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           <Text style={styles.classicNotice}>典籍补充阅读 · 不计入诗词背诵统计</Text>
         )}
 
+        {longText && activeUnit ? (
+          <View style={styles.unitToolbar}>
+            <View style={styles.unitInfo}>
+              <Text style={styles.unitTitle}>第 {unitIndex + 1}/{units.length} 节</Text>
+              <Text style={styles.unitMeta}>{completedUnits.has(unitIndex) ? '本节已背' : '本节待背'} · 自动保存进度</Text>
+            </View>
+            <View style={styles.unitActions}>
+              <Pressable onPress={() => goToUnit(unitIndex - 1)} disabled={unitIndex <= 0} style={[styles.unitAction, unitIndex <= 0 && styles.disabled]}>
+                <Text style={styles.unitActionText}>上一节</Text>
+              </Pressable>
+              <Pressable onPress={() => goToUnit(unitIndex + 1)} disabled={unitIndex >= units.length - 1} style={[styles.unitAction, unitIndex >= units.length - 1 && styles.disabled]}>
+                <Text style={styles.unitActionText}>下一节</Text>
+              </Pressable>
+              <Pressable onPress={() => void markCurrentUnitDone()} style={styles.unitActionStrong}>
+                <Text style={styles.unitActionStrongText}>{completedUnits.has(unitIndex) ? '已完成' : '标记已背'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.poem}>
-          {work.lines.map((line, index) => (
+          {work.lines.map((line, index) => {
+            if (activeUnit && (index < activeUnit.lineStart || index > activeUnit.lineEnd)) return null;
+            return (
             <React.Fragment key={`${work.id}-${index}`}>
               {work.sectionBreaks?.includes(index) ? (
                 <View style={styles.sectionBreak}>
@@ -519,7 +581,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
               onFavorite={() => setFavoriteLine(index)}
             />
             </React.Fragment>
-          ))}
+            );
+          })}
         </View>
 
         {work.genre !== '典籍' ? <View style={styles.reviewBlock}>
@@ -541,6 +604,23 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
         <Text style={styles.source}>文本来源：{work.source}</Text>
       </ScrollView>
+
+      {selection ? (
+        <View style={styles.fixedSelectionBar}>
+          <Text style={styles.fixedSelectionText} numberOfLines={1}>已选 {getSelectedText(work.lines[selection.line] ?? '', selection)}</Text>
+          <View style={styles.fixedSelectionActions}>
+            <Pressable onPress={() => void lookup(selection.line, selection.start, selection.end)} style={styles.fixedSelectionAction}>
+              <Text style={styles.fixedSelectionActionText}>解释所选</Text>
+            </Pressable>
+            <Pressable onPress={() => { const end = Math.max(0, toChars(work.lines[selection.line] ?? '').length - 1); setSelection({ line: selection.line, start: 0, end }); void lookup(selection.line, 0, end); }} style={styles.fixedSelectionAction}>
+              <Text style={styles.fixedSelectionActionText}>整句</Text>
+            </Pressable>
+            <Pressable onPress={() => setSelection(null)} style={styles.fixedSelectionAction}>
+              <Text style={styles.fixedSelectionActionText}>取消</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       <FavoriteSheet
         visible={favoriteLine !== null}
@@ -667,21 +747,6 @@ function ReaderLine({
           </View>
         </Pressable>
       )}
-      {selection ? (
-        <View style={styles.selectionActions}>
-          <Text style={styles.selectionText}>已选 {getSelectedText(line, selection)}</Text>
-          <Pressable onPress={() => onLookupRange(selection.start, selection.end)} style={styles.selectionAction}>
-            <Text style={styles.selectionActionText}>解释所选</Text>
-          </Pressable>
-          <Pressable onPress={onWholeLine} style={styles.selectionAction}>
-            <Text style={styles.selectionActionText}>整句</Text>
-          </Pressable>
-          <Pressable onPress={onClearSelection} style={styles.selectionAction}>
-            <Text style={styles.selectionActionText}>取消</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
       <View style={styles.lineActions}>
         <Pressable onPress={onToggleTranslation} style={styles.translationToggle}>
           {translationLoading ? <ActivityIndicator size="small" color={colors.vermilion} /> : (
@@ -706,6 +771,22 @@ const styles = StyleSheet.create({
   headerAction: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 16 },
   headerTitle: { flex: 1, textAlign: 'center', color: colors.ink, fontFamily: fonts.title, fontSize: 19, fontWeight: '700' },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: 70 },
+  scrollWithSelection: { paddingBottom: 190 },
+  unitToolbar: { marginTop: 18, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#D8CFC0', backgroundColor: '#FAF6EE' },
+  unitInfo: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+  unitTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 18, fontWeight: '800' },
+  unitMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 5 },
+  unitActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  unitAction: { flex: 1, minHeight: 36, borderRadius: 8, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paperLight },
+  unitActionText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
+  unitActionStrong: { flex: 1.25, minHeight: 36, borderRadius: 8, backgroundColor: colors.jade, alignItems: 'center', justifyContent: 'center' },
+  unitActionStrongText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
+  disabled: { opacity: 0.45 },
+  fixedSelectionBar: { position: 'absolute', left: 14, right: 14, bottom: 14, borderRadius: 14, padding: 12, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.vermilion, shadowColor: '#333333', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
+  fixedSelectionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },
+  fixedSelectionActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  fixedSelectionAction: { flex: 1, minHeight: 42, borderRadius: 9, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  fixedSelectionActionText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 13, fontWeight: '700' },
   hero: { position: 'relative', paddingTop: spacing.xl, paddingBottom: spacing.md },
   workTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 31, fontWeight: '800', letterSpacing: 2, textAlign: 'center' },
   workMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
