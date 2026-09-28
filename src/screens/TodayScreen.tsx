@@ -14,7 +14,6 @@ import { MoodRecommendSheet } from '../components/MoodRecommendSheet';
 import { loadWorksCatalog } from '../data/worksCatalog';
 import { randomRecommendation, recommendForMood } from '../services/recommendation';
 import { DailyDiscovery, loadDailyDiscovery, rotateDailyDiscovery } from '../services/dailyDiscovery';
-import { useAppearance } from '../services/appearance';
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
 import {
@@ -35,7 +34,6 @@ interface Props {
 }
 
 export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Props) {
-  const { cardBackground } = useAppearance();
   const { width: windowWidth } = useWindowDimensions();
   const recommendCardWidth = Math.max(280, windowWidth - uiTuning.pagePadding * 2);
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
@@ -174,13 +172,14 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
             </View>
           </ImageBackground>
           <View style={styles.moodPromptFrame}>
+            <View style={styles.moodPromptContent}>
+              <Text style={styles.moodSearchIcon}>⌕</Text>
+              <Text style={styles.moodPromptText} numberOfLines={1}>输入想法或心情，推荐一首诗词</Text>
+            </View>
             <Pressable
               onPress={() => { setError(''); setMoodVisible(true); }}
-              style={({ pressed }) => [styles.moodPrompt, pressed && styles.pressed]}
-            >
-              <Text style={styles.moodSearchIcon}>⌕</Text>
-              <Text style={styles.moodPromptText}>输入想法或心情，推荐一首诗词</Text>
-            </Pressable>
+              style={styles.moodPromptHit}
+            />
           </View>
           {daily && currentWork ? (
             <Pressable onPress={openDaily}>
@@ -245,16 +244,14 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
               if (!work) return null;
               return (
                 <View key={item.workId + '-' + item.lineIndex}>
-                  <Pressable
-                    onPress={() => onOpenWork(work, item.lineIndex)}
-                    style={({ pressed }) => [styles.highlightRow, pressed && styles.pressed]}
-                  >
+                  <View style={styles.highlightRow}>
                     <Text style={styles.highlightQuote}>{item.quote}</Text>
                     <View style={styles.highlightFooter}>
                       <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
                       <Text style={styles.highlightAction}>查看原诗</Text>
                     </View>
-                  </Pressable>
+                    <Pressable onPress={() => onOpenWork(work, item.lineIndex)} style={styles.highlightHit} />
+                  </View>
                 </View>
               );
             })}
@@ -333,10 +330,11 @@ const styles = StyleSheet.create({
   cardLabel: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   moodButton: { minHeight: 34, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.vermilion, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF8F6' },
   moodButtonText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  moodPromptFrame: { height: 52, marginHorizontal: uiTuning.cardGap, marginTop: uiTuning.cardGap, borderRadius: uiTuning.buttonRadius, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.inputBorderColor, backgroundColor: '#FFF9F0' },
-  moodPrompt: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingLeft: 24, paddingRight: 16 },
-  moodSearchIcon: { color: '#6F6559', fontFamily: fonts.sans, fontSize: 20, marginRight: 10 },
-  moodPromptText: { color: '#5F574D', fontFamily: fonts.body, fontSize: 14 },
+  moodPromptFrame: { height: 52, marginHorizontal: uiTuning.cardGap, marginTop: uiTuning.cardGap, borderRadius: uiTuning.buttonRadius, borderWidth: uiTuning.inputBorder, borderColor: uiTuning.inputBorderColor, backgroundColor: '#FFF9F0', overflow: 'hidden' },
+  moodPromptContent: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 16 },
+  moodPromptHit: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  moodSearchIcon: { color: '#6F6559', fontFamily: fonts.sans, fontSize: 20, marginRight: 10, flexShrink: 0 },
+  moodPromptText: { flex: 1, color: '#5F574D', fontFamily: fonts.body, fontSize: 14 },
   moodSearchAction: { minHeight: 30, borderRadius: radius.pill, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
   moodSearchActionText: { color: colors.white, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   quote: { color: colors.ink, fontFamily: fonts.title, fontSize: 25 * uiTuning.fontScale, lineHeight: 40 * uiTuning.fontScale, marginTop: uiTuning.pagePadding, marginHorizontal: uiTuning.cardGap, fontWeight: '700' },
@@ -366,7 +364,8 @@ const styles = StyleSheet.create({
   discoveryReason: { color: '#756A5D', fontFamily: fonts.body, fontSize: 13, lineHeight: 21, marginBottom: 16 },
   discoveryRefresh: { minHeight: 34, minWidth: 72, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, backgroundColor: colors.paperLight },
   discoveryRefreshText: { color: colors.vermilion, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
-  highlightRow: { marginBottom: 12, paddingTop: 16, paddingBottom: 18, paddingHorizontal: 18, backgroundColor: '#FAF6EE', borderWidth: 1, borderColor: '#D8CFC0', borderLeftWidth: 4, borderLeftColor: colors.jade, borderRadius: 12 },
+  highlightRow: { position: 'relative', marginBottom: 12, paddingTop: 16, paddingBottom: 18, paddingHorizontal: 18, backgroundColor: '#FAF6EE', borderWidth: 1, borderColor: '#D8CFC0', borderLeftWidth: 4, borderLeftColor: colors.jade, borderRadius: 12, overflow: 'hidden' },
+  highlightHit: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   highlightTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   highlightNumber: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   highlightTap: { color: colors.muted, fontFamily: fonts.sans, fontSize: 10 },

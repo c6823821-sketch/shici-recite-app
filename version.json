@@ -1,14 +1,14 @@
 {
-  "version": "3.0.28",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.28/shici-recite-app-v3.0.28.apk",
+  "version": "3.0.29",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.29/shici-recite-app-v3.0.29.apk",
   "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.28/shici-recite-app-v3.0.28.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.28/shici-recite-app-v3.0.28.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.28/shici-recite-app-v3.0.28.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.28/shici-recite-app-v3.0.28.apk"
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.29/shici-recite-app-v3.0.29.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.29/shici-recite-app-v3.0.29.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.29/shici-recite-app-v3.0.29.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.29/shici-recite-app-v3.0.29.apk"
   ],
-  "size": 92547148,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.28",
-  "notes": "按钮文字不再放进 Pressable，改为 View 居中、Pressable 只做透明点击层；秋日应景卡片重新版式。",
-  "sha256": "eafb3c18824d329d9516edc8a25369f4d5daeada3e6d09264d31dca38c335b3d"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.29",
+  "notes": "搜索框图标与文字改用 View 同行排版；秋日应景卡片外层改用 View 绘制边框，Pressable 只做透明点击层。",
+  "sha256": ""
 }

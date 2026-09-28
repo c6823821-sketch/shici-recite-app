@@ -50,28 +50,28 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.28.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.29.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.28
-          path: shici-recite-app-v3.0.28.apk
+          name: shici-recite-app-v3.0.29
+          path: shici-recite-app-v3.0.29.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.28
-          name: 诗词背诵 v3.0.28
+          tag_name: v3.0.29
+          name: 诗词背诵 v3.0.29
           body: |
             诗词背诵 Android 测试版。
 
-            按钮文字改为 View 子元素居中，Pressable 只作为透明点击层。
+            搜索框改为 View 同行布局，放大镜和文字绝不再换行。
 
-            秋日应景卡片增加统一的题目区、分隔线和出处区，底部留白 18px。
+            秋日应景卡片外层用 View 绘制边框和背景，Pressable 只作透明点击层。
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.28。
-          files: shici-recite-app-v3.0.28.apk
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.29。
+          files: shici-recite-app-v3.0.29.apk
           make_latest: true

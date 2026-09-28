@@ -332,3 +332,13 @@ git checkout main
 git reset --hard v3.0.27
 git clean -fd
 ```
+
+## v3.0.29 搜索同行与应景卡片外层回滚
+
+回到 v3.0.28：
+
+```powershell
+git checkout main
+git reset --hard v3.0.28
+git clean -fd
+```
