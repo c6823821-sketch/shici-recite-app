@@ -7,8 +7,8 @@
     "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.26/shici-recite-app-v3.0.26.apk",
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.26/shici-recite-app-v3.0.26.apk"
   ],
-  "size": 0,
+  "size": 92539272,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.26",
   "notes": "搜索框和按钮改为 View 负责边框/背景，Pressable 绝对铺满；解决 Android 上输入框无边框、按钮文字跑到左上角的问题。",
-  "sha256": ""
+  "sha256": "802c35b310d3ae931e40b157a44da7ae116b46239a41bc94f64c1105b0b42781"
 }
