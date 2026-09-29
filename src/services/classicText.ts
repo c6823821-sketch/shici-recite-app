@@ -74,7 +74,7 @@ function isNoiseSegment(value: string): boolean {
 }
 
 function splitLongParagraph(value: string): string[] {
-  return splitSemanticText(value, 96, 160);
+  return splitSemanticText(value, 72, 120);
 }
 
 export function highlightPhrasesIn(text: string): string[] {

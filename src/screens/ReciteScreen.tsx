@@ -110,13 +110,10 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
               ))}
             </View>
 
-            <Pressable
-              disabled={focusQueue.length === 0}
-              onPress={openFocus}
-              style={({ pressed }) => [styles.startButton, focusQueue.length === 0 && styles.disabled, pressed && styles.startButtonPressed]}
-            >
-              <Text style={styles.startButtonText}>开始背诵</Text>
-            </Pressable>
+            <View style={[styles.startButtonShell, focusQueue.length === 0 && styles.disabled]}>
+              <Text style={styles.startButtonText}>????</Text>
+              <Pressable disabled={focusQueue.length === 0} onPress={openFocus} style={styles.startButtonHit} />
+            </View>
           </View>
         )}
 
@@ -154,7 +151,8 @@ const styles = StyleSheet.create({
   goalTargetActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },
   goalTargetText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
   goalTargetTextActive: { color: colors.vermilion, fontWeight: '800' },
-  startButton: { minHeight: 58, borderRadius: 16, backgroundColor: colors.vermilion, marginTop: 18, paddingHorizontal: spacing.lg, alignItems: 'center', justifyContent: 'center' },
+  startButtonShell: { minHeight: 58, borderRadius: 16, backgroundColor: colors.vermilion, marginTop: 18, paddingHorizontal: spacing.lg, alignItems: 'center', justifyContent: 'center' },
+  startButtonHit: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   startButtonPressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   startButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, fontWeight: '800', letterSpacing: 1.2 },
   startButtonArrow: { color: colors.white, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },

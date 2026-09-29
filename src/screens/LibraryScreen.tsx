@@ -108,9 +108,12 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const matchedLines = useMemo(() => {
     if (normalizedQuery.length < 2) return [];
     const results: Array<{ work: Work; lineIndex: number; line: string }> = [];
+    const seenLines = new Set<string>();
     for (const work of filteredWorks) {
       for (let index = 0; index < work.lines.length; index += 1) {
-        if (normalizeSearch(work.lines[index]).includes(normalizedQuery)) {
+        const lineKey = normalizeSearch(work.lines[index]);
+        if (lineKey.includes(normalizedQuery) && !seenLines.has(lineKey)) {
+          seenLines.add(lineKey);
           results.push({ work, lineIndex: index, line: work.lines[index] });
           break;
         }
@@ -122,8 +125,10 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
   const workMatches = useMemo(() => {
     if (normalizedQuery.length < 2) return [];
+    const classicTitles = new Set(CLASSICS.map((classic) => normalizeSearch(classic.title)));
     return filteredWorks.filter((work) => (
-      [work.title, work.intro, ...work.collections]
+      !classicTitles.has(normalizeSearch(work.title))
+      && [work.title, work.intro, ...work.collections]
         .some((value) => normalizeSearch(value).includes(normalizedQuery))
     ));
   }, [filteredWorks, normalizedQuery]);
@@ -164,8 +169,8 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const activeEra = filters.eras.length === 1 ? filters.eras[0] : '??';
 
   const searchTabItems: Array<{ key: SearchTab; label: string; count: number }> = [
-    { key: 'sentence', label: '句子', count: matchedLines.length },
-    { key: 'work', label: '篇目', count: workMatches.length + matchedClassics.length },
+    { key: 'sentence', label: '句子', count: matchedLines.length + matchedClassicSentences.length },
+    { key: 'work', label: '篇目', count: workMatches.length + matchedClassicWorks.length },
     { key: 'author', label: '作者', count: authorMatches.length },
   ];
 
@@ -374,14 +379,14 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
 
   useEffect(() => {
     const term = query.trim();
-    if (!catalogReady || term.length < 2 || matchedLines.length > 0 || workMatches.length > 0 || authorMatches.length > 0 || matchedClassics.length > 0 || !settings?.endpoint.trim()) return;
+    if (!catalogReady || term.length < 2 || matchedLines.length > 0 || workMatches.length > 0 || authorMatches.length > 0 || matchedClassicSentences.length > 0 || matchedClassicWorks.length > 0 || !settings?.endpoint.trim()) return;
     if (attemptedRemoteQuery.current === term) return;
     const timer = setTimeout(() => {
       attemptedRemoteQuery.current = term;
       void remoteSearch(term);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [authorMatches.length, catalogReady, matchedClassics.length, matchedLines.length, query, settings, workMatches.length]);
+  }, [authorMatches.length, catalogReady, matchedClassicSentences.length, matchedClassicWorks.length, matchedLines.length, query, settings, workMatches.length]);
 
   return (
     <View style={styles.container}>

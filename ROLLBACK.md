@@ -362,3 +362,13 @@ git checkout main
 git reset --hard v3.0.30
 git clean -fd
 ```
+
+## v3.0.32 背诵按钮与长文单元回滚
+
+回到 v3.0.31：
+
+```powershell
+git checkout main
+git reset --hard v3.0.31
+git clean -fd
+```

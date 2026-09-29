@@ -92,7 +92,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [wholeError, setWholeError] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
-  const units = useMemo(() => buildLineUnits(work.lines), [work.lines]);
+  const units = useMemo(() => buildLineUnits(work.lines, 72, 120), [work.lines]);
   const longText = useMemo(() => isLongText(work.lines), [work.lines]);
   const activeUnit = units[unitIndex] ?? units[0];
   const progressKey = `work:${work.id}`;
