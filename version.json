@@ -1,14 +1,14 @@
 {
-  "version": "3.0.33",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.33/shici-recite-app-v3.0.33.apk",
+  "version": "3.0.34",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.34/shici-recite-app-v3.0.34.apk",
   "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.33/shici-recite-app-v3.0.33.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.33/shici-recite-app-v3.0.33.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.33/shici-recite-app-v3.0.33.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.33/shici-recite-app-v3.0.33.apk"
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.34/shici-recite-app-v3.0.34.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.34/shici-recite-app-v3.0.34.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.34/shici-recite-app-v3.0.34.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.34/shici-recite-app-v3.0.34.apk"
   ],
-  "size": 92561820,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.33",
-  "notes": "彻底删除古籍同名旧 Work，修复 4/7 节双版本；选字地难页透明层修复；背诵红按钮固定背景。",
-  "sha256": "c5830fccafe1a79479856eeede96ef77aff911f0fae6eee233d54bcbe6f5d2d1"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.34",
+  "notes": "古籍名称同时进入篇目和句子；长诗固定六句一节；搜索历史在点开结果时保存；同名旧 Work 彻底隐藏。",
+  "sha256": ""
 }

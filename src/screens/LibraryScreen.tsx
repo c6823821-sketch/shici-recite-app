@@ -140,7 +140,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     return filteredWorks.filter((work) => normalizeSearch(work.author).includes(normalizedQuery));
   }, [filteredWorks, normalizedQuery]);
 
-  const matchedClassics = useMemo(() => {
+  const classicMatches = useMemo(() => {
     if (normalizedQuery.length < 2) return [];
     return CLASSICS.flatMap((classic) =>
       classic.sections
@@ -152,13 +152,13 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           const titleMatch = normalizeSearch(classic.title).includes(normalizedQuery) || normalizeSearch(section.title).includes(normalizedQuery);
           const segments = splitClassicText(section.text);
           const segmentIndex = Math.max(0, segments.findIndex((segment) => normalizeSearch(segment.text).includes(normalizedQuery)));
-          return { classic, section, sectionIndex, segmentIndex, matchKind: textMatch ? 'sentence' as const : titleMatch ? 'work' as const : 'sentence' as const };
+          return { classic, section, sectionIndex, segmentIndex, textMatch, titleMatch };
         }),
     ).slice(0, 10);
   }, [normalizedQuery]);
 
-  const matchedClassicSentences = useMemo(() => matchedClassics.filter((item) => item.matchKind === 'sentence'), [matchedClassics]);
-  const matchedClassicWorks = useMemo(() => matchedClassics.filter((item) => item.matchKind === 'work'), [matchedClassics]);
+  const matchedClassicSentences = useMemo(() => classicMatches.filter((item) => item.textMatch), [classicMatches]);
+  const matchedClassicWorks = useMemo(() => classicMatches.filter((item) => item.titleMatch), [classicMatches]);
 
   const selected = [
     ...filters.eras,
@@ -403,7 +403,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         renderItem={({ item, index }) => {
           if (item.kind === 'line') {
             return (
-              <Pressable onPress={() => onOpenWork(item.work, item.lineIndex)} style={styles.quoteRow}>
+              <Pressable onPress={() => { void rememberSearch(query); onOpenWork(item.work, item.lineIndex); }} style={styles.quoteRow}>
                 <Text style={styles.quoteLine}>{item.line}</Text>
                 <Text style={styles.quoteTitle}>《{item.work.title}》</Text>
                 <Text style={styles.quoteAuthor}>{item.work.author}</Text>
@@ -420,7 +420,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           }
           if (item.kind === 'classic') {
             return (
-              <Pressable onPress={() => onOpenClassic(item.classic, item.sectionIndex, item.segmentIndex, true)} style={styles.classicResultRow}>
+              <Pressable onPress={() => { void rememberSearch(query); onOpenClassic(item.classic, item.sectionIndex, item.segmentIndex, true); }} style={styles.classicResultRow}>
                 <Text style={styles.classicResultTitle}>《{item.classic.title}》·{item.section.title}</Text>
                 <Text style={styles.classicResultSnippet} numberOfLines={2}>{item.section.text}</Text>
                 <Text style={styles.classicResultAuthor}>{item.classic.author}·{item.classic.kind === '名句' ? '名句补充' : `${item.classic.category}典籍`}</Text>
@@ -435,7 +435,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
           return (
             <View>
               {showEra ? <Text style={styles.eraHeader}>{item.work.dynasty}</Text> : null}
-              <Pressable onPress={() => onOpenWork(item.work, 0)} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
+              <Pressable onPress={() => { void rememberSearch(query); onOpenWork(item.work, 0); }} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
                 <View style={styles.workCopy}>
                   <Text style={styles.workTitle}>{item.work.title}</Text>
                   <Text style={styles.workAuthor}>{item.work.author}{item.work.imported ? ' · API补录待校对' : ''}</Text>

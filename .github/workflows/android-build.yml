@@ -50,30 +50,30 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.33.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.34.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.33
-          path: shici-recite-app-v3.0.33.apk
+          name: shici-recite-app-v3.0.34
+          path: shici-recite-app-v3.0.34.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.33
-          name: 诗词背诵 v3.0.33
+          tag_name: v3.0.34
+          name: 诗词背诵 v3.0.34
           body: |
             诗词背诵 Android 测试版。
 
-            删除古籍同名旧 Work，修复《师说》4/7 节双版本。
+            古籍名称同时进入篇目和句子，不再出现篇目 0 但图片已经有内容。
 
-            长文真正按句号切开，单元保持 49～116 字。
+            长诗按固定六句一节，《离骚》不再分成太多碎片。
 
-            古籍阅读不再透明叠加；背诵按钮改为 View 红底。
+            点开搜索结果时自动保存搜索历史。
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.33。
-          files: shici-recite-app-v3.0.33.apk
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.34。
+          files: shici-recite-app-v3.0.34.apk
           make_latest: true

@@ -77,7 +77,7 @@ export function buildTextUnits(value: string, target = 96, max = 160): SemanticU
   });
 }
 
-export function buildLineUnits(lines: string[], target = 96, max = 160): SemanticUnit[] {
+export function buildLineUnits(lines: string[], target = 96, max = 160, unitLineCount = 6): SemanticUnit[] {
   if (!lines.length) return [];
   const offsets: number[] = [];
   let offset = 0;
@@ -110,7 +110,7 @@ export function buildLineUnits(lines: string[], target = 96, max = 160): Semanti
     const line = lines[index] ?? '';
     const lineChars = Array.from(line).length;
     const previousEnded = index > start && SENTENCE_END.test(lines[index - 1]?.trim().slice(-1) ?? '');
-    if (charCount > 0 && (charCount + lineChars > max || (charCount >= target && previousEnded))) {
+    if (charCount > 0 && (index - start >= unitLineCount || charCount + lineChars > max || (charCount >= target && previousEnded))) {
       flush(index - 1);
       start = index;
       charCount = 0;
