@@ -258,5 +258,5 @@ const styles = StyleSheet.create({
   tabPane: { flex: 1 },
   hidden: { display: 'none' },
   focusOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 400, elevation: 80 },
-  readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40 },
+  readerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, elevation: 40, backgroundColor: colors.paper },
 });

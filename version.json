@@ -1,14 +1,14 @@
 {
-  "version": "3.0.30",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.30/shici-recite-app-v3.0.30.apk",
+  "version": "3.0.31",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.31/shici-recite-app-v3.0.31.apk",
   "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.30/shici-recite-app-v3.0.30.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.30/shici-recite-app-v3.0.30.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.30/shici-recite-app-v3.0.30.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.30/shici-recite-app-v3.0.30.apk"
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.31/shici-recite-app-v3.0.31.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.31/shici-recite-app-v3.0.31.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.31/shici-recite-app-v3.0.31.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.31/shici-recite-app-v3.0.31.apk"
   ],
-  "size": 92569268,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.30",
-  "notes": "全局长文分节与断点续读：长诗、离骚、长恨歌和长文言文自动按语义分节，选字解释改为底部固定工具条。",
-  "sha256": "cdc94c234f386f1ea00cd230a16a389860e17a33198b65a78c9743fdd04ba5e6"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.31",
+  "notes": "作者未知不再显示 API 错误；古籍正文命中归句子；长文阅读不再穿模；背诵按钮去重；词牌永久保存；收藏完整句。",
+  "sha256": ""
 }

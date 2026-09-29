@@ -50,30 +50,30 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.30.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.31.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.30
-          path: shici-recite-app-v3.0.30.apk
+          name: shici-recite-app-v3.0.31
+          path: shici-recite-app-v3.0.31.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.30
-          name: 诗词背诵 v3.0.30
+          tag_name: v3.0.31
+          name: 诗词背诵 v3.0.31
           body: |
             诗词背诵 Android 测试版。
 
-            新增全局长文引擎：长诗、离骚、长恨歌等自动按语义分节。
+            修复作者未知时的 API 错误提示，改为“生平资料较少”。
 
-            阅读进度自动保存，下次打开可从上次单元继续。
+            古籍正文命中改归句子；修复古籍阅读透明叠加；背诵按钮去重。
 
-            选字后底部固定显示“解释所选 / 整句 / 取消”，不再需要滑到段落底部。
+            词牌补录永久保存；收藏自动扩展到完整一句。
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.30。
-          files: shici-recite-app-v3.0.30.apk
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.31。
+          files: shici-recite-app-v3.0.31.apk
           make_latest: true

@@ -116,7 +116,6 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
               style={({ pressed }) => [styles.startButton, focusQueue.length === 0 && styles.disabled, pressed && styles.startButtonPressed]}
             >
               <Text style={styles.startButtonText}>开始背诵</Text>
-              <Text style={styles.startButtonArrow}>开始</Text>
             </Pressable>
           </View>
         )}
@@ -155,7 +154,7 @@ const styles = StyleSheet.create({
   goalTargetActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },
   goalTargetText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12 },
   goalTargetTextActive: { color: colors.vermilion, fontWeight: '800' },
-  startButton: { minHeight: 58, borderRadius: 16, backgroundColor: colors.vermilion, marginTop: 18, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  startButton: { minHeight: 58, borderRadius: 16, backgroundColor: colors.vermilion, marginTop: 18, paddingHorizontal: spacing.lg, alignItems: 'center', justifyContent: 'center' },
   startButtonPressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   startButtonText: { color: colors.white, fontFamily: fonts.body, fontSize: 18, fontWeight: '800', letterSpacing: 1.2 },
   startButtonArrow: { color: colors.white, fontFamily: fonts.body, fontSize: 14, fontWeight: '700' },

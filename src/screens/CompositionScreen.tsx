@@ -13,7 +13,7 @@ import {
 import { CompositionForm, CompositionGenre, GENRE_FORMS, formWithVariant } from '../data/composition';
 import { scoreComposition, CATEGORY_LABELS, CompositionScore } from '../services/compositionScoring';
 import { LocalPrecheck, precheckComposition } from '../services/prosody';
-import { loadApiSettings } from '../services/settings';
+import { getStoredValue, loadApiSettings, setStoredValue } from '../services/settings';
 import { lookupCompositionForm } from '../services/formLookup';
 import { createSavedComposition, loadSavedCompositions, removeSavedComposition, SavedComposition, saveSavedComposition } from '../services/compositions';
 import { colors, fonts, radius, spacing } from '../theme';
@@ -26,6 +26,7 @@ interface Props {
 
 const GENRES: CompositionGenre[] = ['诗', '词', '曲'];
 const CATEGORY_ORDER = ['rules', 'rhyme', 'tone', 'structure', 'parallelism', 'language', 'imagery', 'coherence', 'originality'];
+const FORM_CACHE_KEY = 'composition_extra_forms_v1';
 
 export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   const [genre, setGenre] = useState<CompositionGenre>('诗');
@@ -48,6 +49,10 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   useEffect(() => {
     loadApiSettings().then(setSettings);
     loadSavedCompositions().then(setSaved);
+    getStoredValue(FORM_CACHE_KEY).then((raw) => {
+      if (!raw) return;
+      try { setExtraForms(JSON.parse(raw) as CompositionForm[]); } catch { /* ignore malformed cache */ }
+    });
   }, []);
 
   const availableForms = useMemo(() => {
@@ -83,7 +88,9 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
     setFormMessage('');
     try {
       const result = await lookupCompositionForm(activeSettings, genre, formQuery);
-      setExtraForms((current) => [result, ...current.filter((item) => item.label !== result.label)]);
+      const nextForms = [result, ...extraForms.filter((item) => item.label !== result.label)];
+      setExtraForms(nextForms);
+      await setStoredValue(FORM_CACHE_KEY, JSON.stringify(nextForms));
       setForm(result);
       setVariantIndex(0);
       setFormMessage('已找到这个词牌，请核对格例后使用。');

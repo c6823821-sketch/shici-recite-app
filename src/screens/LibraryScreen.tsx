@@ -141,12 +141,17 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         .filter(({ section }) => normalizeSearch(classic.title).includes(normalizedQuery) || normalizeSearch(section.title).includes(normalizedQuery) || normalizeSearch(section.text).includes(normalizedQuery))
         .slice(0, 2)
         .map(({ section, sectionIndex }) => {
+          const textMatch = normalizeSearch(section.text).includes(normalizedQuery);
+          const titleMatch = normalizeSearch(classic.title).includes(normalizedQuery) || normalizeSearch(section.title).includes(normalizedQuery);
           const segments = splitClassicText(section.text);
           const segmentIndex = Math.max(0, segments.findIndex((segment) => normalizeSearch(segment.text).includes(normalizedQuery)));
-          return { classic, section, sectionIndex, segmentIndex };
+          return { classic, section, sectionIndex, segmentIndex, matchKind: textMatch ? 'sentence' as const : titleMatch ? 'work' as const : 'sentence' as const };
         }),
     ).slice(0, 10);
   }, [normalizedQuery]);
+
+  const matchedClassicSentences = useMemo(() => matchedClassics.filter((item) => item.matchKind === 'sentence'), [matchedClassics]);
+  const matchedClassicWorks = useMemo(() => matchedClassics.filter((item) => item.matchKind === 'work'), [matchedClassics]);
 
   const selected = [
     ...filters.eras,
@@ -167,16 +172,19 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const listItems = useMemo<LibraryListItem[]>(() => {
     if (!query.trim()) return filteredWorks.map((work) => ({ kind: 'work', work }));
     if (searchTab === 'sentence') {
-      return matchedLines.map((result) => ({ kind: 'line', ...result }));
+      return [
+        ...matchedLines.map((result) => ({ kind: 'line' as const, ...result })),
+        ...matchedClassicSentences.map(({ classic, section, sectionIndex, segmentIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex, segmentIndex })),
+      ];
     }
     if (searchTab === 'work') {
       return [
         ...workMatches.map((work) => ({ kind: 'work' as const, work })),
-        ...matchedClassics.map(({ classic, section, sectionIndex, segmentIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex, segmentIndex })),
+        ...matchedClassicWorks.map(({ classic, section, sectionIndex, segmentIndex }) => ({ kind: 'classic' as const, classic, section, sectionIndex, segmentIndex })),
       ];
     }
     return authorMatches.map((work) => ({ kind: 'work', work }));
-  }, [authorMatches, filteredWorks, matchedClassics, matchedLines, query, searchTab, workMatches]);
+  }, [authorMatches, filteredWorks, matchedClassicSentences, matchedClassicWorks, matchedLines, query, searchTab, workMatches]);
 
   const resultTitle = !query.trim()
     ? (hasFilters ? '筛选结果' : '全部篇目')

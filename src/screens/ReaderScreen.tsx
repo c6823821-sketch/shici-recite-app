@@ -28,7 +28,7 @@ import { AuthorInfo, loadAuthorInfo } from '../services/authorInfo';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
 import { loadWholeTranslationCached } from '../services/wholeTranslationStore';
 import { recordInteraction } from '../services/preference';
-import { sentenceAroundLine, toChars } from '../services/text';
+import { completeSentenceAroundLine, toChars } from '../services/text';
 import { buildLineUnits, isLongText, unitContainingLine } from '../services/longText';
 import { loadReadingProgress, markReadingUnitComplete, saveReadingProgress } from '../services/readingProgress';
 import { colors, fonts, spacing } from '../theme';
@@ -297,8 +297,15 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
       const activeSettings = settings ?? await loadApiSettings();
       if (!settings) setSettings(activeSettings);
       setAuthorInfo(await loadAuthorInfo(activeSettings, work.author));
-    } catch (authorFailure) {
-      setAuthorError(authorFailure instanceof Error ? authorFailure.message : '作者资料加载失败。');
+    } catch {
+      setAuthorInfo({
+        name: work.author,
+        dynasty: work.dynasty,
+        bio: `${work.author}的生平资料较少，生卒年及主要事迹多不可考。`,
+        achievements: [],
+        confidence: 'low',
+        source: 'local',
+      });
     } finally {
       setAuthorLoading(false);
     }
@@ -412,7 +419,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     newFolderName: string,
   ) => {
     if (favoriteLine === null) return;
-    const quote = sentenceAroundLine(work.lines, favoriteLine).text || work.lines[favoriteLine];
+    const quote = completeSentenceAroundLine(work.lines, favoriteLine).text || work.lines[favoriteLine];
     let folderId = selectedFolderId ?? undefined;
     if (newFolderName.trim()) {
       const folder = createFolder(newFolderName.trim());
@@ -624,7 +631,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
       <FavoriteSheet
         visible={favoriteLine !== null}
-        quote={favoriteLine === null ? '' : work.lines[favoriteLine]}
+        quote={favoriteLine === null ? '' : (completeSentenceAroundLine(work.lines, favoriteLine).text || work.lines[favoriteLine])}
         folders={favoriteFolders}
         onClose={() => setFavoriteLine(null)}
         onSave={handleFavorite}
