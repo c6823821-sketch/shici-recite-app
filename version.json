@@ -7,8 +7,8 @@
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.32/shici-recite-app-v3.0.32.apk",
     "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.32/shici-recite-app-v3.0.32.apk"
   ],
-  "size": 0,
+  "size": 92561480,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.32",
   "notes": "背诵按钮改用 View 红底；长文单元缩到 72～120 字；清理新旧搜索结果并存；古籍阅读页不再透明叠加。",
-  "sha256": ""
+  "sha256": "bfd9a8384ba3e9976718dee21907d35d3f6d3d7c55850e114a32bafd61031649"
 }
