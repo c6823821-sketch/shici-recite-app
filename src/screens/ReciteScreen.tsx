@@ -111,7 +111,7 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
             </View>
 
             <View style={[styles.startButtonShell, focusQueue.length === 0 && styles.disabled]}>
-              <Text style={styles.startButtonText}>????</Text>
+              <Text style={styles.startButtonText}>开始背诵</Text>
               <Pressable disabled={focusQueue.length === 0} onPress={openFocus} style={styles.startButtonHit} />
             </View>
           </View>

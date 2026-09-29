@@ -8,8 +8,8 @@ export interface SemanticUnit {
   label: string;
 }
 
-const SENTENCE_END = /[???]/;
-const SOFT_END = /[???]/;
+const SENTENCE_END = /[\u3002\uff01\uff1f]/;
+const SOFT_END = /[\uff0c\u3001\uff1a]/;
 
 function clean(value: string): string {
   return value.replace(/\s+/g, '').trim();
@@ -32,7 +32,7 @@ export function splitSemanticText(value: string, target = 96, max = 160): string
   chars.forEach((char, index) => {
     current += char;
     const next = chars[index + 1];
-    const sentenceEnded = SENTENCE_END.test(char) && next !== '?' && next !== '?';
+    const sentenceEnded = SENTENCE_END.test(char) && next !== '\u201d' && next !== '\u2019';
     if (sentenceEnded && current.length >= target) {
       flush();
       return;
@@ -53,7 +53,7 @@ export function splitSemanticText(value: string, target = 96, max = 160): string
         }
       }
     }
-    const fallbackEnd = current.endsWith('?') ? current.length - 1 : current.length;
+    const fallbackEnd = current.endsWith('\uff1b') ? current.length - 1 : current.length;
     const end = cutAt >= 0 ? cutAt + 1 : fallbackEnd;
     const part = current.slice(0, end).trim();
     if (part) result.push(part);
@@ -62,7 +62,7 @@ export function splitSemanticText(value: string, target = 96, max = 160): string
 
   flush();
   return result
-    .map((part) => (part.endsWith('?') ? part.slice(0, -1) : part))
+    .map((part) => (part.endsWith('\uff1b') ? part.slice(0, -1) : part))
     .filter(Boolean);
 }
 
@@ -73,7 +73,7 @@ export function buildTextUnits(value: string, target = 96, max = 160): SemanticU
     const charStart = offset;
     const charEnd = offset + Array.from(text).length - 1;
     offset += Array.from(text).length;
-    return { index, text, lineStart: index, lineEnd: index, charStart, charEnd, label: `?${index + 1}?` };
+    return { index, text, lineStart: index, lineEnd: index, charStart, charEnd, label: `\u7b2c${index + 1}\u8282` };
   });
 }
 
@@ -102,7 +102,7 @@ export function buildLineUnits(lines: string[], target = 96, max = 160): Semanti
       lineEnd: endLine,
       charStart,
       charEnd,
-      label: `?${units.length + 1}?`,
+      label: `\u7b2c${units.length + 1}\u8282`,
     });
   };
 

@@ -76,7 +76,9 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const allWorks = useMemo(() => {
     const seen = new Set<string>();
     const seenContent = new Set<string>();
+    const classicTitles = new Set(CLASSICS.map((classic) => normalizeSearch(classic.title)));
     return [...catalog, ...importedWorks].filter((work) => {
+      if (classicTitles.has(normalizeSearch(work.title))) return false;
       const key = canonicalWorkKey(work);
       const contentKey = canonicalWorkContentKey(work);
       if (seen.has(key) || seenContent.has(contentKey)) return false;
