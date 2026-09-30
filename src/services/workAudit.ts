@@ -25,6 +25,39 @@ function endpointUrl(endpoint: string): string {
   return value.replace(/\/+$/, '') + '/chat/completions';
 }
 
+const KNOWN_TUNE_NAMES = new Set([
+  '\u91c7\u6851\u5b50', '\u4e11\u5974\u513f', '\u6dfb\u5b57\u4e11\u5974\u513f', '\u6d63\u6eaa\u6c99', '\u83e9\u8428\u9a6c',
+  '\u8776\u604b\u82b1', '\u6c34\u8c03\u6b4c\u5934', '\u5ff5\u5974\u5a07', '\u6c81\u56ed\u6625', '\u6c5f\u57ce\u5b50', '\u865e\u7f8e\u4eba',
+]);
+
+function localAuditIssues(work: Work): WorkAuditIssue[] {
+  const issues: WorkAuditIssue[] = [];
+  const lines = work.lines.map((line) => line.trim()).filter(Boolean);
+  for (let index = 1; index < lines.length; index += 1) {
+    if (work.genre !== '词' && lines[index] && lines[index] === lines[index - 1]) {
+      issues.push({
+        field: 'text', line: index + 1,
+        problem: `\u7b2c ${index}\u3001${index + 1} \u53e5\u5b8c\u5168\u76f8\u540c\uff0c\u53ef\u80fd\u662f\u53e0\u53e5\uff0c\u4e5f\u53ef\u80fd\u662f\u5f55\u5165\u91cd\u590d\u3002`,
+        suggestion: '\u8bf7\u6838\u5bf9\u901a\u884c\u672c\uff1b\u82e5\u8bcd\u724c\u8981\u6c42\u53e0\u53e5\u53ef\u4fdd\u7559\uff0c\u5426\u5219\u5220\u9664\u91cd\u590d\u53e5\u3002',
+      });
+    }
+  }
+  const content = lines.join('');
+  const titleParts = work.title.split(/[\u00b7\u30fb]/).map((part) => part.trim()).filter(Boolean);
+  if (titleParts.length === 2 && KNOWN_TUNE_NAMES.has(titleParts[1]) && work.genre === '\u8bcd') {
+    const firstLine = lines[0]?.replace(/[\s\uff0c\u3002\uff01\uff1f\uff1b\uff1a\u3001,.!?;:]+$/g, '').slice(0, 12) ?? '';
+    issues.push({
+      field: 'title',
+      problem: `\u7bc7\u9898\u7b2c\u4e8c\u90e8\u5206\u201c${titleParts[1]}\u201d\u662f\u8bcd\u724c\u540d\uff0c\u53ef\u80fd\u662f\u8bcd\u724c\u5f02\u540d\u6216\u6807\u9898\u6df7\u5165\u3002`,
+      suggestion: firstLine ? `\u6838\u5bf9\u901a\u884c\u7bc7\u9898\uff0c\u53ef\u80fd\u5e94\u4f5c\u201c${titleParts[0]}\u00b7${firstLine}\u201d\u3002` : '\u8bf7\u6838\u5bf9\u901a\u884c\u7bc7\u9898\u3002',
+    });
+  }
+  if (content.includes('\u7a97\u524d\u8c01\u79cd\u82ad\u8549\u6811') && content.includes('\u70b9\u6ef4\u9716\u973e') && work.title.includes('\u91c7\u6851\u5b50')) {
+    issues.push({ field: 'title', problem: '\u901a\u884c\u7bc7\u9898\u901a\u5e38\u4f5c\u201c\u6dfb\u5b57\u4e11\u5974\u513f\u00b7\u7a97\u524d\u8c01\u79cd\u82ad\u8549\u6811\u201d\uff0c\u4e0d\u662f\u628a\u201c\u91c7\u6851\u5b50\u201d\u4f5c\u4e3a\u526f\u9898\u3002', suggestion: '\u5efa\u8bae\u6539\u4e3a\u201c\u6dfb\u5b57\u4e11\u5974\u513f\u00b7\u7a97\u524d\u8c01\u79cd\u82ad\u8549\u6811\u201d\u3002' });
+  }
+  return issues;
+}
+
 function parse(text: string): Record<string, unknown> {
   const cleaned = text.trim();
   const start = cleaned.indexOf('{');
@@ -35,6 +68,7 @@ function parse(text: string): Record<string, unknown> {
 
 export async function auditWork(settings: ApiSettings, work: Work): Promise<WorkAudit> {
   const plainText = work.lines.join('').replace(/\s/g, '');
+  const localIssues = localAuditIssues(work);
   const longForm = work.genre === '文' || /表|序|赋|记|书|论|传|碑|铭|疏|策|诏|檄/.test(work.title);
   if (longForm && plainText.length < 240) {
     return {
@@ -53,6 +87,17 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
     };
   }
   if (!settings.endpoint.trim() || !settings.model.trim()) {
+    if (localIssues.length) {
+      return {
+        title: work.title,
+        author: work.author,
+        dynasty: work.dynasty,
+        correct: false,
+        issues: localIssues,
+        summary: '本地结构校对发现可疑问题，请配置 API 后再做通行本复核。',
+        confidence: 'medium',
+      };
+    }
     throw new Error('请先在“我的 → API 设置”配置接口。');
   }
   const response = await fetch(endpointUrl(settings.endpoint), {
@@ -66,7 +111,7 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
       messages: [
         {
           role: 'system',
-          content: '你是严格的中国古籍校勘助手。只检查用户给出的篇名、作者、朝代和正文是否存在确定错误。禁止凭记忆臆断，禁止改写原文。只返回 JSON：{"title":"校对后的篇名或原篇名","author":"校对后的作者或原作者","dynasty":"朝代","correct":true,"issues":[{"field":"title|author|text","line":1,"problem":"问题","suggestion":"建议"}],"summary":"一句话","confidence":"high|medium|low"}。没有确定问题时 correct 必须为 true，issues 为空。',
+          content: '你是严格的中国古籍校勘助手。必须把篇名、作者、朝代、正文与通行本逐项比对。重复句可能是词牌叠句，不能直接判错，必须说明是否为叠句；如果是词牌异名、篇题拼接错误、作者张冠李戴、正文漏句或增句，必须写入 issues。禁止只凭结构回答无错误。只返回 JSON：{"title":"校对后的篇名或原篇名","author":"校对后的作者或原作者","dynasty":"朝代","correct":true,"issues":[{"field":"title|author|text","line":1,"problem":"具体差异","suggestion":"具体修改建议"}],"summary":"一句话","confidence":"high|medium|low"}。没有确定问题时 correct 必须为 true，issues 为空。',
         },
         {
           role: 'user',
@@ -83,7 +128,7 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error('校对 API 返回内容为空。');
   const parsed = parse(content);
-  const issues = Array.isArray(parsed.issues)
+  const apiIssues = Array.isArray(parsed.issues)
     ? parsed.issues.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object').map((item) => ({
         field: ['title', 'author', 'text'].includes(String(item.field)) ? String(item.field) as WorkAuditIssue['field'] : 'text' as const,
         line: Number.isInteger(item.line) ? Number(item.line) : undefined,
@@ -91,15 +136,14 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
         suggestion: typeof item.suggestion === 'string' ? item.suggestion : undefined,
       }))
     : [];
+  const issues = [...localIssues, ...apiIssues];
   return {
     title: String(parsed.title ?? work.title),
     author: String(parsed.author ?? work.author),
     dynasty: typeof parsed.dynasty === 'string' ? parsed.dynasty : work.dynasty,
     correct: parsed.correct === true && issues.length === 0,
     issues,
-    summary: String(parsed.summary ?? '校对完成。'),
-    confidence: ['high', 'medium', 'low'].includes(String(parsed.confidence))
-      ? String(parsed.confidence) as WorkAudit['confidence']
-      : 'low',
+    summary: issues.length ? (String(parsed.summary ?? '').trim() || '发现可疑问题。') : String(parsed.summary ?? '校对完成。'),
+    confidence: issues.length ? 'medium' : (['high', 'medium', 'low'].includes(String(parsed.confidence)) ? String(parsed.confidence) as WorkAudit['confidence'] : 'low'),
   };
 }

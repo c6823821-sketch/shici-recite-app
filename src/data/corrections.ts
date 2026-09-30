@@ -112,6 +112,10 @@ export function correctKnownImportedWork(work: Work): Work {
   }
 
   const content = chineseOnly(next.lines.join(''));
+  if (content.includes('窗前谁种芭蕉树') && content.includes('点滴霖霪') && content.includes('愁损北人')) {
+    return { ...next, title: '添字丑奴儿·窗前谁种芭蕉树', author: '李清照', dynasty: '宋', genre: '词', source: '校订版 · 李清照《添字丑奴儿·窗前谁种芭蕉树》' };
+  }
+
   if (content.includes('槛菊愁烟兰泣露') && content.includes('欲寄彩笺兼尺素')) {
     const canonicalLines = next.lines.map((line) => line
       .replace('燕子双来去', '燕子双飞去')

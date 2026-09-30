@@ -392,3 +392,13 @@ git checkout main
 git reset --hard v3.0.33
 git clean -fd
 ```
+
+## v3.0.35 校对逻辑回滚
+
+回到 v3.0.34：
+
+```powershell
+git checkout main
+git reset --hard v3.0.34
+git clean -fd
+```
