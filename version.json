@@ -7,8 +7,8 @@
     "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk",
     "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk"
   ],
-  "size": 0,
+  "size": 92570116,
   "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.35",
   "notes": "校对改为本地结构检查 + API 通行本比对；修正添字丑奴儿篇题；提醒叠句与漏句。",
-  "sha256": ""
+  "sha256": "bb09c6cb4f087801af4bd48f8af4367f750f30357af717495eac71adcb601a58"
 }
