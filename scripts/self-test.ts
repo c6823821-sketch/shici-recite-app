@@ -248,6 +248,18 @@ async function testApiServices() {
           }
         : isTranslation
         ? '这是测试用白话翻译。'
+        : body.includes('校勘助手')
+        ? {
+            canonical: {
+              title: correctedYiJianMei!.title,
+              author: correctedYiJianMei!.author,
+              dynasty: correctedYiJianMei!.dynasty,
+              lines: correctedYiJianMei!.lines,
+            },
+            issues: [],
+            summary: '测试通行本比对。',
+            confidence: 'high',
+          }
         : body.includes('古诗文训诂')
         ? {
             selection: '扈',
@@ -303,6 +315,37 @@ async function testApiServices() {
   if (!address || typeof address === 'string') throw new Error('mock server failed');
   const endpoint = `http://127.0.0.1:${address.port}/chat/completions`;
   const settings = { endpoint, apiKey: 'test', model: 'test-model' };
+  const auditSettings = { ...settings, endpoint: `${settings.endpoint.replace('/chat/completions', '')}/audit/chat/completions` };
+
+  const correctAudit = await auditWork(auditSettings, { ...correctedYiJianMei!, id: 'canonical-correct-audit' });
+  assert.equal(correctAudit.canonicalCompared, true, '应记录已完成通行本逐句比对');
+  assert.equal(correctAudit.correct, true, '正确正文应与通行本一致');
+
+  const swappedLines = [...correctedYiJianMei!.lines];
+  [swappedLines[0], swappedLines[1]] = [swappedLines[1], swappedLines[0]];
+  const swappedAudit = await auditWork(auditSettings, { ...correctedYiJianMei!, id: 'canonical-swapped-audit', lines: swappedLines });
+  assert.equal(swappedAudit.issues.some((issue) => issue.problem.includes('句序')), true, '句序颠倒必须被本地通行本比对发现');
+
+  const substitutedAudit = await auditWork(auditSettings, {
+    ...correctedYiJianMei!,
+    id: 'canonical-substituted-audit',
+    lines: correctedYiJianMei!.lines.map((line) => line.replace('玉簟秋', '玉簟春')),
+  });
+  assert.equal(substitutedAudit.issues.some((issue) => issue.field === 'text'), true, '改字必须被本地通行本比对发现');
+
+  const missingMiddleAudit = await auditWork(auditSettings, {
+    ...correctedYiJianMei!,
+    id: 'canonical-missing-middle-audit',
+    lines: correctedYiJianMei!.lines.filter((_, index) => index !== 3),
+  });
+  assert.equal(missingMiddleAudit.issues.some((issue) => issue.field === 'text'), true, '中间漏句必须被本地通行本比对发现');
+
+  const extraLineAudit = await auditWork(auditSettings, {
+    ...correctedYiJianMei!,
+    id: 'canonical-extra-line-audit',
+    lines: [...correctedYiJianMei!.lines, '此句并不存在。'],
+  });
+  assert.equal(extraLineAudit.issues.some((issue) => issue.field === 'text'), true, '增句必须被本地通行本比对发现');
 
   const explanation = await explainWithApi(settings, {
     work: WORKS[0],

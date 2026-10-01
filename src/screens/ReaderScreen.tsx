@@ -469,8 +469,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             {auditError ? <Text style={styles.auditError}>{auditError}</Text> : null}
             {auditResult ? (
               <>
-                <Text style={styles.auditSummary}>{auditResult.correct ? '本地规则未发现确定错误' : '发现以下可疑问题'}</Text>
-                <Text style={styles.auditScope}>校对范围：本地硬规则 + API 版本复核；未与底本逐字比对的篇目，不保证全文完整。</Text>
+                <Text style={styles.auditSummary}>{auditResult.correct ? '已与通行本逐句核对一致' : !auditResult.canonicalCompared && auditResult.issues.length === 0 ? '未获得可核对底本，无法判定' : '发现以下可疑问题'}</Text>
+                <Text style={styles.auditScope}>校对范围：本地硬规则；API 返回完整通行本时，软件再逐句比对。API 未返回完整底本时不会宣称全文正确。</Text>
                 {auditResult.issues.map((issue, index) => (
                   <View key={issue.field + '-' + index} style={styles.auditIssue}>
                     <Text style={styles.auditIssueField}>{issue.field === 'title' ? '题目' : issue.field === 'author' ? '作者' : '正文'}{issue.line ? ' · 第 ' + issue.line + ' 句' : ''}</Text>
