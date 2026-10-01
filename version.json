@@ -1,14 +1,13 @@
 {
-  "version": "3.0.35",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk",
+  "version": "3.0.36",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.36/shici-recite-app-v3.0.36.apk",
   "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.35/shici-recite-app-v3.0.35.apk"
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.36/shici-recite-app-v3.0.36.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.36/shici-recite-app-v3.0.36.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.36/shici-recite-app-v3.0.36.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.36/shici-recite-app-v3.0.36.apk"
   ],
-  "size": 92570116,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.35",
-  "notes": "校对改为本地结构检查 + API 通行本比对；修正添字丑奴儿篇题；提醒叠句与漏句。",
-  "sha256": "bb09c6cb4f087801af4bd48f8af4367f750f30357af717495eac71adcb601a58"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.36",
+  "notes": "修复短词误分节和只显示后半截；全库题名归一；标记缺字/下缺；校对本地硬规则优先。"
 }

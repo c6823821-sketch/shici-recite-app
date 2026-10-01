@@ -1,6 +1,6 @@
 import { Work } from '../types';
 import { CORPUS_WORKS } from './corpus';
-import { CORRECTED_WORKS, correctKnownImportedWork } from './corrections';
+import { CORRECTED_WORKS, correctKnownImportedWork, markIncompleteWork } from './corrections';
 import { MODERN_WORKS } from './modern';
 import { LISAO_GLOSSARY, LISAO_LINES } from './lisao';
 
@@ -698,6 +698,30 @@ function splitCiClauses(work: Work): Work {
   return { ...work, lines, translations };
 }
 
+function ciFirstLineTitle(work: Work): string {
+  const firstLine = work.lines[0]?.trim() ?? '';
+  return Array.from(firstLine.replace(/[，。！？；：、,.!?;:]+$/g, '')).slice(0, 16).join('');
+}
+
+function ciTuneName(work: Work): string {
+  return work.title.split(/[·・]/)[0]?.trim() ?? '';
+}
+
+function normalizeCiSubtitle(work: Work, tuneNames: Set<string>): Work {
+  if (work.genre !== '词') return work;
+  const parts = work.title.split(/[·・]/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length !== 2) return work;
+  const [tune, subtitle] = parts;
+  if (subtitle !== tune && !tuneNames.has(subtitle)) return work;
+  const firstLine = ciFirstLineTitle(work);
+  if (!firstLine) return work;
+  if (firstLine === tune) return { ...work, title: tune };
+  return { ...work, title: `${tune}·${firstLine}` };
+}
+
+const RAW_WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS, ...CORRECTED_WORKS];
+const ciTuneNames = new Set(RAW_WORKS.filter((work) => work.genre === '词').map(ciTuneName).filter(Boolean));
+
 const seenWorks = new Set<string>();
 const arrowOnly = /^[<>]+$/;
 const metadataOnly = /^(词牌介绍|词牌名|作者简介|题解|注释|译文|赏析|背景|序言)$/;
@@ -720,8 +744,10 @@ function sanitizeWork(work: Work): Work {
     })),
   };
 }
-export const WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS, ...CORRECTED_WORKS]
+export const WORKS: Work[] = RAW_WORKS
+  .map((work) => normalizeCiSubtitle(work, ciTuneNames))
   .map(correctKnownImportedWork)
+  .map(markIncompleteWork)
   .map(sanitizeWork)
   .map(splitCiClauses)
   .map((work) => {

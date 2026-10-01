@@ -68,6 +68,12 @@ export function canonicalWorkKey(work: Work): string {
   return `${normalizeWorkTitle(work.title)}|${work.author.trim()}|${opening}`;
 }
 
+const INCOMPLETE_TEXT_PATTERN = /□|（下缺）|\(下缺\)|〔下缺〕/;
+
+export function markIncompleteWork(work: Work): Work {
+  return INCOMPLETE_TEXT_PATTERN.test(work.lines.join('')) ? { ...work, incomplete: true } : work;
+}
+
 export function correctKnownImportedWork(work: Work): Work {
   let next = { ...work };
   const titleKey = normalizeWorkTitle(next.title);
@@ -112,6 +118,14 @@ export function correctKnownImportedWork(work: Work): Work {
   }
 
   const content = chineseOnly(next.lines.join(''));
+  if (content.includes('红藕香残玉簟秋') && content.includes('轻解罗裳') && content.includes('月满西楼')) {
+    return { ...next, title: '一剪梅·红藕香残玉簟秋', author: '李清照', dynasty: '宋', genre: '词', source: '校订版 · 李清照《一剪梅·红藕香残玉簟秋》' };
+  }
+
+  if (content.includes('湖上风来波浩渺') && content.includes('水光山色与人亲') && content.includes('眠沙鸥鹭不回头')) {
+    return { ...next, title: '怨王孙·湖上风来波浩渺', author: '李清照', dynasty: '宋', genre: '词', source: '校订版 · 李清照《怨王孙·湖上风来波浩渺》' };
+  }
+
   if (content.includes('窗前谁种芭蕉树') && content.includes('点滴霖霪') && content.includes('愁损北人')) {
     return { ...next, title: '添字丑奴儿·窗前谁种芭蕉树', author: '李清照', dynasty: '宋', genre: '词', source: '校订版 · 李清照《添字丑奴儿·窗前谁种芭蕉树》' };
   }

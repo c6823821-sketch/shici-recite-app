@@ -32,6 +32,7 @@ export interface Work {
   order?: number;
   sectionBreaks?: number[];
   imported?: boolean;
+  incomplete?: boolean;
   featured?: boolean;
   lines: string[];
   translations: string[];

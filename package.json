@@ -1,14 +1,14 @@
 {
   "name": "shici-recite-app",
-  "version": "3.0.35",
+  "version": "3.0.36",
   "main": "index.ts",
   "dependencies": {
-    "expo": "~57.0.25",
+    "expo": "~57.0.26",
     "expo-application": "~57.0.3",
     "expo-file-system": "~57.0.7",
     "expo-haptics": "~57.0.3",
     "expo-intent-launcher": "~57.0.1",
-    "expo-navigation-bar": "~57.0.2",
+    "expo-navigation-bar": "~57.0.3",
     "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
     "lunar-typescript": "^1.8.6",
@@ -38,6 +38,7 @@
     "check": "npm run typecheck && npm run test:core && npx expo-doctor",
     "export:web": "expo export --platform web",
     "test:core": "tsx scripts/self-test.ts",
+    "audit:catalog": "tsx scripts/audit-catalog.ts",
     "ui:tuner": "node scripts/ui-tuner.mjs"
   },
   "private": true,

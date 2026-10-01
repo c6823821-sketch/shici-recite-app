@@ -93,8 +93,9 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const scrollRef = useRef<ScrollView>(null);
 
   const units = useMemo(() => buildLineUnits(work.lines, 72, 120, 6), [work.lines]);
-  const longText = useMemo(() => isLongText(work.lines), [work.lines]);
-  const activeUnit = units[unitIndex] ?? units[0];
+  const longText = useMemo(() => work.genre !== '词' && isLongText(work.lines), [work.genre, work.lines]);
+  const paginatedText = longText && units.length > 1;
+  const activeUnit = paginatedText ? (units[unitIndex] ?? units[0]) : undefined;
   const progressKey = `work:${work.id}`;
 
   useEffect(() => {
@@ -347,13 +348,10 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     setAuditVisible(true);
     setAuditError('');
     if (auditResult || auditLoading) return;
-    if (!settings?.endpoint.trim() || !settings.model.trim()) {
-      setAuditError('请先在“我的 → API 设置”配置接口。');
-      return;
-    }
     setAuditLoading(true);
     try {
-      setAuditResult(await auditWork(settings, work));
+      const activeSettings = settings ?? { endpoint: '', apiKey: '', model: '' };
+      setAuditResult(await auditWork(activeSettings, work));
     } catch (error) {
       setAuditError(error instanceof Error ? error.message : '校对失败。');
     } finally {
@@ -460,6 +458,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             <Pressable onPress={() => void openAuthor()}><Text style={styles.authorLink}>{work.author}</Text></Pressable>
             <Text style={styles.workMeta}> · {work.genre}</Text>
           </View>
+          {work.incomplete ? <Text style={styles.incompleteNotice}>底本有缺字或“下缺”标记，当前不是完整全文。</Text> : null}
           <Pressable onPress={() => void runAudit()} style={styles.auditFloatingButton}>
             <Text style={styles.auditFloatingText}>校</Text>
           </Pressable>
@@ -470,7 +469,8 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             {auditError ? <Text style={styles.auditError}>{auditError}</Text> : null}
             {auditResult ? (
               <>
-                <Text style={styles.auditSummary}>{auditResult.correct ? '未发现确定错误' : '发现以下可疑问题'}</Text>
+                <Text style={styles.auditSummary}>{auditResult.correct ? '本地规则未发现确定错误' : '发现以下可疑问题'}</Text>
+                <Text style={styles.auditScope}>校对范围：本地硬规则 + API 版本复核；未与底本逐字比对的篇目，不保证全文完整。</Text>
                 {auditResult.issues.map((issue, index) => (
                   <View key={issue.field + '-' + index} style={styles.auditIssue}>
                     <Text style={styles.auditIssueField}>{issue.field === 'title' ? '题目' : issue.field === 'author' ? '作者' : '正文'}{issue.line ? ' · 第 ' + issue.line + ' 句' : ''}</Text>
@@ -532,7 +532,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
           <Text style={styles.classicNotice}>典籍补充阅读 · 不计入诗词背诵统计</Text>
         )}
 
-        {longText && activeUnit ? (
+        {paginatedText && activeUnit ? (
           <View style={styles.unitToolbar}>
             <View style={styles.unitInfo}>
               <Text style={styles.unitTitle}>第 {unitIndex + 1}/{units.length} 节</Text>
@@ -803,6 +803,7 @@ const styles = StyleSheet.create({
   auditFloatingText: { color: colors.jade, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
   auditBox: { marginHorizontal: spacing.lg, marginTop: 12, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperLight },
   auditSummary: { color: colors.ink, fontFamily: fonts.body, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  auditScope: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, lineHeight: 18, marginBottom: 4 },
   auditError: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20 },
   auditIssue: { marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   auditIssueField: { color: colors.vermilion, fontFamily: fonts.sans, fontSize: 11, fontWeight: '700' },
@@ -834,6 +835,7 @@ const styles = StyleSheet.create({
   sectionLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
   sectionLabel: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, letterSpacing: 3 },
   classicNotice: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', marginVertical: 18 },
+  incompleteNotice: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, textAlign: 'center', marginTop: 10, marginHorizontal: spacing.lg },
   lineBlock: { marginVertical: 3, paddingVertical: 8, paddingHorizontal: 8, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   currentLineBlock: { borderLeftColor: colors.vermilion, backgroundColor: 'rgba(163, 52, 42, 0.035)' },
   lineMain: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 46 },

@@ -402,3 +402,13 @@ git checkout main
 git reset --hard v3.0.34
 git clean -fd
 ```
+
+## v3.0.36 全库题名与正文显示修复回滚
+
+回到 v3.0.35：
+
+```powershell
+git checkout main
+git reset --hard v3.0.35
+git clean -fd
+```

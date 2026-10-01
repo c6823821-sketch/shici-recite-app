@@ -1,3 +1,4 @@
+import { correctKnownImportedWork } from '../data/corrections';
 import { ApiSettings, Work } from '../types';
 
 export interface WorkAuditIssue {
@@ -28,6 +29,7 @@ function endpointUrl(endpoint: string): string {
 const KNOWN_TUNE_NAMES = new Set([
   '\u91c7\u6851\u5b50', '\u4e11\u5974\u513f', '\u6dfb\u5b57\u4e11\u5974\u513f', '\u6d63\u6eaa\u6c99', '\u83e9\u8428\u9a6c',
   '\u8776\u604b\u82b1', '\u6c34\u8c03\u6b4c\u5934', '\u5ff5\u5974\u5a07', '\u6c81\u56ed\u6625', '\u6c5f\u57ce\u5b50', '\u865e\u7f8e\u4eba',
+  '\u4e00\u526a\u6885', '\u4e00\u7ffa\u6885', '\u5fc6\u738b\u5b59',
 ]);
 
 function localAuditIssues(work: Work): WorkAuditIssue[] {
@@ -43,8 +45,23 @@ function localAuditIssues(work: Work): WorkAuditIssue[] {
     }
   }
   const content = lines.join('');
+  if (work.incomplete) {
+    issues.push({
+      field: 'text',
+      problem: '底本中含缺字或“下缺”标记，当前正文不是可确认的完整全文。',
+      suggestion: '仅可作为残篇参考；补全前不要把它当作完整原文背诵。',
+    });
+  }
+  const canonical = correctKnownImportedWork(work);
+  if (canonical.title !== work.title) {
+    issues.push({
+      field: 'title',
+      problem: '当前篇题与通行篇名不一致。',
+      suggestion: `建议改为“${canonical.title}”。`,
+    });
+  }
   const titleParts = work.title.split(/[\u00b7\u30fb]/).map((part) => part.trim()).filter(Boolean);
-  if (titleParts.length === 2 && KNOWN_TUNE_NAMES.has(titleParts[1]) && work.genre === '\u8bcd') {
+  if (canonical.title === work.title && titleParts.length === 2 && KNOWN_TUNE_NAMES.has(titleParts[1]) && work.genre === '\u8bcd') {
     const firstLine = lines[0]?.replace(/[\s\uff0c\u3002\uff01\uff1f\uff1b\uff1a\u3001,.!?;:]+$/g, '').slice(0, 12) ?? '';
     issues.push({
       field: 'title',
@@ -93,6 +110,7 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
         author: work.author,
         dynasty: work.dynasty,
         correct: false,
+        incomplete: work.incomplete,
         issues: localIssues,
         summary: '本地结构校对发现可疑问题，请配置 API 后再做通行本复核。',
         confidence: 'medium',
@@ -142,6 +160,7 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
     author: String(parsed.author ?? work.author),
     dynasty: typeof parsed.dynasty === 'string' ? parsed.dynasty : work.dynasty,
     correct: parsed.correct === true && issues.length === 0,
+    incomplete: work.incomplete === true,
     issues,
     summary: issues.length ? (String(parsed.summary ?? '').trim() || '发现可疑问题。') : String(parsed.summary ?? '校对完成。'),
     confidence: issues.length ? 'medium' : (['high', 'medium', 'low'].includes(String(parsed.confidence)) ? String(parsed.confidence) as WorkAudit['confidence'] : 'low'),

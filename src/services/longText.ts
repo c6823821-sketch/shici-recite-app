@@ -121,9 +121,9 @@ export function buildLineUnits(lines: string[], target = 96, max = 160, unitLine
   return units;
 }
 
-export function isLongText(lines: string[], minChars = 240, minLines = 12): boolean {
+export function isLongText(lines: string[], minChars = 240): boolean {
   const chars = lines.reduce((total, line) => total + Array.from(line).length, 0);
-  return chars >= minChars || lines.length >= minLines;
+  return chars >= minChars;
 }
 
 export function unitContainingLine(units: SemanticUnit[], lineIndex: number): number {

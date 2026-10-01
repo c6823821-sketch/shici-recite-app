@@ -1,5 +1,5 @@
 ﻿import { ApiSettings, Work } from '../types';
-import { correctKnownImportedWork } from '../data/corrections';
+import { correctKnownImportedWork, markIncompleteWork } from '../data/corrections';
 
 interface RemoteShape {
   found?: boolean;
@@ -96,5 +96,5 @@ export async function lookupRemoteWork(query: string, settings: ApiSettings): Pr
     order: 50000 + Date.now() % 100000,
     imported: true,
   };
-  return correctKnownImportedWork(work);
+  return markIncompleteWork(correctKnownImportedWork(work));
 }
