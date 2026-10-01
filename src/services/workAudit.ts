@@ -60,7 +60,21 @@ function localAuditIssues(work: Work): WorkAuditIssue[] {
       suggestion: `建议改为“${canonical.title}”。`,
     });
   }
+  if (canonical.author !== work.author) {
+    issues.push({
+      field: 'author',
+      problem: `当前作者“${work.author}”与通行资料“${canonical.author}”不一致。`,
+      suggestion: `建议改为“${canonical.author}”。`,
+    });
+  }
   const titleParts = work.title.split(/[\u00b7\u30fb]/).map((part) => part.trim()).filter(Boolean);
+  if (work.titleFromFirstLine && titleParts.length === 2 && !content.includes(titleParts[1])) {
+    issues.push({
+      field: 'text',
+      problem: `篇题副题“${titleParts[1]}”应由正文首句提供，但当前正文中找不到这句，疑似开头漏句。`,
+      suggestion: '请补回缺失的首句或与完整底本核对。',
+    });
+  }
   if (canonical.title === work.title && titleParts.length === 2 && KNOWN_TUNE_NAMES.has(titleParts[1]) && work.genre === '\u8bcd') {
     const firstLine = lines[0]?.replace(/[\s\uff0c\u3002\uff01\uff1f\uff1b\uff1a\u3001,.!?;:]+$/g, '').slice(0, 12) ?? '';
     issues.push({

@@ -130,7 +130,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     const classicTitles = new Set(CLASSICS.map((classic) => normalizeSearch(classic.title)));
     return filteredWorks.filter((work) => (
       !classicTitles.has(normalizeSearch(work.title))
-      && [work.title, work.intro, ...work.collections]
+      && [work.title, ...(work.aliases ?? []), work.intro, ...work.collections]
         .some((value) => normalizeSearch(value).includes(normalizedQuery))
     ));
   }, [filteredWorks, normalizedQuery]);
@@ -234,7 +234,12 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
       setRemoteMessage(`已补录《${work.title}》·${work.author}，会永久保存在本机。`);
       const normalizedTerm = normalizeSearch(term);
       const normalizedTitle = normalizeSearch(work.title);
-      if (normalizedTitle.includes(normalizedTerm) || normalizedTerm.includes(normalizedTitle)) {
+      const normalizedAliases = (work.aliases ?? []).map(normalizeSearch);
+      if (
+        normalizedTitle.includes(normalizedTerm)
+        || normalizedTerm.includes(normalizedTitle)
+        || normalizedAliases.some((alias) => alias.includes(normalizedTerm) || normalizedTerm.includes(alias))
+      ) {
         setSearchTab('work');
       } else if (normalizeSearch(work.author).includes(normalizedTerm)) {
         setSearchTab('author');
@@ -378,6 +383,13 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         ) : null}
     </View>
   );
+
+  useEffect(() => {
+    if (normalizedQuery.length < 2) return;
+    if (searchTab === 'sentence' && matchedLines.length === 0 && workMatches.length > 0) {
+      setSearchTab('work');
+    }
+  }, [matchedLines.length, normalizedQuery, searchTab, workMatches.length]);
 
   useEffect(() => {
     const term = query.trim();

@@ -32,6 +32,8 @@ export interface Work {
   order?: number;
   sectionBreaks?: number[];
   imported?: boolean;
+  aliases?: string[];
+  titleFromFirstLine?: boolean;
   incomplete?: boolean;
   featured?: boolean;
   lines: string[];

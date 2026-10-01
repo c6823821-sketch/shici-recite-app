@@ -50,30 +50,32 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.36.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.37.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.36
-          path: shici-recite-app-v3.0.36.apk
+          name: shici-recite-app-v3.0.37
+          path: shici-recite-app-v3.0.37.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.36
-          name: 诗词背诵 v3.0.36
+          tag_name: v3.0.37
+          name: 诗词背诵 v3.0.37
           body: |
             诗词背诵 Android 测试版。
 
-            修复短词被误分节、只显示后半截的问题。
+            修正鹧鸪天等词作的上下阕边界。
 
-            全库自动归一“词牌·词牌别名”题名，并标记缺字/下缺作品。
+            支持词牌别名和旧题搜索，丑奴儿·采桑子可直接命中。
 
-            校对先跑本地硬规则，API 不能再把本地确定问题覆盖成“无错误”。
+            联网补录可识别别名，并保留可验证别名用于后续搜索。
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.36。
-          files: shici-recite-app-v3.0.36.apk
+            校对新增作者错误、首句缺失和残缺文本检查。
+
+            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.37。
+          files: shici-recite-app-v3.0.37.apk
           make_latest: true

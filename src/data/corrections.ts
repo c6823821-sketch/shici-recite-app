@@ -81,7 +81,6 @@ export function correctKnownImportedWork(work: Work): Work {
 
   if (
     (titleKey.includes('\u6c5f\u57ce\u5b50') || titleKey.includes('\u6c5f\u795e\u5b50'))
-    && next.author.trim() === '\u82cf\u8f7c'
     && opening.includes('\u5341\u5e74\u751f\u6b7b')
   ) {
     return {
@@ -100,7 +99,6 @@ export function correctKnownImportedWork(work: Work): Work {
 
   if (
     titleKey.includes('\u5510\u591a\u4ee4')
-    && next.author.trim() === '\u5218\u8fc7'
     && opening.includes('\u82a6\u53f6\u6ee1\u6c40\u6d32')
   ) {
     return {

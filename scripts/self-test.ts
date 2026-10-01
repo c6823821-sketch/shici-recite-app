@@ -91,6 +91,17 @@ assert.equal(correctedTianZiChouNuer.title, '添字丑奴儿·窗前谁种芭蕉
 assert.equal(isLongText(correctedTianZiChouNuer.lines), false, '短篇添字丑奴儿不应分节');
 assert.equal(isLongText(Array.from({ length: 24 }, () => '一二三四五六七八九十')), true, '达到字数阈值的真正长文仍应分节');
 
+const heZhuCi = WORKS.find((work) => work.lines.join('').includes('重过阊门万事非'));
+if (!heZhuCi) throw new Error('缺少贺铸鹧鸪天');
+assert.deepEqual(heZhuCi.sectionBreaks, [4], '鹧鸪天上下阕应在头白鸳鸯失伴飞后分隔');
+assert.equal(heZhuCi.lines[4], '原上草，', '原上草应位于下阕开头');
+assert.equal(heZhuCi.lines[5], '露初晞。', '露初晞应与原上草同属一个下阕句组');
+
+assert.equal(correctedTianZiChouNuer.aliases?.includes('添字丑奴儿·采桑子'), true, '应保留旧题别名');
+assert.equal(correctedTianZiChouNuer.aliases?.includes('丑奴儿·采桑子'), true, '应支持省略添字后的词牌别名搜索');
+assert.equal(heZhuCi.aliases?.includes('半死桐·鹧鸪天'), true, '应保留鹧鸪天旧题别名');
+assert.equal(heZhuCi.aliases?.includes('鹧鸪天·重过阊门万事非'), true, '应支持标准词牌名搜索');
+
 const ciTuneNames = new Set(WORKS
   .filter((work) => work.genre === '词')
   .map((work) => work.title.split(/[·・]/)[0]?.trim())
@@ -170,6 +181,37 @@ async function testApiServices() {
   assert.equal(legacyAudit.correct, false, '旧拼题应被本地校对明确判错');
   assert.equal(legacyAudit.issues.some((issue) => issue.field === 'title'), true, '旧拼题应报告题目问题');
 
+  const wrongAuthorAudit = await auditWork({ endpoint: '', apiKey: '', model: '' }, {
+    ...correctedYiJianMei!,
+    id: 'wrong-author-audit',
+    author: '苏轼',
+  });
+  assert.equal(wrongAuthorAudit.issues.some((issue) => issue.field === 'author'), true, '作者张冠李戴应被本地校对发现');
+
+  const missingOpeningAudit = await auditWork({ endpoint: '', apiKey: '', model: '' }, {
+    ...correctedYiJianMei!,
+    id: 'missing-opening-audit',
+    lines: correctedYiJianMei!.lines.slice(6),
+  });
+  assert.equal(missingOpeningAudit.issues.some((issue) => issue.field === 'text'), true, '首句缺失导致篇题首句不存在时应被本地校对发现');
+
+  const duplicateLineAudit = await auditWork({ endpoint: '', apiKey: '', model: '' }, {
+    ...WORKS[0],
+    id: 'duplicate-line-audit',
+    genre: '诗',
+    lines: ['床前明月光。', '床前明月光。'],
+  });
+  assert.equal(duplicateLineAudit.issues.some((issue) => issue.field === 'text'), true, '非词作品重复句应被本地校对发现');
+
+  const incompleteLongAudit = await auditWork({ endpoint: '', apiKey: '', model: '' }, {
+    ...WORKS[0],
+    id: 'incomplete-long-audit',
+    title: '滕王阁序',
+    genre: '文',
+    lines: ['落霞与孤鹜齐飞。'],
+  });
+  assert.equal(incompleteLongAudit.incomplete, true, '疑似摘录的长文应标记不完整');
+
   const server = http.createServer((request, response) => {
     let body = '';
     request.on('data', (chunk) => { body += chunk; });
@@ -177,7 +219,23 @@ async function testApiServices() {
       const isRemote = request.url?.includes('/remote') ?? false;
       const isTranslation = request.url?.includes('/translate') ?? false;
       const explanation = isRemote
-        ? {
+        ? body.includes('丑奴儿·采桑子')
+          ? {
+              found: true,
+              title: '添字丑奴儿·窗前谁种芭蕉树',
+              author: '李清照',
+              dynasty: '宋',
+              genre: '词',
+              lines: ['窗前谁种芭蕉树，', '阴满中庭。', '阴满中庭。', '叶叶心心，', '舒卷有馀情。', '伤心枕上三更雨，', '点滴霖霪。', '点滴霖霪。', '愁损北人，', '不惯起来听。'],
+              matched_line_index: 0,
+              matched_query: '丑奴儿·采桑子',
+              aliases: ['添字丑奴儿·采桑子', '丑奴儿·采桑子'],
+              confidence: 'high',
+              note: '别名测试补录',
+              text_scope: 'full',
+              full_text: true,
+            }
+          : {
             found: true,
             title: '卖炭翁',
             author: '白居易',
@@ -269,6 +327,13 @@ async function testApiServices() {
   });
   assert.equal(remote.title, '卖炭翁');
   assert.equal(remote.imported, true);
+
+  const remoteAlias = await lookupRemoteWork('丑奴儿·采桑子', {
+    ...settings,
+    endpoint: `${settings.endpoint.replace('/chat/completions', '')}/remote/chat/completions`,
+  });
+  assert.equal(remoteAlias.title, '添字丑奴儿·窗前谁种芭蕉树', '联网补录应接受可验证的词牌别名');
+  assert.equal(remoteAlias.aliases?.includes('丑奴儿·采桑子'), true, '补齐后的作品应保留别名');
 
   const recommendation = await recommendForMood(settings, '今天很安静', WORKS);
   assert.equal(recommendation.workId, 'jing-ye-si');

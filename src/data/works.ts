@@ -687,15 +687,21 @@ function splitCiClauses(work: Work): Work {
   if (work.genre !== '词') return work;
   const lines: string[] = [];
   const translations: string[] = [];
-  work.lines.forEach((line) => {
+  const rawBreakAfter = Math.ceil(work.lines.length / 2);
+  let rawBreakClause: number | undefined;
+  work.lines.forEach((line, rawIndex) => {
     const parts = line.match(/[^，。！？；：]+[，。！？；：]?/g)?.map((part) => part.trim()).filter(Boolean) ?? [line];
     lines.push(...parts);
+    if (rawIndex + 1 === rawBreakAfter) rawBreakClause = lines.length;
     if (work.translations.length) {
       const translation = work.translations[lines.length - parts.length] ?? '';
       parts.forEach(() => translations.push(translation));
     }
   });
-  return { ...work, lines, translations };
+  const sectionBreaks = rawBreakClause && rawBreakClause > 0 && rawBreakClause < lines.length
+    ? [rawBreakClause]
+    : work.sectionBreaks;
+  return { ...work, lines, translations, sectionBreaks };
 }
 
 function ciFirstLineTitle(work: Work): string {
@@ -715,8 +721,13 @@ function normalizeCiSubtitle(work: Work, tuneNames: Set<string>): Work {
   if (subtitle !== tune && !tuneNames.has(subtitle)) return work;
   const firstLine = ciFirstLineTitle(work);
   if (!firstLine) return work;
-  if (firstLine === tune) return { ...work, title: tune };
-  return { ...work, title: `${tune}·${firstLine}` };
+  const nextTitle = firstLine === tune ? tune : `${tune}·${firstLine}`;
+  const aliases = new Set([...(work.aliases ?? []), work.title]);
+  const baseTune = tune.replace(/^(添字|减字|偷声|促拍|摊破|转调|添声)/, '');
+  if (baseTune !== tune && subtitle) aliases.add(`${baseTune}·${subtitle}`);
+  if (tuneNames.has(subtitle) && subtitle !== tune) aliases.add(`${subtitle}·${firstLine}`);
+  aliases.delete(nextTitle);
+  return { ...work, title: nextTitle, aliases: aliases.size ? [...aliases] : undefined, titleFromFirstLine: true };
 }
 
 const RAW_WORKS: Work[] = [...CURATED_WORKS, ...MODERN_WORKS, ...CORPUS_WORKS, ...CORRECTED_WORKS];
