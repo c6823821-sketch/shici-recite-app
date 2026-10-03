@@ -34,6 +34,7 @@ export interface Work {
   imported?: boolean;
   aliases?: string[];
   titleFromFirstLine?: boolean;
+  fragment?: boolean;
   incomplete?: boolean;
   featured?: boolean;
   lines: string[];

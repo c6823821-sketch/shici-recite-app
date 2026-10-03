@@ -69,9 +69,13 @@ export function canonicalWorkKey(work: Work): string {
 }
 
 const INCOMPLETE_TEXT_PATTERN = /□|（下缺）|\(下缺\)|〔下缺〕/;
+const FRAGMENT_TITLE_PATTERN = /\u65ad\u53e5|\u6b8b\u53e5|\u9038\u53e5|\u4f5a\u53e5|\u96f6\u53e5/;
 
 export function markIncompleteWork(work: Work): Work {
-  return INCOMPLETE_TEXT_PATTERN.test(work.lines.join('')) ? { ...work, incomplete: true } : work;
+  const incomplete = INCOMPLETE_TEXT_PATTERN.test(work.lines.join(''));
+  const fragment = FRAGMENT_TITLE_PATTERN.test(work.title);
+  if (!incomplete && !fragment) return work;
+  return { ...work, incomplete: incomplete || work.incomplete, fragment: fragment || work.fragment };
 }
 
 export function correctKnownImportedWork(work: Work): Work {

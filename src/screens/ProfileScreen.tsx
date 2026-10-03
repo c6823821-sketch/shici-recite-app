@@ -49,7 +49,7 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const [historyCatalog, setHistoryCatalog] = useState<Work[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [colorQuery, setColorQuery] = useState('');
-  const appVersion = Application.nativeApplicationVersion ?? '3.0.39';
+  const appVersion = Application.nativeApplicationVersion ?? '3.0.40';
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));

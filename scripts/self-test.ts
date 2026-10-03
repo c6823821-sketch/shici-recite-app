@@ -25,6 +25,7 @@ const markedIncomplete = WORKS.filter((work) => /□|（下缺）|\(下缺\)|〔
 assert.ok(markedIncomplete.length > 0, '应存在底本缺字或下缺作品');
 assert.equal(markedIncomplete.every((work) => work.incomplete === true), true, '所有缺字或下缺作品都应标记为资料不全');
 assert.equal(markIncompleteWork({ ...WORKS[0], lines: ['前句完好，', '后句□□□。'] }).incomplete, true, '缺字标记应触发资料不全状态');
+assert.equal(markIncompleteWork({ ...WORKS[0], title: '断句', fragment: undefined, lines: ['近水楼台先得月，', '向阳花木易逢春。'] }).fragment, true, '断句作品应标记为残句');
 assert.equal(CLASSICS.length, 9, '典籍与名句补充库应包含九项');
 assert.ok(CLASSICS.some((item) => item.title === '师说' && item.sections.some((section) => section.text.includes('古之学者必有师') && section.text.includes('作《师说》以贻之'))), '师说应包含完整原文');
 assert.ok(CLASSICS.some((item) => item.title === '陈情表' && item.sections.some((section) => section.text.includes('臣密言') && section.text.includes('谨拜表以闻'))), '陈情表应包含完整原文');

@@ -1,13 +1,13 @@
-{
-  "version": "3.0.39",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.39/shici-recite-app-v3.0.39.apk",
-  "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.39/shici-recite-app-v3.0.39.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.39/shici-recite-app-v3.0.39.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.39/shici-recite-app-v3.0.39.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.39/shici-recite-app-v3.0.39.apk"
-  ],
-  "size": 92594760,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.39",
-  "notes": "????????????????API?????????????????????????"
+﻿{
+    "version":  "3.0.40",
+    "downloadUrl":  "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
+    "downloadUrls":  [
+                         "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
+                         "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
+                         "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
+                         "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk"
+                     ],
+    "size":  0,
+    "releaseUrl":  "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.40",
+    "notes":  "Fix fragment labeling, line terminology, and canonical audit corrections."
 }

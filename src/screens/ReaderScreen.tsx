@@ -493,6 +493,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             <Pressable onPress={() => void openAuthor()}><Text style={styles.authorLink}>{work.author}</Text></Pressable>
             <Text style={styles.workMeta}> · {work.genre}</Text>
           </View>
+          {work.fragment ? <Text style={styles.fragmentNotice}>{'\u672c\u4f5c\u4e3a\u65ad\u53e5/\u6b8b\u53e5\uff0c\u73b0\u5b58\u6b63\u6587\u4ec5\u6b64\u51e0\u53e5\uff0c\u4e0d\u662f\u4f5a\u5931\u524d\u7684\u5b8c\u6574\u7bc7\u76ee\u3002'}</Text> : null}
           {work.incomplete ? <Text style={styles.incompleteNotice}>底本有缺字或“下缺”标记，当前不是完整全文。</Text> : null}
           <Pressable onPress={() => void runAudit()} style={styles.auditFloatingButton}>
             <Text style={styles.auditFloatingText}>校</Text>
@@ -508,7 +509,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
                 <Text style={styles.auditScope}>校对范围：本地硬规则；API 返回完整通行本时，软件再逐句比对。API 未返回完整底本时不会宣称全文正确。</Text>
                 {auditResult.issues.map((issue, index) => (
                   <View key={issue.field + '-' + index} style={styles.auditIssue}>
-                    <Text style={styles.auditIssueField}>{issue.field === 'title' ? '题目' : issue.field === 'author' ? '作者' : '正文'}{issue.line ? ' · 第 ' + issue.line + ' 句' : ''}</Text>
+                    <Text style={styles.auditIssueField}>{issue.field === 'title' ? '题目' : issue.field === 'author' ? '作者' : '正文'}{issue.line ? ' · 第 ' + issue.line + ' 行' : ''}</Text>
                     <Text style={styles.auditIssueText}>{issue.problem}</Text>
                     {issue.suggestion ? <Text style={styles.auditSuggestion}>建议：{issue.suggestion}</Text> : null}
                   </View>
@@ -876,6 +877,7 @@ const styles = StyleSheet.create({
   sectionLabel: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, letterSpacing: 3 },
   classicNotice: { color: colors.jade, fontFamily: fonts.body, fontSize: 13, textAlign: 'center', marginVertical: 18 },
   incompleteNotice: { color: colors.danger, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, textAlign: 'center', marginTop: 10, marginHorizontal: spacing.lg },
+  fragmentNotice: { color: colors.gold, fontFamily: fonts.sans, fontSize: 12, lineHeight: 20, textAlign: 'center', marginTop: 10, marginHorizontal: spacing.lg },
   lineBlock: { marginVertical: 3, paddingVertical: 8, paddingHorizontal: 8, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   currentLineBlock: { borderLeftColor: colors.vermilion, backgroundColor: 'rgba(163, 52, 42, 0.035)' },
   lineMain: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 46 },
