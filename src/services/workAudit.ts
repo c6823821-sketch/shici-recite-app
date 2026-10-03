@@ -19,12 +19,14 @@ export interface WorkAudit {
   incomplete?: boolean;
   verification: 'local-only' | 'canonical-diff';
   canonicalCompared: boolean;
+  canonical?: CanonicalWork;
 }
 
 interface CanonicalWork {
   title: string;
   author: string;
   dynasty?: string;
+  genre?: string;
   lines: string[];
 }
 
@@ -123,6 +125,7 @@ function parseCanonical(parsed: Record<string, unknown>): CanonicalWork | null {
     title: record.title.trim(),
     author: record.author.trim(),
     dynasty: typeof record.dynasty === 'string' ? record.dynasty.trim() : undefined,
+    genre: typeof record.genre === 'string' ? record.genre.trim() : undefined,
     lines,
   };
 }
@@ -315,5 +318,6 @@ export async function auditWork(settings: ApiSettings, work: Work): Promise<Work
     confidence: canonicalCompared ? 'high' : 'low',
     verification: canonicalCompared ? 'canonical-diff' : 'local-only',
     canonicalCompared,
+    canonical: canonical ?? undefined,
   };
 }

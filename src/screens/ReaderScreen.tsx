@@ -85,6 +85,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [auditError, setAuditError] = useState('');
   const [auditResult, setAuditResult] = useState<WorkAudit | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [applyingCorrection, setApplyingCorrection] = useState(false);
   const [wholeTranslations, setWholeTranslations] = useState<string[]>([]);
   const [wholeVisible, setWholeVisible] = useState(false);
   const [wholeLoading, setWholeLoading] = useState(false);
@@ -359,6 +360,40 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
+  const applyAuditCorrection = async () => {
+    const canonical = auditResult?.canonical;
+    if (!canonical) {
+      setAuditError('????????????????????');
+      return;
+    }
+    setApplyingCorrection(true);
+    setAuditError('');
+    try {
+      const corrected: Work = {
+        ...work,
+        title: canonical.title || work.title,
+        author: canonical.author || work.author,
+        dynasty: canonical.dynasty || work.dynasty,
+        genre: canonical.genre || work.genre,
+        lines: canonical.lines,
+        translations: [],
+        glossary: [],
+        titleFromFirstLine: false,
+        incomplete: false,
+        source: '???? ? API ???',
+      };
+      await saveImportedWork(corrected);
+      onWorkUpdated?.(corrected);
+      setAuditResult(null);
+      setAuditVisible(false);
+      setReviewMessage('????????????????');
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : '???????');
+    } finally {
+      setApplyingCorrection(false);
+    }
+  };
+
   const completeFullText = async () => {
     if (!settings?.endpoint.trim() || !settings.model.trim()) {
       setAuditError('请先在“我的 → API 设置”配置接口。');
@@ -479,9 +514,14 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
                   </View>
                 ))}
                 {auditResult.issues.length === 0 ? <Text style={styles.auditIssueText}>{auditResult.summary}</Text> : null}
+                {auditResult.canonical && auditResult.issues.length > 0 ? (
+                  <Pressable onPress={() => void applyAuditCorrection()} disabled={applyingCorrection} style={styles.auditCompleteButton}>
+                    <Text style={styles.auditCompleteText}>{applyingCorrection ? '???????' : '???????'}</Text>
+                  </Pressable>
+                ) : null}
                 {auditResult.incomplete ? (
                   <Pressable onPress={() => void completeFullText()} disabled={completing} style={styles.auditCompleteButton}>
-                    <Text style={styles.auditCompleteText}>{completing ? '正在补全…' : '补全全文'}</Text>
+                    <Text style={styles.auditCompleteText}>{completing ? '?????' : '????'}</Text>
                   </Pressable>
                 ) : null}
                 <Text style={styles.auditConfidence}>把握度：{auditResult.confidence}</Text>

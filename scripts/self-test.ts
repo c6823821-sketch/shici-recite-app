@@ -320,6 +320,7 @@ async function testApiServices() {
   const correctAudit = await auditWork(auditSettings, { ...correctedYiJianMei!, id: 'canonical-correct-audit' });
   assert.equal(correctAudit.canonicalCompared, true, '应记录已完成通行本逐句比对');
   assert.equal(correctAudit.correct, true, '正确正文应与通行本一致');
+  assert.equal(correctAudit.canonical?.lines.length, correctedYiJianMei!.lines.length, '??????????????????');
 
   const swappedLines = [...correctedYiJianMei!.lines];
   [swappedLines[0], swappedLines[1]] = [swappedLines[1], swappedLines[0]];

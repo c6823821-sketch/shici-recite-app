@@ -432,3 +432,13 @@ git checkout main
 git reset --hard v3.0.37
 git clean -fd
 ```
+
+## v3.0.39 ??????????
+
+?? v3.0.38?
+
+```powershell
+git checkout main
+git reset --hard v3.0.38
+git clean -fd
+```

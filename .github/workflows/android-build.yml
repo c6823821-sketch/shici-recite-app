@@ -50,30 +50,30 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.38.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.39.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.38
-          path: shici-recite-app-v3.0.38.apk
+          name: shici-recite-app-v3.0.39
+          path: shici-recite-app-v3.0.39.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.38
-          name: 诗词背诵 v3.0.38
+          tag_name: v3.0.39
+          name: 诗词背诵 v3.0.39
           body: |
-            诗词背诵 Android 测试版。
+            ???? Android ????
 
-            校对改为 API 返回完整通行本，再由客户端本地逐句比对。
+            ??????????????????????
 
-            可发现句序颠倒、改字、漏句、增句、作者错误和题名错误。
+            ?????????????????????????
 
-            修正鹧鸪天上下阕边界，支持词牌别名和旧题搜索。
+            API ???????????????????????
 
-            安装后可在“我的 → 检查更新”确认当前版本为 v3.0.38。
-          files: shici-recite-app-v3.0.38.apk
+            ???????? ? ???????????? v3.0.39?
+          files: shici-recite-app-v3.0.39.apk
           make_latest: true
