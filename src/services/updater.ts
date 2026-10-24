@@ -69,10 +69,10 @@ async function fetchManifest(): Promise<UpdateInfo | null> {
   for (const url of MANIFEST_URLS) {
     try {
       const response = await fetchWithTimeout(url);
-      if (!response.ok) throw new Error(`?????????${response.status}?`);
+      if (!response.ok) throw new Error(`更新清单请求失败（${response.status}）。`);
       const data = (await response.json()) as Manifest;
       const version = (data.version ?? '').replace(/^v/i, '');
-      if (!version) throw new Error('??????????');
+      if (!version) throw new Error('更新清单缺少版本号。');
       return {
         version,
         downloadUrl: data.downloadUrl ?? `https://github.com/${OWNER}/${REPO}/releases/download/v${version}/${APK_PREFIX}v${version}.apk`,
@@ -85,15 +85,15 @@ async function fetchManifest(): Promise<UpdateInfo | null> {
       lastError = error;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error('?????????');
+  throw lastError instanceof Error ? lastError : new Error('更新清单暂时无法读取。');
 }
 
 async function fetchLatestPage(): Promise<UpdateInfo> {
   const response = await fetchWithTimeout(LATEST_PAGE);
-  if (!response.ok) throw new Error(`?????????${response.status}?`);
+  if (!response.ok) throw new Error(`版本发布页请求失败（${response.status}）。`);
   const match = response.url.match(/\/releases\/tag\/v?([0-9]+(?:\.[0-9]+)*)/i);
   const version = match?.[1];
-  if (!version) throw new Error('??? Releases ?????????');
+  if (!version) throw new Error('无法从 Releases 页面读取版本号。');
   return {
     version,
     downloadUrl: `https://github.com/${OWNER}/${REPO}/releases/download/v${version}/${APK_PREFIX}v${version}.apk`,

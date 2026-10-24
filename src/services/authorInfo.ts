@@ -77,7 +77,7 @@ function parseJson(text: string): Record<string, unknown> {
   const cleaned = text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
-  if (start < 0 || end <= start) throw new Error('???? API ???? JSON?');
+  if (start < 0 || end <= start) throw new Error('作者资料 API 没有返回有效 JSON。');
   return JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
 }
 
@@ -103,7 +103,7 @@ export async function loadAuthorInfo(settings: ApiSettings | null, author: strin
   }
 
   if (!settings?.endpoint.trim() || !settings.model.trim()) {
-    throw new Error('????? API?????????????????');
+    throw new Error('作者资料需要配置 API；你仍可查看内置的常见作者简介。');
   }
 
   const response = await fetch(endpointUrl(settings.endpoint), {
@@ -116,16 +116,16 @@ export async function loadAuthorInfo(settings: ApiSettings | null, author: strin
       messages: [
         {
           role: 'system',
-          content: '?????????????????? JSON??????????????????{"name":"","dynasty":"","bio":"","achievements":["??????"],"confidence":"high|medium|low"}???????? confidence ????????',
+          content: '你是严谨的古代文学作者资料助手。只输出 JSON，不要 Markdown，不要编造。不确定的生卒年、仕履和事迹必须省略，并在 confidence 中降低把握度。格式：{"name":"","dynasty":"","bio":"","achievements":["代表作或主要成就"],"confidence":"high|medium|low"}。',
         },
         { role: 'user', content: JSON.stringify({ author: name }) },
       ],
     }),
   });
-  if (!response.ok) throw new Error(`?????????${response.status}?`);
+  if (!response.ok) throw new Error(`作者资料 API 请求失败（${response.status}）。`);
   const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
   const content = payload.choices?.[0]?.message?.content;
-  if (!content) throw new Error('???? API ?????');
+  if (!content) throw new Error('作者资料 API 返回内容为空。');
   const parsed = parseJson(content);
   const result: Omit<AuthorInfo, 'source'> = {
     name,
@@ -136,7 +136,7 @@ export async function loadAuthorInfo(settings: ApiSettings | null, author: strin
       ? (String(parsed.confidence) as AuthorInfo['confidence'])
       : 'low',
   };
-  if (!result.bio.trim()) throw new Error('???? API ???????');
+  if (!result.bio.trim()) throw new Error('作者资料 API 没有返回有效生平介绍。');
   await setStoredValue(cacheKey, JSON.stringify(result));
   return { ...result, source: 'api' };
 }

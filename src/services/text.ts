@@ -16,7 +16,7 @@ export function isWholeLine(line: string, start: number, end: number): boolean {
 export function sentenceAroundLine(lines: string[], index: number): { start: number; end: number; text: string } {
   if (!lines.length) return { start: 0, end: 0, text: '' };
   const safeIndex = Math.max(0, Math.min(index, lines.length - 1));
-  const terminal = /[???!?]$/;
+  const terminal = /[\u3002\uff01\uff1f!?.]$/;
   let end = safeIndex;
   while (end < lines.length - 1 && !terminal.test(lines[end].trim())) end += 1;
   return { start: safeIndex, end, text: lines.slice(safeIndex, end + 1).join('').trim() };

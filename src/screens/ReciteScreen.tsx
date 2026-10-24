@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { loadWorksCatalog } from '../data/worksCatalog';
-import { rankedReciteWorks } from '../services/reciteSelection';
+import { selectReciteWorks } from '../services/reciteSelection';
 import { DailyGoal, loadDailyGoal, loadDueRecords, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
 import { workDisplayTitle } from '../services/workPresentation';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
@@ -31,17 +31,30 @@ export function ReciteScreen({ onOpenFocus, refreshToken = 0 }: Props) {
     });
   }, [refreshToken]);
 
-  const doneCount = todayRecords.filter((record) => record.status === 'done').length;
-  const completedToday = new Set(todayRecords.filter((record) => record.status === 'done').map((record) => record.workId));
+  const catalogById = useMemo(() => new Map(catalog.map((work) => [work.id, work])), [catalog]);
+  const doneCount = useMemo(
+    () => todayRecords.filter((record) => record.status === 'done').length,
+    [todayRecords],
+  );
+  const completedToday = useMemo(
+    () => new Set(todayRecords.filter((record) => record.status === 'done').map((record) => record.workId)),
+    [todayRecords],
+  );
   const remainingTarget = Math.max(0, goal.target - doneCount);
-  const pending = records
-    .filter((record) => record.status === 'pending')
-    .map((record) => catalog.find((work) => work.id === record.workId))
-    .filter((work): work is Work => Boolean(work));
-  const review = records
-    .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
-    .map((record) => catalog.find((work) => work.id === record.workId))
-    .filter((work): work is Work => Boolean(work));
+  const pending = useMemo(
+    () => records
+      .filter((record) => record.status === 'pending')
+      .map((record) => catalogById.get(record.workId))
+      .filter((work): work is Work => Boolean(work)),
+    [catalogById, records],
+  );
+  const review = useMemo(
+    () => records
+      .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
+      .map((record) => catalogById.get(record.workId))
+      .filter((work): work is Work => Boolean(work)),
+    [catalogById, records],
+  );
   const attentionCount = pending.length + review.length;
 
   const focusQueue = useMemo(() => {
@@ -49,7 +62,7 @@ export function ReciteScreen({ onOpenFocus, refreshToken = 0 }: Props) {
     review.forEach((work) => queue.set(work.id, work));
     pending.forEach((work) => queue.set(work.id, work));
     const minimum = Math.min(20, Math.max(attentionCount, remainingTarget));
-    const ranked = rankedReciteWorks(catalog, completedToday);
+    const ranked = selectReciteWorks(catalog, minimum, completedToday);
     for (const work of ranked) {
       if (queue.size >= minimum) break;
       queue.set(work.id, work);

@@ -1,8 +1,9 @@
 ﻿import * as Haptics from 'expo-haptics';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Modal,
   PanResponder,
   Platform,
@@ -57,6 +58,12 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
   const [infoVisible, setInfoVisible] = useState(false);
   const [infoLoading, setInfoLoading] = useState(false);
   const [infoError, setInfoError] = useState('');
+  const [autoAdvanceInfo, setAutoAdvanceInfo] = useState(false);
+  const [leavePrompt, setLeavePrompt] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [context, setContext] = useState<WorkContext | null>(null);
   const [translation, setTranslation] = useState('');
   const revealOpacity = useRef(new Animated.Value(0)).current;
@@ -225,11 +232,44 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
 
   const closeInfo = () => {
     setInfoVisible(false);
+    setAutoAdvanceInfo(false);
     if (advanceAfterInfoRef.current) {
       advanceAfterInfoRef.current = false;
       setTimeout(() => advance(true), 80);
     }
   };
+
+  const confirmLeave = useCallback((title: string, message: string, action: () => void) => {
+    const hasProgress = masteredKeysRef.current.size > 0
+      || missedKeysRef.current.size > 0
+      || retryQueueRef.current.length > 0;
+    if (!hasProgress) {
+      action();
+      return;
+    }
+    setLeavePrompt({ title, message, onConfirm: action });
+  }, []);
+
+  const leaveSession = useCallback(() => confirmLeave(
+    '退出本轮背诵？',
+    '本轮尚未完成的进度不会保留；已经整首背完的记录仍会保存。',
+    onBack,
+  ), [confirmLeave, onBack]);
+
+  const leaveForSettings = useCallback(() => confirmLeave(
+    '先去设置？',
+    '打开设置会结束本轮背诵，尚未完成的进度不会保留。',
+    onOpenSettings,
+  ), [confirmLeave, onOpenSettings]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      leaveSession();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [leaveSession]);
 
   const mark = async (correct: boolean) => {
     if (!activeWork || busy) return;
@@ -244,6 +284,9 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
         missedKeysRef.current.add(activeKey);
         resolvedWorksRef.current.delete(activeWork.id);
         updateMastery(activeKey, false);
+        retryQueueRef.current = retryQueueRef.current.filter(
+          (card) => cardKey(works[card.workIndex]?.id ?? '', card.lineIndex) !== activeKey,
+        );
         retryQueueRef.current.push({ workIndex, lineIndex });
         setRetryCount(retryQueueRef.current.length);
         if (!wasMissed) {
@@ -254,15 +297,18 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
         runFeedback('again');
         setBusy(false);
         advanceAfterInfoRef.current = true;
+        setAutoAdvanceInfo(true);
         void openInfo();
         return;
       }
 
       updateMastery(activeKey, true);
       missedKeysRef.current.delete(activeKey);
-      const workHasMiss = activeWork.lines.some((_, index) => missedKeysRef.current.has(cardKey(activeWork.id, index)))
-        || retryQueueRef.current.some((card) => card.workIndex === workIndex);
-      if (!workHasMiss) await resolveWork(activeWork);
+      const masteredWholeWork = activeWork.lines.every(
+        (_, index) => masteredKeysRef.current.has(cardKey(activeWork.id, index)),
+      );
+      const workStillQueued = retryQueueRef.current.some((card) => card.workIndex === workIndex);
+      if (masteredWholeWork && !workStillQueued) await resolveWork(activeWork);
 
       runFeedback('correct');
       setTimeout(() => {
@@ -297,11 +343,11 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={onBack} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
+        <Pressable onPress={leaveSession} style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}>
           <Text style={styles.headerText}>‹ 返回</Text>
         </Pressable>
         <Text style={styles.headerTitle}>第 {workIndex + 1} / {works.length} 首</Text>
-        <Pressable onPress={onOpenSettings} style={({ pressed }) => [styles.headerButton, styles.headerRight, pressed && styles.pressed]}>
+        <Pressable onPress={leaveForSettings} style={({ pressed }) => [styles.headerButton, styles.headerRight, pressed && styles.pressed]}>
           <Text style={styles.headerText}>设置</Text>
         </Pressable>
       </View>
@@ -397,9 +443,42 @@ export function FocusReciteScreen({ works, initialIndex = 0, onBack, onOpenSetti
                 <Text style={styles.sheetBody}>暂无可展示释义，请检查 API 设置后重试。</Text>
               ) : null}
               <Pressable onPress={closeInfo} style={styles.sheetClose}>
-                <Text style={styles.sheetCloseText}>知道了，稍后再背</Text>
+                <Text style={styles.sheetCloseText}>{autoAdvanceInfo ? '看完继续' : '知道了'}</Text>
               </Pressable>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={leavePrompt !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeavePrompt(null)}
+      >
+        <View style={styles.confirmRoot}>
+          <Pressable style={styles.backdrop} onPress={() => setLeavePrompt(null)} />
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>{leavePrompt?.title}</Text>
+            <Text style={styles.confirmMessage}>{leavePrompt?.message}</Text>
+            <View style={styles.confirmActions}>
+              <Pressable
+                onPress={() => setLeavePrompt(null)}
+                style={({ pressed }) => [styles.confirmSecondary, pressed && styles.pressed]}
+              >
+                <Text style={styles.confirmSecondaryText}>继续背诵</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  const action = leavePrompt?.onConfirm;
+                  setLeavePrompt(null);
+                  action?.();
+                }}
+                style={({ pressed }) => [styles.confirmDanger, pressed && styles.pressed]}
+              >
+                <Text style={styles.confirmDangerText}>确定离开</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -425,7 +504,7 @@ const styles = StyleSheet.create({
   focusLine: { color: colors.ink, fontFamily: fonts.title, fontSize: 28, lineHeight: 50, textAlign: 'center', position: 'absolute', paddingHorizontal: 8 },
   tapHint: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12, marginTop: 18 },
   lineMeta: { color: colors.jade, fontFamily: fonts.sans, fontSize: 11, marginTop: 8, letterSpacing: 1 },
-  feedbackOverlay: { position: 'absolute', left: 0, right: 0, top: '35%', alignItems: 'center', justifyContent: 'center', paddingVertical: 28, paddingHorizontal: 40, borderRadius: 32, alignSelf: 'center' },
+  feedbackOverlay: { position: 'absolute', left: 40, right: 40, top: '35%', alignItems: 'center', justifyContent: 'center', paddingVertical: 28, borderRadius: 32, alignSelf: 'center' },
   feedbackCorrect: { backgroundColor: 'rgba(74,103,91,0.94)' },
   feedbackAgain: { backgroundColor: 'rgba(198,40,40,0.94)' },
   feedbackIcon: { color: colors.white, fontFamily: fonts.sans, fontSize: 50, fontWeight: '800' },
@@ -442,6 +521,15 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.52 },
   pressed: { opacity: 0.72 },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  confirmRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  confirmCard: { width: '100%', maxWidth: 360, borderRadius: 20, backgroundColor: colors.paperLight, borderWidth: 1, borderColor: colors.line, padding: spacing.lg, ...shadow },
+  confirmTitle: { color: colors.ink, fontFamily: fonts.title, fontSize: 23, fontWeight: '800', textAlign: 'center' },
+  confirmMessage: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 15, lineHeight: 25, textAlign: 'center', marginTop: 12 },
+  confirmActions: { flexDirection: 'row', gap: 10, marginTop: 22 },
+  confirmSecondary: { flex: 1, minHeight: 50, borderRadius: 14, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
+  confirmSecondaryText: { color: colors.ink, fontFamily: fonts.body, fontSize: 15, fontWeight: '700' },
+  confirmDanger: { flex: 1, minHeight: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.vermilion },
+  confirmDangerText: { color: colors.white, fontFamily: fonts.body, fontSize: 15, fontWeight: '800' },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(31,26,20,0.34)' },
   sheet: { maxHeight: '82%', backgroundColor: colors.paperLight, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: colors.line },
   sheetHandle: { width: 44, height: 3, borderRadius: radius.pill, backgroundColor: colors.line, alignSelf: 'center', marginTop: 10 },

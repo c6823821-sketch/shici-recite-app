@@ -22,13 +22,18 @@ import { ApiSettings } from '../types';
 interface Props {
   onBack: () => void;
   onOpenSettings: () => void;
+  settingsRevision?: number;
 }
 
 const GENRES: CompositionGenre[] = ['诗', '词', '曲'];
 const CATEGORY_ORDER = ['rules', 'rhyme', 'tone', 'structure', 'parallelism', 'language', 'imagery', 'coherence', 'originality'];
 const FORM_CACHE_KEY = 'composition_extra_forms_v1';
 
-export function CompositionScreen({ onBack, onOpenSettings }: Props) {
+export function CompositionScreen({
+  onBack,
+  onOpenSettings,
+  settingsRevision = 0,
+}: Props) {
   const [genre, setGenre] = useState<CompositionGenre>('诗');
   const [form, setForm] = useState<CompositionForm>(GENRE_FORMS.诗[0]);
   const [text, setText] = useState('');
@@ -54,6 +59,17 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
       try { setExtraForms(JSON.parse(raw) as CompositionForm[]); } catch { /* ignore malformed cache */ }
     });
   }, []);
+
+  useEffect(() => {
+    if (settingsRevision === 0) return undefined;
+    let alive = true;
+    void loadApiSettings().then((value) => {
+      if (alive) setSettings(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [settingsRevision]);
 
   const availableForms = useMemo(() => {
     const forms = genre === '词' ? [...GENRE_FORMS[genre], ...extraForms] : GENRE_FORMS[genre];
@@ -126,7 +142,10 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
   };
 
   const openDraft = (item: SavedComposition) => {
-    const nextForm = GENRE_FORMS[item.genre].find((candidate) => candidate.id === item.formId) ?? GENRE_FORMS[item.genre][0];
+    const forms = item.genre === '词'
+      ? [...GENRE_FORMS[item.genre], ...extraForms]
+      : GENRE_FORMS[item.genre];
+    const nextForm = forms.find((candidate) => candidate.id === item.formId) ?? forms[0];
     setGenre(item.genre);
     setForm(nextForm);
     setVariantIndex(Math.max(0, Math.min(item.variantIndex, (nextForm.variants?.length ?? 1) - 1)));
@@ -192,6 +211,8 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
         </View>
 
         <Text style={styles.sectionLabel}>
+          {genre === '诗' ? '选择诗体' : genre === '词' ? '选择词牌' : '选择曲牌'}
+        </Text>
         {genre === '词' ? (
           <View style={styles.formSearchRow}>
             <TextInput
@@ -208,7 +229,6 @@ export function CompositionScreen({ onBack, onOpenSettings }: Props) {
           </View>
         ) : null}
         {formMessage ? <Text style={styles.formSearchMessage}>{formMessage}</Text> : null}
-{genre === '诗' ? '选择诗体' : genre === '词' ? '选择词牌' : '选择曲牌'}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.formRow}>
           {availableForms.map((item) => {
             const active = form.id === item.id;
@@ -351,10 +371,15 @@ function ScoreCard({ score }: { score: CompositionScore }) {
   const [openIssue, setOpenIssue] = useState<number | null>(0);
   const scoreTone = score.overallScore >= 80 ? colors.jade : score.overallScore >= 60 ? colors.gold : colors.vermilion;
   const severityLabels: Record<string, string> = {
-    critical: '??',
-    major: '??',
-    minor: '??',
-    uncertain: '???',
+    critical: '硬伤',
+    major: '重要',
+    minor: '轻微',
+    uncertain: '存疑',
+  };
+  const confidenceLabels: Record<string, string> = {
+    high: '高',
+    medium: '中',
+    low: '低',
   };
 
   return (
@@ -365,9 +390,9 @@ function ScoreCard({ score }: { score: CompositionScore }) {
           <Text style={styles.scoreDenominator}>/ 100</Text>
         </View>
         <View style={styles.scoreHeroCopy}>
-          <Text style={styles.scoreLabel}>???? ? ????</Text>
+          <Text style={styles.scoreLabel}>严格评分 · API 复核</Text>
           <Text style={styles.verdict}>{score.verdict}</Text>
-          <Text style={styles.level}>{score.level} ? API ?????{score.confidence}</Text>
+          <Text style={styles.level}>{score.level} · 把握度 {confidenceLabels[score.confidence] ?? score.confidence}</Text>
         </View>
       </View>
 
@@ -376,7 +401,7 @@ function ScoreCard({ score }: { score: CompositionScore }) {
       </View>
       <Text style={styles.summary}>{score.summary}</Text>
 
-      <Text style={styles.resultSectionTitle}>????</Text>
+      <Text style={styles.resultSectionTitle}>分项评分</Text>
       {CATEGORY_ORDER.map((key) => {
         const value = score.categoryScores[key] ?? 0;
         const tone = value >= 80 ? colors.jade : value >= 60 ? colors.gold : colors.vermilion;
@@ -391,9 +416,9 @@ function ScoreCard({ score }: { score: CompositionScore }) {
         );
       })}
 
-      <Text style={styles.resultSectionTitle}>????</Text>
+      <Text style={styles.resultSectionTitle}>发现的问题</Text>
       {score.issues.length === 0 ? (
-        <Text style={styles.resultText}>????????????????????????</Text>
+        <Text style={styles.resultText}>没有发现可以明确指出的格律或表达问题。</Text>
       ) : (
         score.issues.map((issue, index) => {
           const expanded = openIssue === index;
@@ -405,24 +430,24 @@ function ScoreCard({ score }: { score: CompositionScore }) {
               >
                 <View style={styles.issueHeaderCopy}>
                   <Text style={styles.issueTitle}>
-                    {severityLabels[issue.severity] ?? issue.severity} ? {issue.category}
-                    {issue.line ? ` ? ? ${issue.line} ?` : ''}
+                    {severityLabels[issue.severity] ?? issue.severity} · {issue.category}
+                    {issue.line ? ` · 第 ${issue.line} 行` : ''}
                   </Text>
                   <Text style={styles.issueSummary} numberOfLines={expanded ? undefined : 2}>{issue.problem}</Text>
                 </View>
-                <Text style={styles.accordionToggle}>{expanded ? '?' : '+'}</Text>
+                <Text style={styles.accordionToggle}>{expanded ? '−' : '+'}</Text>
               </Pressable>
               {expanded ? (
                 <View style={styles.issueDetail}>
                   {issue.quote ? (
                     <View style={styles.quoteCompare}>
-                      <Text style={styles.compareLabel}>??</Text>
+                      <Text style={styles.compareLabel}>原句</Text>
                       <Text style={styles.issueQuoteStrike}>{issue.quote}</Text>
                     </View>
                   ) : null}
                   <Text style={styles.issueProblem}>{issue.problem}</Text>
                   <View style={styles.suggestionBox}>
-                    <Text style={styles.suggestionLabel}>????</Text>
+                    <Text style={styles.suggestionLabel}>修改建议</Text>
                     <Text style={styles.suggestionText}>{issue.suggestion}</Text>
                   </View>
                 </View>
@@ -432,12 +457,12 @@ function ScoreCard({ score }: { score: CompositionScore }) {
         })
       )}
 
-      <Text style={styles.resultSectionTitle}>??????</Text>
-      {score.strengths.length ? score.strengths.map((item) => <Text key={item} style={styles.resultText}>? {item}</Text>) : (
-        <Text style={styles.resultText}>????????????????</Text>
+      <Text style={styles.resultSectionTitle}>有依据的优点</Text>
+      {score.strengths.length ? score.strengths.map((item) => <Text key={item} style={styles.resultText}>· {item}</Text>) : (
+        <Text style={styles.resultText}>没有足够明确的优点可以列出。</Text>
       )}
 
-      <Text style={styles.resultSectionTitle}>????</Text>
+      <Text style={styles.resultSectionTitle}>修改顺序</Text>
       {score.revisionPlan.map((item, index) => (
         <Text key={`${item}-${index}`} style={styles.resultText}>{index + 1}. {item}</Text>
       ))}

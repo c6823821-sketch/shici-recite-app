@@ -16,7 +16,12 @@ if (requestedVersionCode !== undefined && !/^\d+$/.test(requestedVersionCode)) {
 }
 
 function writeJson(relativePath, value) {
-  fs.writeFileSync(path.join(root, relativePath), `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  const target = path.join(root, relativePath);
+  const previousText = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
+  const bom = previousText.charCodeAt(0) === 0xFEFF;
+  const eol = previousText.includes('\r\n') ? '\r\n' : '\n';
+  const text = `${JSON.stringify(value, null, 2)}\n`.replace(/\n/g, eol);
+  fs.writeFileSync(target, `${bom ? '\uFEFF' : ''}${text}`, 'utf8');
 }
 
 packageJson.version = requestedVersion;

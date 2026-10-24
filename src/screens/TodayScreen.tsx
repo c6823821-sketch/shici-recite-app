@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ImageBackground,
@@ -28,9 +28,15 @@ interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
   onOpenSettings: () => void;
   refreshToken?: number;
+  settingsRevision?: number;
 }
 
-export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Props) {
+export function TodayScreen({
+  onOpenWork,
+  onOpenSettings,
+  refreshToken = 0,
+  settingsRevision = 0,
+}: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const recommendCardWidth = Math.max(280, windowWidth - uiTuning.pagePadding * 2);
   const [daily, setDaily] = useState<DailyRecommendation | null>(null);
@@ -92,10 +98,22 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
     };
   }, [refreshToken]);
 
-  const currentWork = daily ? catalog.find((work) => work.id === daily.workId) ?? null : null;
+  useEffect(() => {
+    if (settingsRevision === 0) return undefined;
+    let alive = true;
+    void loadApiSettings().then((value) => {
+      if (alive) setSettings(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [settingsRevision]);
+
+  const catalogById = useMemo(() => new Map(catalog.map((work) => [work.id, work])), [catalog]);
+  const currentWork = daily ? catalogById.get(daily.workId) ?? null : null;
   const review = records
     .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
-    .map((record) => catalog.find((work) => work.id === record.workId))
+    .map((record) => catalogById.get(record.workId))
     .filter((work): work is Work => Boolean(work));
   const openDaily = () => {
     if (currentWork && daily) onOpenWork(currentWork, daily.lineIndex);
@@ -113,10 +131,15 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
   };
 
   const random = async () => {
-    const next = randomRecommendation(catalog);
-    setDaily(next);
-    await saveTodayRecommendation(next);
-    setMoodVisible(false);
+    if (!catalog.length) return;
+    try {
+      const next = randomRecommendation(catalog, daily?.workId);
+      setDaily(next);
+      await saveTodayRecommendation(next);
+      setMoodVisible(false);
+    } catch (randomError) {
+      setError(randomError instanceof Error ? randomError.message : '换一首失败，请稍后重试。');
+    }
   };
 
   const recommend = async () => {
@@ -235,7 +258,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
             </View>
             <Text style={styles.discoveryReason}>{discovery.reason}</Text>
             {discovery.items.map((item) => {
-              const work = catalog.find((candidate) => candidate.id === item.workId);
+              const work = catalogById.get(item.workId);
               if (!work) return null;
               return (
                 <View key={item.workId + '-' + item.lineIndex}>

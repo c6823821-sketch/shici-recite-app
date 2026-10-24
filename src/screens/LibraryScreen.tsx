@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BackHandler,
   FlatList,
   Platform,
   Pressable,
@@ -27,6 +28,7 @@ interface Props {
   onOpenWork: (work: Work, lineIndex?: number) => void;
   onOpenClassic: (classic: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch?: boolean) => void;
   onOpenSettings: () => void;
+  settingsRevision?: number;
 }
 
 const EMPTY_FILTERS: FilterState = { eras: [], genres: [], collections: [], themes: [], moods: [] };
@@ -47,7 +49,12 @@ function matchesDimension(selected: string[], values: string[]): boolean {
   return selected.length === 0 || selected.some((value) => values.includes(value));
 }
 
-export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Props) {
+export function LibraryScreen({
+  onOpenWork,
+  onOpenClassic,
+  onOpenSettings,
+  settingsRevision = 0,
+}: Props) {
   const [query, setQuery] = useState('');
   const [searchTab, setSearchTab] = useState<SearchTab>('sentence');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -64,16 +71,31 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [remoteMessage, setRemoteMessage] = useState('');
   const attemptedRemoteQuery = useRef('');
   const lastAutoTabQuery = useRef('');
+  const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
     loadImportedWorks().then(setImportedWorks);
-    loadWorksCatalog().then((value) => { setCatalog(value); setCatalogReady(true); });
+    loadWorksCatalog().then((value) => {
+      setCatalog(value);
+      setCatalogReady(true);
+    });
     loadApiSettings().then(setSettings);
     getStoredValue(SEARCH_HISTORY_KEY).then((raw) => {
       if (!raw) return;
       try { setSearchHistory(JSON.parse(raw) as string[]); } catch { /* ignore */ }
     });
   }, []);
+
+  useEffect(() => {
+    if (settingsRevision === 0) return undefined;
+    let alive = true;
+    void loadApiSettings().then((value) => {
+      if (alive) setSettings(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [settingsRevision]);
 
   const allWorks = useMemo(() => {
     const seen = new Set<string>();
@@ -82,8 +104,9 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     return [...catalog, ...importedWorks].filter((work) => {
       if (classicTitles.has(normalizeSearch(work.title))) return false;
       const key = canonicalWorkKey(work);
+      if (seen.has(key)) return false;
       const contentKey = canonicalWorkContentKey(work);
-      if (seen.has(key) || seenContent.has(contentKey)) return false;
+      if (seenContent.has(contentKey)) return false;
       seen.add(key);
       seenContent.add(contentKey);
       return true;
@@ -107,25 +130,30 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     });
   }, [allWorks, filters]);
 
-  const normalizedQuery = useMemo(() => normalizeSearch(query.trim()), [query]);
+  const normalizedQuery = useMemo(() => normalizeSearch(deferredQuery.trim()), [deferredQuery]);
 
-  const matchedLines = useMemo(() => {
-    if (normalizedQuery.length < 2) return [];
+  const lineSearch = useMemo(() => {
+    if (normalizedQuery.length < 2) return { items: [], truncated: false };
     const results: Array<{ work: Work; lineIndex: number; line: string }> = [];
     const seenLines = new Set<string>();
-    for (const work of filteredWorks) {
+    let truncated = false;
+    searchLines: for (const work of filteredWorks) {
       for (let index = 0; index < work.lines.length; index += 1) {
         const lineKey = normalizeSearch(work.lines[index]);
         if (lineKey.includes(normalizedQuery) && !seenLines.has(lineKey)) {
           seenLines.add(lineKey);
+          if (results.length >= 50) {
+            truncated = true;
+            break searchLines;
+          }
           results.push({ work, lineIndex: index, line: work.lines[index] });
           break;
         }
       }
-      if (results.length >= 50) break;
     }
-    return results;
+    return { items: results, truncated };
   }, [filteredWorks, normalizedQuery]);
+  const matchedLines = lineSearch.items;
 
   const workMatches = useMemo(() => {
     if (normalizedQuery.length < 2) return [];
@@ -171,12 +199,21 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     ...filters.moods,
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
-  const activeEra = filters.eras.length === 1 ? filters.eras[0] : '';
-
-  const searchTabItems: Array<{ key: SearchTab; label: string; count: number }> = [
-    { key: 'sentence', label: '句子', count: matchedLines.length + matchedClassicSentences.length },
-    { key: 'work', label: '篇目', count: workMatches.length + matchedClassicWorks.length },
-    { key: 'author', label: '作者', count: authorMatches.length },
+  const activeEra = filters.eras.length === 0
+    ? '全部'
+    : filters.eras.length === 1
+      ? filters.eras[0]
+      : '';
+  const searchTabItems: Array<{ key: SearchTab; label: string; count: string }> = [
+    {
+      key: 'sentence',
+      label: '句子',
+      count: lineSearch.truncated
+        ? `${matchedLines.length + matchedClassicSentences.length}+`
+        : String(matchedLines.length + matchedClassicSentences.length),
+    },
+    { key: 'work', label: '篇目', count: String(workMatches.length + matchedClassicWorks.length) },
+    { key: 'author', label: '作者', count: String(authorMatches.length) },
   ];
 
   const listItems = useMemo<LibraryListItem[]>(() => {
@@ -204,6 +241,9 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         ? '匹配篇目'
         : '匹配作者';
   const resultCount = listItems.length;
+  const resultCountLabel = query.trim() && searchTab === 'sentence' && lineSearch.truncated
+    ? `${resultCount}+`
+    : resultCount.toLocaleString('zh-CN');
 
   const rememberSearch = async (value: string) => {
     const term = value.trim();
@@ -289,7 +329,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     <View>
         <View style={styles.header}>
           <Text style={styles.title}>诗库</Text>
-          <Text style={styles.subtitle}>离线 {catalog.length.toLocaleString('zh-CN')} 篇 · 可组合筛选</Text>
+          <Text style={styles.subtitle}>原文离线 {catalog.length.toLocaleString('zh-CN')} 篇 · 搜索与筛选</Text>
         </View>
 
         <View style={styles.searchBlock}>
@@ -369,12 +409,16 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
         <View style={styles.resultHeader}>
           <Text style={styles.resultTitle}>{resultTitle}</Text>
           <View style={styles.resultHeaderActions}>
-            <Text style={styles.resultCount}>{resultCount.toLocaleString('zh-CN')} 项</Text>
+            <Text style={styles.resultCount}>{resultCountLabel} 项</Text>
             <Pressable onPress={() => setFilterVisible(true)} style={styles.filterPill}>
               <Text style={styles.filterPillText}>筛选</Text>
             </Pressable>
           </View>
         </View>
+        {query.trim() && searchTab === 'sentence' && lineSearch.truncated ? (
+          <Text style={styles.limitNotice}>匹配较多，句子列表仅显示前 50 条。</Text>
+        ) : null}
+        {remoteMessage ? <Text style={styles.remoteMessage}>{remoteMessage}</Text> : null}
 
         {selected.length > 0 ? (
           <View style={styles.selectedGrid}>
@@ -398,10 +442,10 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     let nextTab: SearchTab | null = null;
     if (exactAuthorMatch) {
       nextTab = 'author';
-    } else if (matchedLines.length === 0 && matchedClassicSentences.length === 0) {
-      if (workMatches.length > 0 || matchedClassicWorks.length > 0) nextTab = 'work';
-      else if (authorMatches.length > 0) nextTab = 'author';
-    }
+    } else if (matchedLines.length > 0 || matchedClassicSentences.length > 0) {
+      nextTab = 'sentence';
+    } else if (workMatches.length > 0 || matchedClassicWorks.length > 0) nextTab = 'work';
+    else if (authorMatches.length > 0) nextTab = 'author';
     if (nextTab) setSearchTab(nextTab);
     lastAutoTabQuery.current = normalizedQuery;
   }, [
@@ -415,21 +459,52 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   ]);
 
   useEffect(() => {
-    const term = query.trim();
-    if (!catalogReady || term.length < 2 || matchedLines.length > 0 || workMatches.length > 0 || authorMatches.length > 0 || matchedClassicSentences.length > 0 || matchedClassicWorks.length > 0 || !settings?.endpoint.trim()) return;
-    if (attemptedRemoteQuery.current === term) return;
+    const term = deferredQuery.trim();
+    if (
+      !catalogReady
+      || term.length < 2
+      || matchedLines.length > 0
+      || workMatches.length > 0
+      || authorMatches.length > 0
+      || matchedClassicSentences.length > 0
+      || matchedClassicWorks.length > 0
+      || !settings?.endpoint.trim()
+    ) return undefined;
+    if (attemptedRemoteQuery.current === term) return undefined;
     const timer = setTimeout(() => {
       attemptedRemoteQuery.current = term;
       void remoteSearch(term);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [authorMatches.length, catalogReady, matchedClassicSentences.length, matchedClassicWorks.length, matchedLines.length, query, settings, workMatches.length]);
+  }, [
+    authorMatches.length,
+    catalogReady,
+    deferredQuery,
+    matchedClassicSentences.length,
+    matchedClassicWorks.length,
+    matchedLines.length,
+    settings,
+    workMatches.length,
+  ]);
+
+  useEffect(() => {
+    if (!categoryVisible) return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setCategoryVisible(false);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [categoryVisible]);
 
   return (
     <View style={styles.container}>
       <FlatList
         style={styles.listView}
         data={listItems}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews={Platform.OS === 'android'}
+        windowSize={7}
         keyExtractor={(item) => item.kind === 'line' ? `${item.work.id}-${item.lineIndex}` : item.kind === 'classic' ? `${item.classic.id}-${item.sectionIndex}` : item.work.id}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
@@ -568,6 +643,7 @@ const styles = StyleSheet.create({
   resultTitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 17, fontWeight: '700' },
   resultHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   resultCount: { color: colors.muted, fontFamily: fonts.sans, fontSize: 12 },
+  limitNotice: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 8 },
   filterPill: { minHeight: 32, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paperLight },
   filterPillText: { color: colors.inkSoft, fontFamily: fonts.body, fontSize: 12, fontWeight: '700' },
   remotePanel: { marginHorizontal: 0, marginTop: 10 },

@@ -25,7 +25,14 @@ export function MainTabBar({ active, onChange }: Props) {
       {TABS.map((tab) => {
         const selected = active === tab.key;
         return (
-          <Pressable key={tab.key} onPress={() => onChange(tab.key)} style={styles.tab}>
+          <Pressable
+            key={tab.key}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected }}
+            onPress={() => onChange(tab.key)}
+            style={styles.tab}
+          >
             <View style={[styles.mark, selected && styles.markActive]}>
               <Text style={[styles.markText, selected && styles.markTextActive]}>{tab.mark}</Text>
             </View>

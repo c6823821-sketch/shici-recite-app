@@ -1,13 +1,13 @@
 {
-  "version": "3.1.0",
-  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
+  "version": "3.1.1",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.1/shici-recite-app-v3.1.1.apk",
   "downloadUrls": [
-    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
-    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
-    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
-    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk"
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.1/shici-recite-app-v3.1.1.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.1/shici-recite-app-v3.1.1.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.1/shici-recite-app-v3.1.1.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.1/shici-recite-app-v3.1.1.apk"
   ],
-  "size": 42444513,
-  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.1.0",
-  "notes": "调整每日背诵选题，优先短篇与名篇；修复作者搜索、宋词标题显示和版本号统一问题。"
+  "size": 0,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.1.1",
+  "notes": "修复底部导航卡顿、整首背诵记录准确性、换一换重复推荐、诗库筛选与检索反馈、创作页布局及异常问号文本。"
 }

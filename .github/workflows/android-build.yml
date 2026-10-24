@@ -57,6 +57,24 @@ jobs:
       - name: Prepare APK
         run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
 
+      - name: Record APK size in update manifest
+        env:
+          APK_PATH: shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
+          APP_VERSION: ${{ steps.app_version.outputs.version }}
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync('version.json', 'utf8').replace(/^\uFEFF/, ''));
+          manifest.size = fs.statSync(process.env.APK_PATH).size;
+          fs.writeFileSync('version.json', `${JSON.stringify(manifest, null, 2)}\n`);
+          NODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: record v${APP_VERSION} apk size [skip ci]"
+          git push origin HEAD:main
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -71,9 +89,13 @@ jobs:
           tag_name: v${{ steps.app_version.outputs.version }}
           name: 诗词背诵 v${{ steps.app_version.outputs.version }}
           body: |
-            修复背诵选题、搜索和版本显示体验。
+            本次更新重点修复导航卡顿与背诵记录准确性。
 
-            本次更新：每日背诵优先短篇与名篇，不再直接推《离骚》等长文；搜索作者会直接进入作者结果；宋词会补首句帮助区分；版本号统一为三段式。
+            - 底部页面按需加载，背诵候选只计算实际需要的篇目，避免反复排序两万余篇作品。
+            - 修复答对一句就可能提前记成整首已背的问题；退出专注背诵前会提示未完成进度。
+            - “换一换”恢复真正随机并排除当前篇目。
+            - 修复诗库筛选高亮、50 条截断提示、搜索卡顿和联网补录反馈。
+            - 修复创作页布局、词牌草稿恢复、评分提示及多处异常问号文本。
 
             安装包名称：shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
           files: shici-recite-app-v${{ steps.app_version.outputs.version }}.apk

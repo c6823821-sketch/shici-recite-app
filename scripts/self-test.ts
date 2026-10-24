@@ -8,7 +8,14 @@ import { explainWithApi } from '../src/services/api';
 import { lookupRemoteWork } from '../src/services/remoteLookup';
 import { auditWork } from '../src/services/workAudit';
 import { isLongText } from '../src/services/longText';
-import { bestDailyWork, isReciteFriendly, rankedReciteWorks } from '../src/services/reciteSelection';
+import { sentenceAroundLine } from '../src/services/text';
+import {
+  bestDailyWork,
+  isReciteFriendly,
+  randomReciteWork,
+  rankedReciteWorks,
+  selectReciteWorks,
+} from '../src/services/reciteSelection';
 import { workDisplayTitle } from '../src/services/workPresentation';
 import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
@@ -30,10 +37,25 @@ assert.notEqual(dailyReciteWork?.title, '离骚', '每日背诵不应把《离�
 const rankedReciteWorksValue = rankedReciteWorks(WORKS, new Set(), '2026-10-21');
 assert.equal(rankedReciteWorksValue.every(isReciteFriendly), true, '普通背诵候选应全部适合短时背诵');
 assert.ok(rankedReciteWorksValue.length > 1000, '短篇优先后仍应保留充足候选');
+assert.deepEqual(
+  selectReciteWorks(WORKS, 20, new Set(), '2026-10-21'),
+  rankedReciteWorksValue.slice(0, 20),
+  '限制数量的快速选择应与完整候选排序的前 20 项一致',
+);
+const excludedDailyWorkId = dailyReciteWork!.id;
+const randomReplacement = randomReciteWork(WORKS, new Set([excludedDailyWorkId]), 0);
+assert.ok(randomReplacement, '换一换应能选出替代篇目');
+assert.notEqual(randomReplacement?.id, excludedDailyWorkId, '换一换不能继续返回当前篇目');
+assert.equal(isReciteFriendly(randomReplacement!), true, '换一换仍应只选择适合背诵的篇目');
 
 const genericCi = WORKS.find((work) => work.genre === '词' && !/[·・]/.test(work.title) && work.lines[0]);
 assert.ok(genericCi, '应存在仅显示词牌的宋词篇目');
 assert.ok(workDisplayTitle(genericCi!).includes('·'), '宋词标题应补首句，避免同名词牌难以区分');
+assert.deepEqual(
+  sentenceAroundLine(['春风又绿江南岸，', '明月何时照我还。', '后一首。'], 0),
+  { start: 0, end: 1, text: '春风又绿江南岸，明月何时照我还。' },
+  '句意补全应识别中文句号并停在完整句末',
+);
 
 const splitXiangsi = WORKS.find((work) => work.title === '相思' && work.author === '王维');
 assert.deepEqual(splitXiangsi?.lines, ['红豆生南国，', '秋来发故枝。', '愿君多采撷，', '此物最相思。'], '背诵分句应拆到逗号');
@@ -342,7 +364,7 @@ async function testApiServices() {
   const correctAudit = await auditWork(auditSettings, { ...correctedYiJianMei!, id: 'canonical-correct-audit' });
   assert.equal(correctAudit.canonicalCompared, true, '应记录已完成通行本逐句比对');
   assert.equal(correctAudit.correct, true, '正确正文应与通行本一致');
-  assert.equal(correctAudit.canonical?.lines.length, correctedYiJianMei!.lines.length, '??????????????????');
+  assert.equal(correctAudit.canonical?.lines.length, correctedYiJianMei!.lines.length, '通行本逐句比对结果应保留完整句数');
 
   const swappedLines = [...correctedYiJianMei!.lines];
   [swappedLines[0], swappedLines[1]] = [swappedLines[1], swappedLines[0]];

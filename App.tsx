@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { NavigationBar } from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -26,6 +26,11 @@ import { AppearanceProvider, useAppearance } from './src/services/appearance';
 
 type Screen = 'tabs' | 'reader' | 'classic' | 'focus';
 
+const MemoTodayScreen = React.memo(TodayScreen);
+const MemoLibraryScreen = React.memo(LibraryScreen);
+const MemoReciteScreen = React.memo(ReciteScreen);
+const MemoCompositionScreen = React.memo(CompositionScreen);
+const MemoProfileScreen = React.memo(ProfileScreen);
 
 export default function App() {
   return (
@@ -41,6 +46,8 @@ function AppShell() {
   const { background } = useAppearance();
   const [screen, setScreen] = useState<Screen>('tabs');
   const [tab, setTab] = useState<MainTab>('today');
+  const [visitedTabs, setVisitedTabs] = useState<MainTab[]>(['today']);
+  const tabRef = useRef<MainTab>('today');
   const [work, setWork] = useState<Work>(SAMPLE_WORK);
   const [readerLineIndex, setReaderLineIndex] = useState(0);
   const [readerReturnTab, setReaderReturnTab] = useState<MainTab>('today');
@@ -51,6 +58,13 @@ function AppShell() {
   const [focusWorks, setFocusWorks] = useState<Work[]>([]);
   const [focusIndex, setFocusIndex] = useState(0);
   const [focusRevision, setFocusRevision] = useState(0);
+  const [settingsRevision, setSettingsRevision] = useState(0);
+
+  const changeTab = useCallback((next: MainTab) => {
+    tabRef.current = next;
+    setTab(next);
+    setVisitedTabs((current) => current.includes(next) ? current : [...current, next]);
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -68,7 +82,7 @@ function AppShell() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (screen === 'focus') {
         setScreen('tabs');
-        setTab('recite');
+        changeTab('recite');
         setFocusRevision((value) => value + 1);
         return true;
       }
@@ -90,49 +104,49 @@ function AppShell() {
         return true;
       }
       if (screen === 'reader') {
-        setTab(readerReturnTab);
+        changeTab(readerReturnTab);
         setScreen('tabs');
         return true;
       }
       if (tab !== 'today') {
-        setTab('today');
+        changeTab('today');
         return true;
       }
       return false;
     });
     return () => subscription.remove();
-  }, [classic, classicFromSearch, classicSectionIndex, readerReturnTab, screen, tab]);
+  }, [changeTab, classic, classicFromSearch, classicSectionIndex, readerReturnTab, screen, tab]);
 
-  const openWork = (next: Work, lineIndex = 0) => {
-    setReaderReturnTab(tab);
+  const openWork = useCallback((next: Work, lineIndex = 0) => {
+    setReaderReturnTab(tabRef.current);
     setWork(next);
     setReaderLineIndex(lineIndex);
     setScreen('reader');
-  };
+  }, []);
 
-  const openFocus = (nextWorks: Work[], initialIndex = 0) => {
+  const openFocus = useCallback((nextWorks: Work[], initialIndex = 0) => {
     const unique = [...new Map(nextWorks.map((item) => [item.id, item])).values()];
     if (!unique.length) return;
     setFocusWorks(unique);
     setFocusIndex(Math.max(0, Math.min(initialIndex, unique.length - 1)));
     setScreen('focus');
-  };
+  }, []);
 
-  const closeFocus = () => {
+  const closeFocus = useCallback(() => {
     setScreen('tabs');
-    setTab('recite');
+    changeTab('recite');
     setFocusRevision((value) => value + 1);
-  };
+  }, [changeTab]);
 
-  const openClassic = (next: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch = false) => {
+  const openClassic = useCallback((next: Classic, sectionIndex?: number, segmentIndex?: number, fromSearch = false) => {
     setClassic(next);
     setClassicSectionIndex(sectionIndex);
     setClassicSegmentIndex(segmentIndex);
     setClassicFromSearch(fromSearch);
     setScreen('classic');
-  };
+  }, []);
 
-  const openFavorite = async (favorite: FavoriteLine) => {
+  const openFavorite = useCallback(async (favorite: FavoriteLine) => {
     if (favorite.workId.startsWith('classic-')) {
       const suffix = favorite.workId.slice('classic-'.length);
       const separator = suffix.lastIndexOf('-');
@@ -152,14 +166,14 @@ function AppShell() {
       ?? catalog.find((item) => normalizeWorkTitle(item.title) === targetTitle)
       ?? imported.find((item) => normalizeWorkTitle(item.title) === targetTitle);
     if (target) openWork(target, favorite.lineIndex);
-  };
+  }, [openClassic, openWork]);
 
-  const closeReader = () => {
-    setTab(readerReturnTab);
+  const closeReader = useCallback(() => {
+    changeTab(readerReturnTab);
     setScreen('tabs');
-  };
+  }, [changeTab, readerReturnTab]);
 
-  const closeClassic = () => {
+  const closeClassic = useCallback(() => {
     if (classicFromSearch) {
       setScreen('tabs');
       return;
@@ -170,48 +184,67 @@ function AppShell() {
       return;
     }
     setScreen('tabs');
-  };
+  }, [classicFromSearch, classicSectionIndex]);
 
-  const openSettings = () => {
+  const openSettings = useCallback(() => {
     setScreen('tabs');
-    setTab('profile');
+    changeTab('profile');
     setFocusRevision((value) => value + 1);
-  };
+  }, [changeTab]);
+
+  const backToToday = useCallback(() => changeTab('today'), [changeTab]);
+  const openFavoriteFromProfile = useCallback((item: FavoriteLine) => {
+    void openFavorite(item);
+  }, [openFavorite]);
+  const settingsSaved = useCallback(() => {
+    setSettingsRevision((value) => value + 1);
+  }, []);
 
   return (
     <View style={[styles.root, { backgroundColor: background }]}>
       <StatusBar style="dark" />
       <View style={styles.tabs}>
         <View style={styles.content}>
-          <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
-            <TodayScreen
+          {visitedTabs.includes('today') ? <View style={[styles.tabPane, tab !== 'today' && styles.hidden]}>
+            <MemoTodayScreen
               onOpenWork={openWork}
               onOpenSettings={openSettings}
               refreshToken={focusRevision}
+              settingsRevision={settingsRevision}
             />
-          </View>
-          <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
-            <LibraryScreen onOpenWork={openWork} onOpenClassic={openClassic} onOpenSettings={openSettings} />
-          </View>
-          <View style={[styles.tabPane, tab !== 'recite' && styles.hidden]}>
-            <ReciteScreen
+          </View> : null}
+          {visitedTabs.includes('library') ? <View style={[styles.tabPane, tab !== 'library' && styles.hidden]}>
+            <MemoLibraryScreen
+              onOpenWork={openWork}
+              onOpenClassic={openClassic}
+              onOpenSettings={openSettings}
+              settingsRevision={settingsRevision}
+            />
+          </View> : null}
+          {visitedTabs.includes('recite') ? <View style={[styles.tabPane, tab !== 'recite' && styles.hidden]}>
+            <MemoReciteScreen
               onOpenFocus={openFocus}
               refreshToken={focusRevision}
             />
-          </View>
-          <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
-            <CompositionScreen onBack={() => setTab('today')} onOpenSettings={openSettings} />
-          </View>
-          <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
-            <ProfileScreen
-              active={tab === 'profile'}
-              refreshToken={screen === 'tabs' && tab === 'profile' ? 1 : 0}
-              onOpenFavorite={(item) => { void openFavorite(item); }}
-              onOpenWork={openWork}
+          </View> : null}
+          {visitedTabs.includes('compose') ? <View style={[styles.tabPane, tab !== 'compose' && styles.hidden]}>
+            <MemoCompositionScreen
+              onBack={backToToday}
+              onOpenSettings={openSettings}
+              settingsRevision={settingsRevision}
             />
-          </View>
+          </View> : null}
+          {visitedTabs.includes('profile') ? <View style={[styles.tabPane, tab !== 'profile' && styles.hidden]}>
+            <MemoProfileScreen
+              active={tab === 'profile'}
+              refreshToken={0}
+              onOpenFavorite={openFavoriteFromProfile}
+              onOpenWork={openWork}
+              onSettingsSaved={settingsSaved}
+            />
+          </View> : null}
         </View>
-        {screen === 'tabs' ? <MainTabBar active={tab} onChange={setTab} /> : null}
+        {screen === 'tabs' ? <MainTabBar active={tab} onChange={changeTab} /> : null}
       </View>
       {screen === 'reader' ? (
         <View style={[styles.readerOverlay, { backgroundColor: background }]}>

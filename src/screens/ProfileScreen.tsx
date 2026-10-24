@@ -2,6 +2,7 @@
 import * as Application from 'expo-application';
 import {
   ActivityIndicator,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -31,11 +32,18 @@ interface Props {
   refreshToken?: number;
   onOpenFavorite: (favorite: FavoriteLine) => void;
   onOpenWork: (work: Work, lineIndex?: number) => void;
+  onSettingsSaved?: () => void;
 }
 
 const EMPTY: ApiSettings = { endpoint: '', apiKey: '', model: '' };
 
-export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite, onOpenWork }: Props) {
+export function ProfileScreen({
+  active = false,
+  refreshToken = 0,
+  onOpenFavorite,
+  onOpenWork,
+  onSettingsSaved,
+}: Props) {
   const { backgroundKey, setBackground } = useAppearance();
   const [section, setSection] = useState<Section>('menu');
   const [settings, setSettings] = useState<ApiSettings>(EMPTY);
@@ -74,6 +82,15 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
     if (active) void refreshFavorites();
   }, [active, refreshToken]);
 
+  useEffect(() => {
+    if (!active || section === 'menu') return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSection('menu');
+      return true;
+    });
+    return () => subscription.remove();
+  }, [active, section]);
+
   const refreshHistory = async () => {
     setHistoryLoading(true);
     try {
@@ -95,8 +112,13 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const upcomingRecords = latestRecords.filter((record) => record.status === 'pending' || (record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() > Date.now()));
 
   const save = async () => {
-    await saveApiSettings(settings);
-    setMessage('API 设置已保存。');
+    try {
+      await saveApiSettings(settings);
+      onSettingsSaved?.();
+      setMessage('API 设置已保存。');
+    } catch (error) {
+      setMessage(error instanceof Error ? `保存失败：${error.message}` : '保存失败，请稍后重试。');
+    }
   };
 
   const test = async () => {

@@ -350,7 +350,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const applyAuditCorrection = async () => {
     const canonical = auditResult?.canonical;
     if (!canonical) {
-      setAuditError('????????????????????');
+      setAuditError('校对结果没有可应用的通行本，请重新校对。');
       return;
     }
     setApplyingCorrection(true);
@@ -367,15 +367,15 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         glossary: [],
         titleFromFirstLine: false,
         incomplete: false,
-        source: '???? ? API ???',
+        source: '通行本校订 · API 比对',
       };
       await saveImportedWork(corrected);
       onWorkUpdated?.(corrected);
       setAuditResult(null);
       setAuditVisible(false);
-      setReviewMessage('????????????????');
+      setReviewMessage('已应用通行本校订，当前阅读页已更新。');
     } catch (error) {
-      setAuditError(error instanceof Error ? error.message : '???????');
+      setAuditError(error instanceof Error ? error.message : '应用校订失败。');
     } finally {
       setApplyingCorrection(false);
     }
@@ -504,12 +504,12 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
                 {auditResult.issues.length === 0 ? <Text style={styles.auditIssueText}>{auditResult.summary}</Text> : null}
                 {auditResult.canonical && auditResult.issues.length > 0 ? (
                   <Pressable onPress={() => void applyAuditCorrection()} disabled={applyingCorrection} style={styles.auditCompleteButton}>
-                    <Text style={styles.auditCompleteText}>{applyingCorrection ? '???????' : '???????'}</Text>
+                    <Text style={styles.auditCompleteText}>{applyingCorrection ? '正在应用…' : '应用通行本校订'}</Text>
                   </Pressable>
                 ) : null}
                 {auditResult.incomplete ? (
                   <Pressable onPress={() => void completeFullText()} disabled={completing} style={styles.auditCompleteButton}>
-                    <Text style={styles.auditCompleteText}>{completing ? '?????' : '????'}</Text>
+                    <Text style={styles.auditCompleteText}>{completing ? '正在补全…' : '联网补全全文'}</Text>
                   </Pressable>
                 ) : null}
                 <Text style={styles.auditConfidence}>把握度：{auditResult.confidence}</Text>

@@ -1,5 +1,5 @@
 ﻿import { ApiSettings, DailyRecommendation, Work } from '../types';
-import { bestDailyWork, isReciteFriendly, reciteQualityScore } from './reciteSelection';
+import { isReciteFriendly, randomReciteWork, reciteQualityScore } from './reciteSelection';
 import { completeSentenceAroundLine } from './text';
 
 interface RecommendationResponse {
@@ -129,8 +129,11 @@ function resolveRecommendation(
   };
 }
 
-export function randomRecommendation(catalog: Work[]): DailyRecommendation {
-  const work = bestDailyWork(catalog);
+export function randomRecommendation(catalog: Work[], excludeWorkId?: string): DailyRecommendation {
+  const work = randomReciteWork(
+    catalog,
+    excludeWorkId ? new Set([excludeWorkId]) : new Set(),
+  );
   if (!work) throw new Error('本地书库暂无可用篇目。');
   const lineIndex = 0;
   return {
