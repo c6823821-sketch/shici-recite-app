@@ -17,13 +17,10 @@ import { DailyDiscovery, loadDailyDiscovery, rotateDailyDiscovery } from '../ser
 import { loadTodayRecommendation, saveTodayRecommendation } from '../services/recommendationStore';
 import { loadApiSettings } from '../services/settings';
 import {
-  DailyGoal,
-  loadDailyGoal,
   loadDueRecords,
-  loadTodayRecords,
-  saveDailyGoal,
   StudyRecord,
 } from '../services/studyQueue';
+import { workDisplayTitle } from '../services/workPresentation';
 import { colors, fonts, radius, shadow, spacing, uiTuning } from '../theme';
 import { ApiSettings, DailyRecommendation, Work } from '../types';
 
@@ -45,8 +42,6 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
   const [discovery, setDiscovery] = useState<DailyDiscovery | null>(null);
   const [discoveryLoading, setDiscoveryLoading] = useState(false);
   const [records, setRecords] = useState<StudyRecord[]>([]);
-  const [todayRecords, setTodayRecords] = useState<StudyRecord[]>([]);
-  const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
   const [catalog, setCatalog] = useState<Work[]>([]);
 
   useEffect(() => {
@@ -185,7 +180,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
             <Pressable onPress={openDaily}>
               <Text style={[styles.quote, { fontSize: 29 * uiTuning.fontScale, lineHeight: 46 * uiTuning.fontScale }]}>{daily.quote}</Text>
               <Text style={styles.recommendMetaLine}>
-                <Text style={styles.recommendPoemTitle}>《{currentWork.title}》</Text>
+                <Text style={styles.recommendPoemTitle}>《{workDisplayTitle(currentWork)}》</Text>
                 <Text style={styles.recommendPoemMeta}>  ·  {currentWork.author} · {currentWork.dynasty}</Text>
               </Text>
               <Text style={styles.reason}>{daily.reason}</Text>
@@ -213,7 +208,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
               style={({ pressed }) => [styles.reviewRow, pressed && styles.pressed]}
             >
               <View style={styles.reviewCopy}>
-                <Text style={styles.reviewTitle}>{work.title}</Text>
+                <Text style={styles.reviewTitle}>{workDisplayTitle(work)}</Text>
                 <Text style={styles.reviewMeta}>到期复习 · {work.author}</Text>
               </View>
               <Text style={styles.reviewAction}>复习</Text>
@@ -247,7 +242,7 @@ export function TodayScreen({ onOpenWork, onOpenSettings, refreshToken = 0 }: Pr
                   <View style={styles.highlightRow}>
                     <Text style={styles.highlightQuote}>{item.quote}</Text>
                     <View style={styles.highlightFooter}>
-                      <Text style={styles.highlightSource}>《{work.title}》· {work.author}</Text>
+                      <Text style={styles.highlightSource}>《{workDisplayTitle(work)}》· {work.author}</Text>
                       <Text style={styles.highlightAction}>查看原诗</Text>
                     </View>
                     <Pressable onPress={() => onOpenWork(work, item.lineIndex)} style={styles.highlightHit} />

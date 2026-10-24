@@ -31,6 +31,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -50,30 +55,26 @@ jobs:
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v3.0.40.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shici-recite-app-v3.0.40
-          path: shici-recite-app-v3.0.40.apk
+          name: shici-recite-app-v${{ steps.app_version.outputs.version }}
+          path: shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.40
-          name: 诗词背诵 v3.0.40
+          tag_name: v${{ steps.app_version.outputs.version }}
+          name: 诗词背诵 v${{ steps.app_version.outputs.version }}
           body: |
-            ???? Android ????
+            修复背诵选题、搜索和版本显示体验。
 
-            ??????????????????????
+            本次更新：每日背诵优先短篇与名篇，不再直接推《离骚》等长文；搜索作者会直接进入作者结果；宋词会补首句帮助区分；版本号统一为三段式。
 
-            ?????????????????????????
-
-            API ???????????????????????
-
-            ???????? ? ???????????? v3.0.40?
-          files: shici-recite-app-v3.0.40.apk
+            安装包名称：shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
+          files: shici-recite-app-v${{ steps.app_version.outputs.version }}.apk
           make_latest: true

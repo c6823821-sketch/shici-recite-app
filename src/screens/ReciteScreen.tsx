@@ -1,17 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { loadWorksCatalog } from '../data/worksCatalog';
+import { rankedReciteWorks } from '../services/reciteSelection';
 import { DailyGoal, loadDailyGoal, loadDueRecords, loadTodayRecords, saveDailyGoal, StudyRecord } from '../services/studyQueue';
+import { workDisplayTitle } from '../services/workPresentation';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
 import { Work } from '../types';
 
 interface Props {
   onOpenFocus: (works: Work[], initialIndex?: number) => void;
-  onOpenWork: (work: Work, lineIndex?: number) => void;
   refreshToken?: number;
 }
 
-export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Props) {
+export function ReciteScreen({ onOpenFocus, refreshToken = 0 }: Props) {
   const [catalog, setCatalog] = useState<Work[]>([]);
   const [goal, setGoal] = useState<DailyGoal>({ target: 1, date: '' });
   const [records, setRecords] = useState<StudyRecord[]>([]);
@@ -31,6 +32,8 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
   }, [refreshToken]);
 
   const doneCount = todayRecords.filter((record) => record.status === 'done').length;
+  const completedToday = new Set(todayRecords.filter((record) => record.status === 'done').map((record) => record.workId));
+  const remainingTarget = Math.max(0, goal.target - doneCount);
   const pending = records
     .filter((record) => record.status === 'pending')
     .map((record) => catalog.find((work) => work.id === record.workId))
@@ -39,24 +42,30 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
     .filter((record) => record.status === 'done' && record.dueAt && new Date(record.dueAt).getTime() <= Date.now())
     .map((record) => catalog.find((work) => work.id === record.workId))
     .filter((work): work is Work => Boolean(work));
+  const attentionCount = pending.length + review.length;
 
   const focusQueue = useMemo(() => {
     const queue = new Map<string, Work>();
-    const add = (work: Work | undefined) => {
-      if (work) queue.set(work.id, work);
-    };
-    review.forEach(add);
-    pending.forEach(add);
-    const minimum = Math.min(20, Math.max(1, goal.target, review.length + pending.length));
-    for (const work of catalog) {
+    review.forEach((work) => queue.set(work.id, work));
+    pending.forEach((work) => queue.set(work.id, work));
+    const minimum = Math.min(20, Math.max(attentionCount, remainingTarget));
+    const ranked = rankedReciteWorks(catalog, completedToday);
+    for (const work of ranked) {
       if (queue.size >= minimum) break;
-      if (!queue.has(work.id)) queue.set(work.id, work);
+      queue.set(work.id, work);
     }
     return [...queue.values()].slice(0, minimum);
-  }, [catalog, goal.target, pending, review]);
+  }, [attentionCount, catalog, completedToday, pending, remainingTarget, review]);
+
+  const taskQueue = focusQueue.slice(0, Math.max(remainingTarget, attentionCount));
 
   const openFocus = () => {
     if (focusQueue.length) onOpenFocus(focusQueue, 0);
+  };
+
+  const openTask = (item: Work) => {
+    const index = focusQueue.findIndex((work) => work.id === item.id);
+    if (index >= 0) onOpenFocus(focusQueue, index);
   };
 
   return (
@@ -68,36 +77,31 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
 
         {loading ? <ActivityIndicator color={colors.vermilion} style={styles.loader} /> : (
           <View style={styles.taskCard}>
-            <Text style={styles.taskValue}>今日背诵进度 {doneCount}/{goal.target}</Text>
-            <Text style={styles.taskHint}>逐首完成，背对后自动安排下一次复习。</Text>
+            <Text style={styles.taskValue}>今日背诵进度 {doneCount}/{goal.target} · {remainingTarget > 0 ? `还剩 ${remainingTarget} 首` : '已完成'}</Text>
+            <Text style={styles.taskHint}>点任意一篇可直接进入背诵，也可以从头开始。</Text>
 
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: (Math.min(100, (doneCount / Math.max(1, goal.target)) * 100)).toString() + '%' as any }]} />
             </View>
 
             <View style={styles.taskList}>
-              {focusQueue.slice(0, Math.max(1, goal.target)).map((item, index) => {
-                const record = todayRecords.find((entry) => entry.workId === item.id);
-                const completed = record?.status === 'done';
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => onOpenWork(item, 0)}
-                    style={({ pressed }) => [styles.taskItem, pressed && styles.pressed]}
-                  >
-                    <Text style={styles.taskIndex}>{index + 1}.</Text>
-                    <View style={styles.taskCopy}>
-                      <Text style={styles.taskTitle} numberOfLines={1}>{item.title}</Text>
-                      <Text style={styles.taskMeta}>{item.author} · {item.dynasty}</Text>
-                    </View>
-                    <Text style={[styles.taskStatus, completed && styles.taskStatusDone]}>
-                      {completed ? '已背' : '待背'}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {taskQueue.length ? taskQueue.map((item, index) => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => openTask(item)}
+                  style={({ pressed }) => [styles.taskItem, pressed && styles.pressed]}
+                >
+                  <Text style={styles.taskIndex}>{index + 1}.</Text>
+                  <View style={styles.taskCopy}>
+                    <Text style={styles.taskTitle} numberOfLines={1}>{workDisplayTitle(item)}</Text>
+                    <Text style={styles.taskMeta}>{item.author} · {item.dynasty}</Text>
+                  </View>
+                  <Text style={styles.taskStatus}>待背 ›</Text>
+                </Pressable>
+              )) : (
+                <Text style={styles.taskEmpty}>今天的背诵目标已经完成，可以休息一下。</Text>
+              )}
             </View>
-
             <View style={styles.goalTargets}>
               {[1, 2, 3, 5].map((value) => (
                 <Pressable
@@ -111,7 +115,7 @@ export function ReciteScreen({ onOpenFocus, onOpenWork, refreshToken = 0 }: Prop
             </View>
 
             <View style={[styles.startButtonShell, focusQueue.length === 0 && styles.disabled]}>
-              <Text style={styles.startButtonText}>开始背诵</Text>
+              <Text style={styles.startButtonText}>{focusQueue.length ? '从头开始背诵' : '今日已完成'}</Text>
               <Pressable disabled={focusQueue.length === 0} onPress={openFocus} style={styles.startButtonHit} />
             </View>
           </View>
@@ -146,6 +150,7 @@ const styles = StyleSheet.create({
   taskMeta: { color: colors.muted, fontFamily: fonts.sans, fontSize: 11, marginTop: 4 },
   taskStatus: { color: colors.gold, fontFamily: fonts.sans, fontSize: 11, marginLeft: 8 },
   taskStatusDone: { color: colors.jade },
+  taskEmpty: { color: colors.muted, fontFamily: fonts.body, fontSize: 13, lineHeight: 22, paddingVertical: 18 },
   goalTargets: { flexDirection: 'row', gap: 8, marginTop: 16 },
   goalTarget: { flex: 1, minHeight: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper },
   goalTargetActive: { borderColor: colors.vermilion, backgroundColor: '#FBE9E7' },

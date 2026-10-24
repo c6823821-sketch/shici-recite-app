@@ -8,6 +8,16 @@
 - 备份分支：`backup/pre-ui-refactor-v2.9.3`
 - 重构分支：`feat/ui-refactor`
 
+## v3.1.0 背诵友好与版本统一回滚
+
+回到 v3.0.42：
+
+```powershell
+git checkout main
+git reset --hard v3.0.42
+git clean -fd
+```
+
 
 ## v3.0.1 微调回滚
 
@@ -442,3 +452,22 @@ git checkout main
 git reset --hard v3.0.38
 git clean -fd
 ```
+## v3.0.41 背诵分句与重背队列回滚
+
+回到 v3.0.40：
+
+```powershell
+git checkout main
+git reset --hard v3.0.40
+git clean -fd
+```
+## v3.0.42 清单直达回滚
+
+回到 v3.0.41：
+
+```powershell
+git checkout main
+git reset --hard v3.0.41
+git clean -fd
+```
+

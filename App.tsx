@@ -196,7 +196,6 @@ function AppShell() {
           <View style={[styles.tabPane, tab !== 'recite' && styles.hidden]}>
             <ReciteScreen
               onOpenFocus={openFocus}
-              onOpenWork={openWork}
               refreshToken={focusRevision}
             />
           </View>

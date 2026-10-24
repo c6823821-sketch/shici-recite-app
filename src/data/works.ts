@@ -683,25 +683,45 @@ const CURATED_WORKS: Work[] = [
 
 ];
 
-function splitCiClauses(work: Work): Work {
-  if (work.genre !== '词') return work;
+function splitRecitationLines(work: Work): Work {
+  const partsByLine = work.lines.map((line) => (
+    line.match(/[^\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A]+[\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A]?/g)
+      ?.map((part) => part.trim())
+      .filter(Boolean) ?? [line]
+  ));
+  if (partsByLine.every((parts) => parts.length === 1)) return work;
+
   const lines: string[] = [];
   const translations: string[] = [];
-  const rawBreakAfter = Math.ceil(work.lines.length / 2);
-  let rawBreakClause: number | undefined;
-  work.lines.forEach((line, rawIndex) => {
-    const parts = line.match(/[^，。！？；：]+[，。！？；：]?/g)?.map((part) => part.trim()).filter(Boolean) ?? [line];
+  const lineStarts: number[] = [];
+  const breaks = new Set<number>();
+  const autoBreakAfter = work.genre === '\u8bcd' && !work.sectionBreaks?.length
+    ? Math.ceil(work.lines.length / 2)
+    : 0;
+
+  partsByLine.forEach((parts, rawIndex) => {
+    lineStarts[rawIndex] = lines.length;
+    if (work.sectionBreaks?.includes(rawIndex)) breaks.add(lines.length);
     lines.push(...parts);
-    if (rawIndex + 1 === rawBreakAfter) rawBreakClause = lines.length;
+    if (autoBreakAfter > 0 && rawIndex + 1 === autoBreakAfter) breaks.add(lines.length);
     if (work.translations.length) {
-      const translation = work.translations[lines.length - parts.length] ?? '';
+      const translation = work.translations[rawIndex] ?? '';
       parts.forEach(() => translations.push(translation));
     }
   });
-  const sectionBreaks = rawBreakClause && rawBreakClause > 0 && rawBreakClause < lines.length
-    ? [rawBreakClause]
-    : work.sectionBreaks;
-  return { ...work, lines, translations, sectionBreaks };
+
+  return {
+    ...work,
+    lines,
+    translations,
+    sectionBreaks: breaks.size
+      ? [...breaks].filter((index) => index > 0 && index < lines.length)
+      : work.sectionBreaks,
+    glossary: work.glossary.map((item) => ({
+      ...item,
+      lineIndex: lineStarts[item.lineIndex] ?? 0,
+    })),
+  };
 }
 
 function ciFirstLineTitle(work: Work): string {
@@ -760,7 +780,7 @@ export const WORKS: Work[] = RAW_WORKS
   .map(correctKnownImportedWork)
   .map(markIncompleteWork)
   .map(sanitizeWork)
-  .map(splitCiClauses)
+  .map(splitRecitationLines)
   .map((work) => {
     if (work.genre === '词' && work.lines.length >= 8 && !work.sectionBreaks?.length) {
       return { ...work, sectionBreaks: [Math.ceil(work.lines.length / 2)] };

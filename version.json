@@ -1,13 +1,13 @@
-﻿{
-    "version":  "3.0.40",
-    "downloadUrl":  "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
-    "downloadUrls":  [
-                         "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
-                         "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
-                         "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk",
-                         "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.0.40/shici-recite-app-v3.0.40.apk"
-                     ],
-    "size":  92586612,
-    "releaseUrl":  "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.0.40",
-    "notes":  "Fix fragment labeling, line terminology, and canonical audit corrections."
+{
+  "version": "3.1.0",
+  "downloadUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
+  "downloadUrls": [
+    "https://ghproxy.net/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
+    "https://gh-proxy.com/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
+    "https://ghfast.top/https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk",
+    "https://github.com/c6823821-sketch/shici-recite-app/releases/download/v3.1.0/shici-recite-app-v3.1.0.apk"
+  ],
+  "size": 42444513,
+  "releaseUrl": "https://github.com/c6823821-sketch/shici-recite-app/releases/tag/v3.1.0",
+  "notes": "调整每日背诵选题，优先短篇与名篇；修复作者搜索、宋词标题显示和版本号统一问题。"
 }

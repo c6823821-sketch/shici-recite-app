@@ -9,12 +9,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Card } from 'ts-fsrs';
 import { ExplanationSheet } from '../components/ExplanationSheet';
 import { AuthorSheet } from '../components/AuthorSheet';
 import { FavoriteSheet } from '../components/FavoriteSheet';
 import { explainWithApi } from '../services/api';
-import { loadCard, rateWork } from '../services/fsrs';
 import { findLocalExplanation } from '../services/localGlossary';
 import { findDictionaryExplanation } from '../services/localDictionary';
 import { createFavorite, createFolder, FavoriteFolder, loadFolders, saveFavorite, saveFolder } from '../services/favorites';
@@ -22,7 +20,6 @@ import { loadOrCreateContext, WorkContext } from '../services/context';
 import { lookupRemoteWork } from '../services/remoteLookup';
 import { saveImportedWork } from '../services/importedWorks';
 import { auditWork, WorkAudit } from '../services/workAudit';
-import { setStudyStatus } from '../services/studyQueue';
 import { loadApiSettings } from '../services/settings';
 import { AuthorInfo, loadAuthorInfo } from '../services/authorInfo';
 import { loadCachedTranslation, saveCachedTranslation } from '../services/translationCache';
@@ -31,6 +28,7 @@ import { recordInteraction } from '../services/preference';
 import { completeSentenceAroundLine, toChars } from '../services/text';
 import { buildLineUnits, isLongText, unitContainingLine } from '../services/longText';
 import { loadReadingProgress, markReadingUnitComplete, saveReadingProgress } from '../services/readingProgress';
+import { workDisplayTitle } from '../services/workPresentation';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Explanation, Work } from '../types';
 
@@ -72,7 +70,6 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
   const [unitIndex, setUnitIndex] = useState(0);
   const [completedUnits, setCompletedUnits] = useState<Set<number>>(new Set());
   const [progressReady, setProgressReady] = useState(false);
-  const [card, setCard] = useState<Card | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
   const [favoriteLine, setFavoriteLine] = useState<number | null>(null);
   const [favoriteFolders, setFavoriteFolders] = useState<FavoriteFolder[]>([]);
@@ -101,7 +98,6 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
   useEffect(() => {
     loadApiSettings().then(setSettings);
-    loadCard(work.id).then(setCard);
     loadFolders().then(setFavoriteFolders);
     setWholeTranslations([]);
     setWholeVisible(false);
@@ -313,15 +309,6 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
     }
   };
 
-  const markStudy = async (done: boolean) => {
-    const next = await rateWork(work.id, done ? 'good' : 'again');
-    setCard(next);
-    await setStudyStatus(work.id, done ? 'done' : 'pending', next.due.toISOString());
-    await recordInteraction(work, done ? 'completed' : 'pending');
-    setReviewMessage(done ? '已完成，进入复习队列。' : '已加入待背清单，下次继续。');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-  };
-
   const toggleContext = async () => {
     if (contextVisible) {
       setContextVisible(false);
@@ -479,7 +466,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
         <Pressable onPress={onBack} style={styles.headerSide}>
           <Text style={styles.headerAction}>‹ 返回</Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>{work.title}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{workDisplayTitle(work)}</Text>
         <Pressable onPress={onOpenSettings} style={[styles.headerSide, styles.headerRight]}>
           <Text style={styles.headerAction}>我的</Text>
         </Pressable>
@@ -487,7 +474,7 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
 
       <ScrollView ref={scrollRef} contentContainerStyle={[styles.scroll, selection && styles.scrollWithSelection]} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <Text style={styles.workTitle}>{work.title}</Text>
+          <Text style={styles.workTitle}>{workDisplayTitle(work)}</Text>
           <View style={styles.workMetaRow}>
             <Text style={styles.workMeta}>{work.dynasty} · </Text>
             <Pressable onPress={() => void openAuthor()}><Text style={styles.authorLink}>{work.author}</Text></Pressable>
@@ -632,23 +619,6 @@ export function ReaderScreen({ work, initialLineIndex = 0, onBack, onOpenSetting
             );
           })}
         </View>
-
-        {work.genre !== '典籍' ? <View style={styles.reviewBlock}>
-          <Text style={styles.reviewTitle}>这一首背得怎么样？</Text>
-          <Text style={styles.reviewHint}>完成就打勾；没背完就放进待背清单，下次继续。</Text>
-          <View style={styles.ratingRow}>
-            <Pressable style={[styles.ratingButton, styles.doneButton]} onPress={() => markStudy(true)}>
-              <Text style={styles.doneText}>✓ 完成背诵</Text>
-            </Pressable>
-            <Pressable style={styles.ratingButton} onPress={() => markStudy(false)}>
-              <Text style={styles.ratingText}>加入待背清单</Text>
-            </Pressable>
-          </View>
-          {reviewMessage ? <Text style={styles.reviewMessage}>{reviewMessage}</Text> : null}
-          <Text style={styles.reviewExplanation}>
-            完成表示今天能独立背出，系统会把它加入复习队列，之后根据你的记忆状态安排复习；没背完则进入待背清单。
-          </Text>
-        </View> : null}
 
         <Text style={styles.source}>文本来源：{work.source}</Text>
       </ScrollView>

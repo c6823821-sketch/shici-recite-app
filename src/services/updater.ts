@@ -47,6 +47,10 @@ function isNewer(latest: string, current: string): boolean {
   return false;
 }
 
+function isMalformedVersion(value: string): boolean {
+  return value.replace(/^v/i, '').split('.').length > 3;
+}
+
 async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -110,7 +114,7 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
   } catch {
     latest = await fetchLatestPage();
   }
-  if (!isNewer(latest.version, currentVersion)) return null;
+  if (!isNewer(latest.version, currentVersion) && !isMalformedVersion(currentVersion)) return null;
   if (!latest.downloadUrl) throw new Error('\u65b0\u7248\u6ca1\u6709\u627e\u5230 APK \u5b89\u88c5\u5305\u3002');
   return latest;
 }

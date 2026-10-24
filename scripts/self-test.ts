@@ -8,6 +8,8 @@ import { explainWithApi } from '../src/services/api';
 import { lookupRemoteWork } from '../src/services/remoteLookup';
 import { auditWork } from '../src/services/workAudit';
 import { isLongText } from '../src/services/longText';
+import { bestDailyWork, isReciteFriendly, rankedReciteWorks } from '../src/services/reciteSelection';
+import { workDisplayTitle } from '../src/services/workPresentation';
 import { loadWholeTranslation } from '../src/services/wholeTranslation';
 import { WORKS } from '../src/data/works';
 import { CLASSICS } from '../src/data/classics';
@@ -20,6 +22,25 @@ assert.ok(WORKS.filter((work) => work.collections.includes('唐诗三百首')).l
 assert.ok(WORKS.filter((work) => work.collections.includes('全宋词')).length >= 20000, '全宋词应至少包含 20,000 篇');
 assert.equal(WORKS.filter((work) => work.author === '李煜').length, 61, '李煜五代十国作品应完整收录');
 assert.ok(WORKS.length >= 23000, '总内容库应超过 23,000 篇');
+
+const dailyReciteWork = bestDailyWork(WORKS, '2026-10-21');
+assert.ok(dailyReciteWork, '每日背诵应能选出可用篇目');
+assert.equal(isReciteFriendly(dailyReciteWork!), true, '每日背诵不应选择长文或残缺篇目');
+assert.notEqual(dailyReciteWork?.title, '离骚', '每日背诵不应把《离骚》放入普通短篇队列');
+const rankedReciteWorksValue = rankedReciteWorks(WORKS, new Set(), '2026-10-21');
+assert.equal(rankedReciteWorksValue.every(isReciteFriendly), true, '普通背诵候选应全部适合短时背诵');
+assert.ok(rankedReciteWorksValue.length > 1000, '短篇优先后仍应保留充足候选');
+
+const genericCi = WORKS.find((work) => work.genre === '词' && !/[·・]/.test(work.title) && work.lines[0]);
+assert.ok(genericCi, '应存在仅显示词牌的宋词篇目');
+assert.ok(workDisplayTitle(genericCi!).includes('·'), '宋词标题应补首句，避免同名词牌难以区分');
+
+const splitXiangsi = WORKS.find((work) => work.title === '相思' && work.author === '王维');
+assert.deepEqual(splitXiangsi?.lines, ['红豆生南国，', '秋来发故枝。', '愿君多采撷，', '此物最相思。'], '背诵分句应拆到逗号');
+const splitBiaoYouMei = WORKS.find((work) => work.title === '摽有梅');
+assert.equal(splitBiaoYouMei?.lines.length, 12, '诗经复沓短句应逐句拆分');
+const splitWulingChun = WORKS.find((work) => work.title === '武陵春' && work.author === '李清照');
+assert.equal(splitWulingChun?.lines[1], '日晚倦梳头。', '词句应保留正确分句');
 
 const markedIncomplete = WORKS.filter((work) => /□|（下缺）|\(下缺\)|〔下缺〕/.test(work.lines.join('')));
 assert.ok(markedIncomplete.length > 0, '应存在底本缺字或下缺作品');
@@ -397,4 +418,3 @@ testApiServices()
     console.error(error);
     process.exit(1);
   });
-

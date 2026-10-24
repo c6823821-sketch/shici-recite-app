@@ -19,8 +19,10 @@ import { FavoriteFolder, FavoriteLine, loadFavorites, loadFolders, removeFavorit
 import { loadApiSettings, saveApiSettings } from '../services/settings';
 import { checkForUpdate, downloadAndInstallUpdate, formatBytes, UpdateInfo } from '../services/updater';
 import { APP_BACKGROUNDS, useAppearance } from '../services/appearance';
+import { workDisplayTitle } from '../services/workPresentation';
 import { colors, fonts, spacing } from '../theme';
 import { ApiSettings, Work } from '../types';
+import packageInfo from '../../package.json';
 
 type Section = 'menu' | 'api' | 'favorites' | 'history' | 'appearance';
 
@@ -49,7 +51,8 @@ export function ProfileScreen({ active = false, refreshToken = 0, onOpenFavorite
   const [historyCatalog, setHistoryCatalog] = useState<Work[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [colorQuery, setColorQuery] = useState('');
-  const appVersion = Application.nativeApplicationVersion ?? '3.0.40';
+  const nativeVersion = Application.nativeApplicationVersion ?? packageInfo.version;
+  const appVersion = nativeVersion.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? nativeVersion;
 
   useEffect(() => {
     loadApiSettings().then((value) => setSettings(value ?? EMPTY));
@@ -307,7 +310,7 @@ function HistoryRow({
   return (
     <Pressable onPress={onOpen} style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
       <View style={styles.historyCopy}>
-        <Text style={styles.historyTitle}>{work.title}</Text>
+        <Text style={styles.historyTitle}>{workDisplayTitle(work)}</Text>
         <Text style={styles.historyMeta}>{work.author} · {work.dynasty}</Text>
       </View>
       <View style={styles.historySide}>

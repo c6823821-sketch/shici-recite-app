@@ -3,6 +3,7 @@ import { FlatList, ImageBackground, Platform, Pressable, ScrollView, StyleSheet,
 import { FILTER_GROUPS, FilterKey } from '../data/taxonomy';
 import { Work } from '../types';
 import { colors, fonts, spacing } from '../theme';
+import { workDisplayTitle } from '../services/workPresentation';
 
 export type DimensionKey = FilterKey | 'fly';
 
@@ -111,8 +112,8 @@ export function CategoryBrowser({ initialDimension = 'themes', works, onOpenWork
           )}
           renderItem={({ item }: any) => (
             <Pressable onPress={() => onOpenWork(item.work, item.lineIndex ?? 0)} style={styles.resultRow}>
-              {item.line ? <Text style={styles.quote}>{item.line}</Text> : <Text style={styles.workTitle}>{item.work.title}</Text>}
-              <Text style={styles.meta}>{item.line ? `《${item.work.title}》· ${item.work.author}` : `${item.work.author} · ${item.work.dynasty} · ${item.work.genre}`}</Text>
+              {item.line ? <Text style={styles.quote}>{item.line}</Text> : <Text style={styles.workTitle}>{workDisplayTitle(item.work)}</Text>}
+              <Text style={styles.meta}>{item.line ? `《${workDisplayTitle(item.work)}》· ${item.work.author}` : `${item.work.author} · ${item.work.dynasty} · ${item.work.genre}`}</Text>
               {!item.line && item.work.lines[0] ? <Text style={styles.snippet} numberOfLines={2}>{item.work.lines[0]}</Text> : null}
             </Pressable>
           )}

@@ -1,4 +1,5 @@
 ﻿import { ApiSettings, DailyRecommendation, Work } from '../types';
+import { bestDailyWork, isReciteFriendly, reciteQualityScore } from './reciteSelection';
 import { completeSentenceAroundLine } from './text';
 
 interface RecommendationResponse {
@@ -71,22 +72,24 @@ function chooseCandidates(userText: string, catalog: Work[]): Work[] {
   const intentTags = Object.entries(INTENT_KEYWORDS)
     .filter(([, keywords]) => keywords.some((keyword) => userText.includes(keyword)))
     .map(([tag]) => tag);
-  const scored = catalog
+  const friendlyCatalog = catalog.filter(isReciteFriendly);
+  const pool = friendlyCatalog.length >= 40 ? friendlyCatalog : catalog;
+  const scored = pool
     .map((work) => {
       const themeHits = intentTags.filter((tag) => work.themes.includes(tag) || work.moods.includes(tag)).length;
       const textHits = intentTags.filter((tag) =>
         INTENT_KEYWORDS[tag].some((keyword) => work.lines.some((line) => line.includes(keyword))),
       ).length;
-      return { work, score: themeHits * 3 + textHits };
+      return { work, score: themeHits * 3 + textHits, quality: reciteQualityScore(work) };
     })
     .filter((item) => item.score > 0)
-    .sort((left, right) => right.score - left.score);
+    .sort((left, right) => right.score - left.score || right.quality - left.quality);
 
   const result = scored.slice(0, 80).map((item) => item.work);
   if (result.length < 40) {
-    const start = hashText(userText) % Math.max(1, catalog.length);
-    for (let index = 0; result.length < 80 && index < catalog.length; index += 1) {
-      const candidate = catalog[(start + index * 97) % catalog.length];
+    const start = hashText(userText) % Math.max(1, pool.length);
+    for (let index = 0; result.length < 80 && index < pool.length; index += 1) {
+      const candidate = pool[(start + index * 97) % pool.length];
       if (candidate && !result.some((work) => work.id === candidate.id)) result.push(candidate);
     }
   }
@@ -127,8 +130,8 @@ function resolveRecommendation(
 }
 
 export function randomRecommendation(catalog: Work[]): DailyRecommendation {
-  const work = catalog[Math.floor(Math.random() * catalog.length)] ?? catalog[0];
-  if (!work) throw new Error('???????????');
+  const work = bestDailyWork(catalog);
+  if (!work) throw new Error('本地书库暂无可用篇目。');
   const lineIndex = 0;
   return {
     workId: work.id,

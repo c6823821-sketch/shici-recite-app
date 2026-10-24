@@ -2,6 +2,7 @@
 import { ApiSettings, Work } from '../types';
 import { getStoredValue, setStoredValue } from './settings';
 import { loadPreferenceProfile, preferenceScore, topInterests } from './preference';
+import { isReciteFriendly, reciteQualityScore } from './reciteSelection';
 import { completeSentenceAroundLine } from './text';
 
 export interface DailyDiscoveryItem {
@@ -98,12 +99,18 @@ function pickItems(
   excludeWorkIds: Set<string> = new Set(),
   salt = '',
 ): DailyDiscoveryItem[] {
-  const ranked = catalog.map((work) => {
+  const friendlyCatalog = catalog.filter(isReciteFriendly);
+  const poolCatalog = friendlyCatalog.length >= 12 ? friendlyCatalog : catalog;
+  const ranked = poolCatalog.map((work) => {
     const contextScore = work.themes.filter((theme) => context.themes.includes(theme)).length * 4;
     const lineIndex = work.lines.findIndex((line) => context.keywords.some((keyword) => line.includes(keyword)));
     const keywordScore = lineIndex >= 0 ? 3 : 0;
     const personalScore = preferenceScore(work, profile);
-    return { work, lineIndex: lineIndex >= 0 ? lineIndex : 0, score: contextScore + keywordScore + personalScore };
+    return {
+      work,
+      lineIndex: lineIndex >= 0 ? lineIndex : 0,
+      score: contextScore + keywordScore + personalScore + reciteQualityScore(work) / 100,
+    };
   }).sort((left, right) => right.score - left.score || left.work.id.localeCompare(right.work.id));
 
   const withoutRecent = ranked.filter((item) => !excludeWorkIds.has(item.work.id));

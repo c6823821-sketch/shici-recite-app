@@ -18,6 +18,7 @@ import { lookupRemoteWork } from '../services/remoteLookup';
 import { canonicalWorkContentKey, canonicalWorkKey } from '../data/corrections';
 import { splitClassicText } from '../services/classicText';
 import { getStoredValue, loadApiSettings, setStoredValue } from '../services/settings';
+import { workDisplayTitle } from '../services/workPresentation';
 import { ERA_ORDER, ERAS, FILTER_GROUPS, FilterKey, FilterState } from '../data/taxonomy';
 import { colors, fonts, radius, spacing } from '../theme';
 import { ApiSettings, Classic, ClassicSection, Work } from '../types';
@@ -62,6 +63,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteMessage, setRemoteMessage] = useState('');
   const attemptedRemoteQuery = useRef('');
+  const lastAutoTabQuery = useRef('');
 
   useEffect(() => {
     loadImportedWorks().then(setImportedWorks);
@@ -139,6 +141,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     if (normalizedQuery.length < 2) return [];
     return filteredWorks.filter((work) => normalizeSearch(work.author).includes(normalizedQuery));
   }, [filteredWorks, normalizedQuery]);
+  const exactAuthorMatch = authorMatches.some((work) => normalizeSearch(work.author) === normalizedQuery);
 
   const classicMatches = useMemo(() => {
     if (normalizedQuery.length < 2) return [];
@@ -168,7 +171,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
     ...filters.moods,
   ];
   const hasFilters = selected.length > 0 || query.trim().length > 0;
-  const activeEra = filters.eras.length === 1 ? filters.eras[0] : '??';
+  const activeEra = filters.eras.length === 1 ? filters.eras[0] : '';
 
   const searchTabItems: Array<{ key: SearchTab; label: string; count: number }> = [
     { key: 'sentence', label: '句子', count: matchedLines.length + matchedClassicSentences.length },
@@ -385,11 +388,31 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
   );
 
   useEffect(() => {
-    if (normalizedQuery.length < 2) return;
-    if (searchTab === 'sentence' && matchedLines.length === 0 && workMatches.length > 0) {
-      setSearchTab('work');
+    if (normalizedQuery.length < 2) {
+      lastAutoTabQuery.current = '';
+      setSearchTab('sentence');
+      return;
     }
-  }, [matchedLines.length, normalizedQuery, searchTab, workMatches.length]);
+    if (lastAutoTabQuery.current === normalizedQuery) return;
+
+    let nextTab: SearchTab | null = null;
+    if (exactAuthorMatch) {
+      nextTab = 'author';
+    } else if (matchedLines.length === 0 && matchedClassicSentences.length === 0) {
+      if (workMatches.length > 0 || matchedClassicWorks.length > 0) nextTab = 'work';
+      else if (authorMatches.length > 0) nextTab = 'author';
+    }
+    if (nextTab) setSearchTab(nextTab);
+    lastAutoTabQuery.current = normalizedQuery;
+  }, [
+    authorMatches.length,
+    exactAuthorMatch,
+    matchedClassicSentences.length,
+    matchedClassicWorks.length,
+    matchedLines.length,
+    normalizedQuery,
+    workMatches.length,
+  ]);
 
   useEffect(() => {
     const term = query.trim();
@@ -417,7 +440,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
             return (
               <Pressable onPress={() => { void rememberSearch(query); onOpenWork(item.work, item.lineIndex); }} style={styles.quoteRow}>
                 <Text style={styles.quoteLine}>{item.line}</Text>
-                <Text style={styles.quoteTitle}>《{item.work.title}》</Text>
+                <Text style={styles.quoteTitle}>《{workDisplayTitle(item.work)}》</Text>
                 <Text style={styles.quoteAuthor}>{item.work.author}</Text>
                 <View style={styles.resultActionRow}>
                   <Pressable
@@ -449,7 +472,7 @@ export function LibraryScreen({ onOpenWork, onOpenClassic, onOpenSettings }: Pro
               {showEra ? <Text style={styles.eraHeader}>{item.work.dynasty}</Text> : null}
               <Pressable onPress={() => { void rememberSearch(query); onOpenWork(item.work, 0); }} style={({ pressed }) => [styles.workRow, pressed && styles.pressed]}>
                 <View style={styles.workCopy}>
-                  <Text style={styles.workTitle}>{item.work.title}</Text>
+                  <Text style={styles.workTitle}>{workDisplayTitle(item.work)}</Text>
                   <Text style={styles.workAuthor}>{item.work.author}{item.work.imported ? ' · API补录待校对' : ''}</Text>
                   <Text style={styles.workMeta}>{item.work.dynasty} · {item.work.genre}</Text>
                   <View style={styles.tagRow}>
