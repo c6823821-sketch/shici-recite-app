@@ -43,5 +43,12 @@
     "ui:tuner": "node scripts/ui-tuner.mjs"
   },
   "private": true,
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo"
+      ]
+    }
+  },
   "description": "离线优先的古诗文阅读与 FSRS 背诵 App"
 }
